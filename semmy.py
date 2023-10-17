@@ -14,7 +14,6 @@ from vispy.io import load_data_file, read_png
 class Semmy():
     def __init__(self, *args, **kwargs):
         self.version = "v0.0.1"
-        self.img = read_png("img/black.png")
 
         self.main_window = None
 
@@ -112,6 +111,9 @@ class CanvasWrapper():
     def __init__(self):
 
         self.img = np.flipud(read_png("img/2023-04-24_PTB_D5_10-01.jpg"))
+        # self.img = np.flipud(read_png("img/start_page.png"))
+        self.no_image_selected = False
+
         self.canvas = SceneCanvas(size=(self.img.shape[1], 
                                         self.img.shape[0]), 
                                         bgcolor=(240/255, 240/255, 240/255,1))
@@ -131,6 +133,10 @@ class CanvasWrapper():
         title = Label("SEM-Image", color='black', font_size=14)
         title.height_max = 50
         self.grid.add_widget(title, row=0, col=0, col_span=3)
+
+        if self.no_image_selected:
+            load_image_label = Label("Please select\nan image", color='white', font_size=20)
+            self.grid.add_widget(load_image_label, row=1, col=1)
         
         # y axis
         yaxis = AxisWidget(orientation='left',

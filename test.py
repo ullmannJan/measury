@@ -1,107 +1,106 @@
-import numpy as np
+import argparse
 
-from vispy.util.transforms import ortho
-from vispy import gloo
-from vispy import app
-
-
-# Image to be displayed
-W, H = 64, 48
-img_array = np.random.uniform(0, 1, (W, H)).astype(np.float32)
-
-# A simple texture quad
-data = np.zeros(4, dtype=[('a_position', np.float32, 2),
-                          ('a_texcoord', np.float32, 2)])
-data['a_position'] = np.array([[0, 0], [W, 0], [0, H], [W, H]])
-data['a_texcoord'] = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+from vispy import app, scene
+from vispy.io import read_mesh, load_data_file
+from vispy.scene.visuals import Mesh
+from vispy.scene import transforms
+from vispy.visuals.filters import ShadingFilter, WireframeFilter
 
 
-VERT_SHADER = """
-// Uniforms
-uniform mat4 u_model;
-uniform mat4 u_view;
-uniform mat4 u_projection;
-uniform float u_antialias;
+parser = argparse.ArgumentParser()
+default_mesh = load_data_file('orig/triceratops.obj.gz')
+parser.add_argument('--mesh', default=default_mesh)
+parser.add_argument('--shininess', default=100)
+parser.add_argument('--wireframe-width', default=1)
+args, _ = parser.parse_known_args()
 
-// Attributes
-attribute vec2 a_position;
-attribute vec2 a_texcoord;
+vertices, faces, normals, texcoords = read_mesh(args.mesh)
 
-// Varyings
-varying vec2 v_texcoord;
+canvas = scene.SceneCanvas(keys='interactive', bgcolor='white')
+view = canvas.central_widget.add_view()
 
-// Main
-void main (void)
-{
-    v_texcoord = a_texcoord;
-    gl_Position = u_projection * u_view * u_model * vec4(a_position,0.0,1.0);
-}
-"""
+view.camera = 'arcball'
+view.camera.depth_value = 1e3
 
-FRAG_SHADER = """
-uniform sampler2D u_texture;
-varying vec2 v_texcoord;
-void main()
-{
-    gl_FragColor = texture2D(u_texture, v_texcoord);
-    gl_FragColor.a = 1.0;
-}
+# Create a colored `MeshVisual`.
+mesh = Mesh(vertices, faces, color=(.5, .7, .5, 1))
+mesh.transform = transforms.MatrixTransform()
+mesh.transform.rotate(90, (1, 0, 0))
+mesh.transform.rotate(-45, (0, 0, 1))
+view.add(mesh)
 
-"""
-
-
-class Canvas(app.Canvas):
-
-    def __init__(self):
-        app.Canvas.__init__(self, keys='interactive', size=((W * 5), (H * 5)))
-
-        self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
-        self.texture = gloo.Texture2D(img_array, interpolation='linear')
-
-        self.program['u_texture'] = self.texture
-        self.program.bind(gloo.VertexBuffer(data))
-
-        self.view = np.eye(4, dtype=np.float32)
-        self.model = np.eye(4, dtype=np.float32)
-        self.projection = np.eye(4, dtype=np.float32)
-
-        self.program['u_model'] = self.model
-        self.program['u_view'] = self.view
-        self.projection = ortho(0, W, 0, H, -1, 1)
-        self.program['u_projection'] = self.projection
-
-        gloo.set_clear_color('white')
-
-        self._timer = app.Timer('auto', connect=self.update, start=True)
-
-        self.show()
-
-    def on_resize(self, event):
-        width, height = event.physical_size
-        gloo.set_viewport(0, 0, width, height)
-        self.projection = ortho(0, width, 0, height, -100, 100)
-        self.program['u_projection'] = self.projection
-
-        # Compute thje new size of the quad
-        r = width / float(height)
-        R = W / float(H)
-        if r < R:
-            w, h = width, width / R
-            x, y = 0, int((height - h) / 2)
-        else:
-            w, h = height * R, height
-            x, y = int((width - w) / 2), 0
-        data['a_position'] = np.array(
-            [[x, y], [x + w, y], [x, y + h], [x + w, y + h]])
-        self.program.bind(gloo.VertexBuffer(data))
-
-    def on_draw(self, event):
-        gloo.clear(color=True, depth=True)
-        img_array[...] = np.random.uniform(0, 1, (W, H)).astype(np.float32)
-        self.texture.set_data(img_array)
-        self.program.draw('triangle_strip')
+# Use filters to affect the rendering of the mesh.
+wireframe_filter = WireframeFilter(width=args.wireframe_width)
+# Note: For convenience, this `ShadingFilter` would be created automatically by
+# the `MeshVisual with, e.g. `mesh = MeshVisual(..., shading='smooth')`. It is
+# created manually here for demonstration purposes.
+shading_filter = ShadingFilter(shininess=args.shininess)
+# The wireframe filter is attached before the shading filter otherwise the
+# wireframe is not shaded.
+mesh.attach(wireframe_filter)
+mesh.attach(shading_filter)
 
 
-if __name__ == '__main__':
-    canvas = Canvas()
+def attach_headlight(view):
+    light_dir = (0, 1, 0, 0)
+    shading_filter.light_dir = light_dir[:3]
+    initial_light_dir = view.camera.transform.imap(light_dir)
+
+    @view.scene.transform.changed.connect
+    def on_transform_change(event):
+        transform = view.camera.transform
+        shading_filter.light_dir = transform.map(initial_light_dir)[:3]
+
+
+attach_headlight(view)
+
+shading_states = (
+    dict(shading=None),
+    dict(shading='flat'),
+    dict(shading='smooth'),
+)
+shading_state_index = shading_states.index(
+    dict(shading=shading_filter.shading))
+
+wireframe_states = (
+    dict(wireframe_only=False, faces_only=False,),
+    dict(wireframe_only=True, faces_only=False,),
+    dict(wireframe_only=False, faces_only=True,),
+)
+wireframe_state_index = wireframe_states.index(dict(
+    wireframe_only=wireframe_filter.wireframe_only,
+    faces_only=wireframe_filter.faces_only,
+))
+
+
+def cycle_state(states, index):
+    new_index = (index + 1) % len(states)
+    return states[new_index], new_index
+
+
+@canvas.events.key_press.connect
+def on_key_press(event):
+    global shading_state_index
+    global wireframe_state_index
+    if event.key == 's':
+        state, shading_state_index = cycle_state(shading_states,
+                                                 shading_state_index)
+        for attr, value in state.items():
+            setattr(shading_filter, attr, value)
+        mesh.update()
+    elif event.key == 'w':
+        wireframe_filter.enabled = not wireframe_filter.enabled
+        mesh.update()
+    elif event.key == 'f':
+        state, wireframe_state_index = cycle_state(wireframe_states,
+                                                   wireframe_state_index)
+        for attr, value in state.items():
+            setattr(wireframe_filter, attr, value)
+        mesh.update()
+
+
+canvas.show()
+
+
+if __name__ == "__main__":
     app.run()
