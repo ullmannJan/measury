@@ -1,0 +1,44 @@
+import cv2
+from pathlib import Path
+from PyQt6.QtWidgets import QVBoxLayout, QPushButton, QTableWidget, QWidget, QFileDialog
+
+class MainUI(QWidget):
+
+    def __init__(self, vispy_canvas_wrapper, parent=None):
+        super().__init__(parent)
+        layout = QVBoxLayout()
+        self.vispy_canvas_wrapper = vispy_canvas_wrapper
+
+        self.setMinimumWidth(200)
+
+        # self.select_image_label = QtWidgets.QLabel("Select File:")
+        # layout.addWidget(self.select_image_label)
+        self.select_image_button = QPushButton("Select SEM File", self)
+        layout.addWidget(self.select_image_button)
+        self.select_image_button.clicked.connect(self.select_sem_file)
+
+        self.center_image_button = QPushButton("Test", self)
+        layout.addWidget(self.center_image_button)
+        self.center_image_button.clicked.connect(self.vispy_canvas_wrapper.update_image)
+        
+        # add empty space
+        layout.addStretch(1)
+        self.setLayout(layout)
+        
+        # Table
+        self.table = QTableWidget()
+        self.table.setRowCount(10)
+        self.table.setColumnCount(2)
+        layout.addWidget(self.table)
+
+        
+    
+    def select_sem_file(self):
+        file = self.openFileNameDialog()
+        img_data = cv2.imread(file)
+
+    def openFileNameDialog(self):
+        fileName, _ = QFileDialog.getOpenFileName(self,"Select SEM Image", "","All Files (*);;Python Files (*.py)")
+        if fileName:
+            return Path(fileName)
+
