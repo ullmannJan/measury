@@ -5,6 +5,8 @@ from PyQt6.QtWidgets import QMessageBox, QVBoxLayout, QHBoxLayout, \
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QDoubleValidator, QIntValidator
 
+from OutputWindow import OutputWindow
+
 class MainUI(QWidget):
     
     def __init__(self, vispy_canvas_wrapper, file_handler, parent=None):
@@ -17,7 +19,7 @@ class MainUI(QWidget):
 
 
         self.layout = QVBoxLayout(self)
-        self.setMinimumWidth(200)
+        self.setMinimumWidth(175)
 
         # sem settings
         self.sem_label = QLabel("Select SEM", self)
@@ -95,11 +97,27 @@ class MainUI(QWidget):
         # add empty space
         self.layout.addStretch(1)
         
+
+        # Output
+        self.output_box = QGroupBox("Output", self)
+        self.output_layout = QVBoxLayout()
+
+        self.structure_edit = QLineEdit(self, placeholderText="enter structure name")
+        self.output_layout.addWidget(self.structure_edit)
+
+        self.openOutputWindow = QPushButton("Open Output Window", self)
+        self.output_layout.addWidget(self.openOutputWindow)
+        self.openOutputWindow.clicked.connect(self.open_output_window)
+
+        self.output_box.setLayout(self.output_layout)
+        self.layout.addWidget(self.output_box)
+
         # Table
         self.table = QTableWidget()
         self.table.setRowCount(5)
-        self.table.setColumnCount(2)
+        self.table.setColumnCount(5)
         self.layout.addWidget(self.table)
+        self.table.hide()
         
         self.setLayout(self.layout)
     
@@ -115,4 +133,8 @@ class MainUI(QWidget):
     def raise_error(self, error):        
         msg = QMessageBox.critical(None, "Error", str(error))
         msg.exec()
+
+    def open_output_window(self):
+        self.output_window = OutputWindow()
+        self.output_window.show()
 

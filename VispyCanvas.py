@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 from numpy.typing import NDArray
 from vispy.color import Colormap
-from vispy.scene import SceneCanvas, visuals, AxisWidget, Label
+from vispy.scene import SceneCanvas, visuals, AxisWidget, Label, transforms
 from vispy.io import load_data_file, read_png
            
 class VispyCanvas(SceneCanvas):
@@ -31,6 +31,7 @@ class VispyCanvas(SceneCanvas):
                             interpolation='nearest',
                             cmap="viridis",
                             parent=self.view.scene)
+        
         
         self.start_state = True
 
@@ -145,24 +146,29 @@ class VispyCanvas(SceneCanvas):
                         self.view.camera._viewbox.events.mouse_move.connect(
                             self.view.camera.viewbox_mouse_event)
                     
-                    
                     ## line
                     case 1:
                         #disable panning
                         self.view.camera._viewbox.events.mouse_move.disconnect(
                             self.view.camera.viewbox_mouse_event)
-                        if self.line_start is None:
-                            self.line_start = mouse_image_coords
-                            print("first point stored")
-                        else:
-                            # save both points 
-                            self.line_start = None
-                            print("second point captured")
+                        if event.button == 1:
+                            if self.line_start is None:
+                                # first point stored
+                                self.line_start = mouse_image_coords
+                            else:
+                                # save both points 
+                                print(self.line_start, mouse_image_coords)
+                                # self.main_ui.table.show()
 
-                        print(event.button, mouse_image_coords)
+                                #second point captured
+                                self.line_start = None
+                        elif event.button == 2:
+                            self.line.visible = False
+                            self.line_start = None
+                            
+
                     ## circle
                     ## rectangle
-
 
 
 
@@ -204,17 +210,19 @@ class VispyCanvas(SceneCanvas):
                 mouse_image_coords = tr_image.map(event.pos)[:2]
 
                 match self.main_ui.tools.checkedId():
-                    
+                    ## line
                     case 1:
                         if self.line_start is not None:
                             if self.line is None:
                                 self.line = visuals.Line(pos=np.array([self.line_start, mouse_image_coords]),
-                                                         width=5, 
-                                                         color=(1,1,1,1),
-                                                         parent=self.scene)
+                                                         width=3, 
+                                                         color=(1,1,1,0.7),
+                                                         method='agg',
+                                                         parent=self.view.scene)
+                                self.line.transform = transforms.STTransform(translate=(0, 0, -1))
                             else:
+                                self.line.visible = True
                                 self.line.set_data(np.array([self.line_start, mouse_image_coords]))
-                            print(mouse_image_coords)
                     ## circle
                     ## rectangle
               
