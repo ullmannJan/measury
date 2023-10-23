@@ -24,12 +24,12 @@ class MainWindow(QMainWindow):
         # self.setStyleSheet("background-color: white") 
 
         # Create actions for menu bar
-        openAction = QAction(QIcon('open.png'), '&Open', self)
+        openAction = QAction(QIcon('open.png'), '&Open File', self)
         openAction.setShortcut('Ctrl+O')
         openAction.setStatusTip('Open document')
         openAction.triggered.connect(self.qt_controls.select_sem_file)
         
-        centerAction = QAction(QIcon('open.png'), '&Center', self)
+        centerAction = QAction(QIcon('open.png'), '&Center Image', self)
         centerAction.setShortcut('Ctrl+P')
         centerAction.setStatusTip('Center Image')
         centerAction.triggered.connect(self.vispy_canvas.center_image)

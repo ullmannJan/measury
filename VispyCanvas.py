@@ -10,6 +10,9 @@ class VispyCanvas(SceneCanvas):
     CANVAS_SHAPE = (800, 600)
     main_ui = None
 
+    line = None
+    line_start = None
+
     def __init__(self, file_handler):
         
         self.file_handler = file_handler
@@ -21,13 +24,15 @@ class VispyCanvas(SceneCanvas):
         
         self.grid = self.central_widget.add_grid(margin=0)
 
-        self.view = self.grid.add_view(1, 1, bgcolor='black')
+        self.view = self.grid.add_view(row=1, col=1, bgcolor='black')
 
         self.image = visuals.Image(data = None,
                             texture_format="auto",
                             interpolation='nearest',
                             cmap="viridis",
                             parent=self.view.scene)
+        
+        self.start_state = True
 
         # title
         self.title_label = Label("SEM-Image", color='black', font_size=12)
@@ -57,46 +62,56 @@ class VispyCanvas(SceneCanvas):
         right_padding.width_max =25
 
 
-        self.load_image_label = Label("Please select\nan image", color='white', font_size=16)
+        self.load_image_label = Label("Click here to select\nan image", color='white', font_size=16)
         self.grid.add_widget(self.load_image_label, row=1, col=1)
 
         
         # camera
+        self.view.camera.flip = (0,1,0)
         self.view.camera.set_range(x=(0,1),
                                    y=(0,1), 
-                                   margin=0)
+                                   margin=0)  
+              
 
         self.freeze()
 
     def update_image(self):
-        # self.file_handler.img_path="img/2023-04-24_PTB_D5_10-01.jpg"
-        # self.file_handler.img_path=None
 
         if self.file_handler.img_path is not None:
             try:
-                self.remove_load_text()
-
                 self.title_label.text = self.file_handler.img_path
 
-                self.file_handler.img_data = np.flipud(cv2.imread(self.file_handler.img_path))
+                self.file_handler.img_data = cv2.imread(self.file_handler.img_path)
                 
-                self.image.set_data(self.file_handler.img_data)
+                self.draw_image()
 
                 self.view.camera = "panzoom"
                 self.view.camera.set_range(x=(0,self.file_handler.img_data.shape[1]),
                                             y=(0,self.file_handler.img_data.shape[0]), margin=0)
                 self.view.camera.aspect = 1
+                self.view.camera.flip = (0,1,0)
 
                 self.xaxis.link_view(self.view)
                 self.yaxis.link_view(self.view)
+                
+                self.start_state = False
+
             except Exception as error:
                 # handle the exception                                
                 self.main_ui.raise_error(error)
+            
+            self.remove_load_text()
+    
+    def draw_image(self, img_data=None):
+        if img_data is None:
+            img_data = self.file_handler.img_data
+        self.image.set_data(img_data)
 
     def center_image(self):
         if self.file_handler.img_data is not None:
             self.view.camera.set_range(x=(0,self.file_handler.img_data.shape[1]),
                                        y=(0,self.file_handler.img_data.shape[0]), margin=0)
+            
 
     def add_load_text(self):
          # load image label
@@ -107,9 +122,109 @@ class VispyCanvas(SceneCanvas):
         self.load_image_label.visible = False
 
     def on_mouse_press(self, event):
-        print(event)
-        if event.button == 1:
-            print(1)
-        if event.button == 2:
-            print(2)
-        print(event.pos)
+        # transform so that coordinates start at 0 in self.view window
+        tr = self.scene.node_transform(self.view)
+        # only activate when over self.view by looking if coordinates < 0 or > size of self.view
+        if not( (tr.map(event.pos)[:2] > self.view.size).any() or (tr.map(event.pos)[:2] < (0,0)).any() ):
+            
+            if self.start_state:
+                # when no image is selected open file opening sequence by clicking
+                self.main_ui.select_sem_file()
+            else:
+                # main use of program
+
+                # transform to get image pixel coordinates
+                tr_image = self.scene.node_transform(self.image)
+                mouse_image_coords = tr_image.map(event.pos)[:2]
+                m_i_x, m_i_y = np.floor(mouse_image_coords).astype(int)
+
+                match self.main_ui.tools.checkedId():
+                    ## move image
+                    case 0:
+                        # enable panning
+                        self.view.camera._viewbox.events.mouse_move.connect(
+                            self.view.camera.viewbox_mouse_event)
+                    
+                    
+                    ## line
+                    case 1:
+                        #disable panning
+                        self.view.camera._viewbox.events.mouse_move.disconnect(
+                            self.view.camera.viewbox_mouse_event)
+                        if self.line_start is None:
+                            self.line_start = mouse_image_coords
+                            print("first point stored")
+                        else:
+                            # save both points 
+                            self.line_start = None
+                            print("second point captured")
+
+                        print(event.button, mouse_image_coords)
+                    ## circle
+                    ## rectangle
+
+
+
+
+                    ## identify scaling
+                    case 4:
+                        #disable panning
+                        self.view.camera._viewbox.events.mouse_move.disconnect(
+                            self.view.camera.viewbox_mouse_event)
+                        # print(event.button, mouse_image_coords)
+
+                        temp = self.file_handler.img_data.copy()
+                        cv2.floodFill(temp, 
+                                      None,
+                                      (m_i_x, m_i_y),
+                                      newVal=(255, 0, 0),
+                                      loDiff=(10,10,10),
+                                      upDiff=(10,10,10)
+                                      )
+                        
+                        self.draw_image(img_data=temp)
+
+                        non_zero_indices = np.nonzero(np.sum(self.file_handler.img_data-temp, axis=2))
+
+                        # plus one to account for the start pixel
+                        scale_px = np.max(non_zero_indices[1])-np.min(non_zero_indices[1]) + 1
+
+                        self.main_ui.pixel_edit.setText(str(scale_px))
+
+    def on_mouse_move(self, event):
+
+        # transform so that coordinates start at 0 in self.view window
+        tr = self.scene.node_transform(self.view)
+        # only activate when over self.view by looking if coordinates < 0 or > size of self.view
+        if not( (tr.map(event.pos)[:2] > self.view.size).any() or (tr.map(event.pos)[:2] < (0,0)).any() ):
+            
+            if not self.start_state:
+                # transform to get image pixel coordinates
+                tr_image = self.scene.node_transform(self.image)
+                mouse_image_coords = tr_image.map(event.pos)[:2]
+
+                match self.main_ui.tools.checkedId():
+                    
+                    case 1:
+                        if self.line_start is not None:
+                            if self.line is None:
+                                self.line = visuals.Line(pos=np.array([self.line_start, mouse_image_coords]),
+                                                         width=5, 
+                                                         color=(1,1,1,1),
+                                                         parent=self.scene)
+                            else:
+                                self.line.set_data(np.array([self.line_start, mouse_image_coords]))
+                            print(mouse_image_coords)
+                    ## circle
+                    ## rectangle
+              
+
+    # later improvements
+    # def on_key_press(self, event):
+    #     print(event.key)
+    #     if event.key in ['K']:
+    #         former_tool_id = self.main_ui.tools.checkedId()
+    #         self.main_ui.tools.button(0).setChecked(True)
+
+
+                        
