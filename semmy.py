@@ -1,5 +1,6 @@
 from vispy.app import use_app
 from MainWindow import MainWindow
+from FileHandler import FileHandler
 
 class Semmy:
 
@@ -9,7 +10,8 @@ class Semmy:
 
         self.app = use_app("pyqt6")
         self.app.create()
-        self.main_window = MainWindow()
+        self.file_handler = FileHandler()
+        self.main_window = MainWindow(self.file_handler)
 
     def run(self):
         self.main_window.show()

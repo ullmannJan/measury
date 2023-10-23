@@ -1,24 +1,25 @@
 
 from MainUI import MainUI
-from VispyCanvasWrapper import VispyCanvasWrapper
+from VispyCanvas import VispyCanvas
 from PyQt6.QtGui import QAction, QIcon
-from PyQt6.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QSplitter, QSplitterHandle
+from PyQt6.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QSplitter
 from PyQt6.QtCore import Qt
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, file_handler, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._canvas_wrapper = VispyCanvasWrapper()
-        self._controls = MainUI(self._canvas_wrapper)
-        self._canvas_wrapper.main_ui = self._controls
+        self.file_handler = file_handler
+        self.vispy_canvas = VispyCanvas(self.file_handler)
+        self.qt_controls = MainUI(self.vispy_canvas, self.file_handler)
+        self.vispy_canvas.main_ui = self.qt_controls
 
         self.initUI()
 
     def initUI(self):
         self.setWindowTitle("Semmy")
-        self.setWindowIcon(QIcon("img/black.png"))
+        self.setWindowIcon(QIcon("img/logo/tape_measure_640.png"))
         self.setMinimumSize(300,200)
         # self.setStyleSheet("background-color: white") 
 
@@ -26,13 +27,20 @@ class MainWindow(QMainWindow):
         openAction = QAction(QIcon('open.png'), '&Open', self)
         openAction.setShortcut('Ctrl+O')
         openAction.setStatusTip('Open document')
-        openAction.triggered.connect(self.openCall)
+        openAction.triggered.connect(self.qt_controls.select_sem_file)
+        
+        centerAction = QAction(QIcon('open.png'), '&Center', self)
+        centerAction.setShortcut('Ctrl+P')
+        centerAction.setStatusTip('Center Image')
+        centerAction.triggered.connect(self.vispy_canvas.center_image)
 
         # Create menu bar
         menuBar = self.menuBar()
         fileMenu = menuBar.addMenu('&File')
         fileMenu.addAction(openAction)
         settingsMenu = menuBar.addMenu('&Settings')
+        viewMenu = menuBar.addMenu('&View')
+        viewMenu.addAction(centerAction)
 
         central_widget = QWidget()
         main_layout = QHBoxLayout()
@@ -40,15 +48,12 @@ class MainWindow(QMainWindow):
         # splitter
         splitter = QSplitter(Qt.Orientation.Horizontal)
         # controls
-        splitter.addWidget(self._controls)
+        splitter.addWidget(self.qt_controls)
         # vispy canvas
-        splitter.addWidget(self._canvas_wrapper.canvas.native)
+        splitter.addWidget(self.vispy_canvas.native)
 
         main_layout.addWidget(splitter)
 
         central_widget.setLayout(main_layout)
         self.setCentralWidget(central_widget)
     
-    
-    def openCall(self):
-        print("tada")
