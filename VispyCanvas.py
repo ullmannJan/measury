@@ -4,6 +4,7 @@ from numpy.typing import NDArray
 from vispy.color import Colormap
 from vispy.scene import SceneCanvas, visuals, AxisWidget, Label, transforms
 from vispy.io import load_data_file, read_png
+from vispy.util.event import Event
            
 class VispyCanvas(SceneCanvas):
     """ Canvas """
@@ -158,6 +159,11 @@ class VispyCanvas(SceneCanvas):
                             else:
                                 # save both points 
                                 print(self.line_start, mouse_image_coords)
+                                scaling_factor = 1
+                                if self.main_ui.length_edit.text() and self.main_ui.pixel_edit.text():
+                                    scaling_factor = float(self.main_ui.length_edit.text())/float(self.main_ui.pixel_edit.text())
+                                print(scaling_factor*abs(np.linalg.norm(self.line_start-mouse_image_coords)))
+                                
                                 # self.main_ui.table.show()
 
                                 #second point captured
@@ -177,25 +183,33 @@ class VispyCanvas(SceneCanvas):
                         #disable panning
                         self.view.camera._viewbox.events.mouse_move.disconnect(
                             self.view.camera.viewbox_mouse_event)
-                        # print(event.button, mouse_image_coords)
 
-                        temp = self.file_handler.img_data.copy()
-                        cv2.floodFill(temp, 
-                                      None,
-                                      (m_i_x, m_i_y),
-                                      newVal=(255, 0, 0),
-                                      loDiff=(10,10,10),
-                                      upDiff=(10,10,10)
-                                      )
-                        
-                        self.draw_image(img_data=temp)
+                        # get width of scaling bar and show it in image
+                        self.find_scaling_bar_width((m_i_x, m_i_y))
 
-                        non_zero_indices = np.nonzero(np.sum(self.file_handler.img_data-temp, axis=2))
+    def find_scaling_bar_width(self, seed_point):
+        # get width of scaling bar by floodFilling an area of similar pixels.
+        # The start point needs to be given
 
-                        # plus one to account for the start pixel
-                        scale_px = np.max(non_zero_indices[1])-np.min(non_zero_indices[1]) + 1
+        # create copy of image which can be modified
+        img_data_modified = self.file_handler.img_data.copy()
+        cv2.floodFill(img_data_modified, 
+                        None,
+                        seed_point,
+                        newVal=(255, 0, 0),
+                        loDiff=(10,10,10),
+                        upDiff=(10,10,10)
+                    )
+        
+        self.draw_image(img_data=img_data_modified)
 
-                        self.main_ui.pixel_edit.setText(str(scale_px))
+        non_zero_indices = np.nonzero(np.sum(self.file_handler.img_data-img_data_modified, axis=2))
+
+        # plus one to account for the start pixel
+        scale_px = np.max(non_zero_indices[1])-np.min(non_zero_indices[1]) + 1
+
+        self.main_ui.pixel_edit.setText(str(scale_px))
+        self.scene.update()
 
     def on_mouse_move(self, event):
 
@@ -215,9 +229,10 @@ class VispyCanvas(SceneCanvas):
                         if self.line_start is not None:
                             if self.line is None:
                                 self.line = visuals.Line(pos=np.array([self.line_start, mouse_image_coords]),
-                                                         width=3, 
+                                                         width=5, 
                                                          color=(1,1,1,0.7),
-                                                         method='agg',
+                                                         method='gl',
+                                                         antialias=True,
                                                          parent=self.view.scene)
                                 self.line.transform = transforms.STTransform(translate=(0, 0, -1))
                             else:
@@ -225,7 +240,6 @@ class VispyCanvas(SceneCanvas):
                                 self.line.set_data(np.array([self.line_start, mouse_image_coords]))
                     ## circle
                     ## rectangle
-              
 
     # later improvements
     # def on_key_press(self, event):

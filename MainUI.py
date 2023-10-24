@@ -26,7 +26,7 @@ class MainUI(QWidget):
         self.layout.addWidget(self.sem_label)
 
         self.dd_select_sem = QComboBox(self)
-        self.dd_select_sem.addItems(["JSM-6500F - Jeol", "...", "Generic SEM"])
+        self.dd_select_sem.addItems(self.file_handler.sem_db.keys())
         self.layout.addWidget(self.dd_select_sem)
 
         # image settings
@@ -55,6 +55,7 @@ class MainUI(QWidget):
         tools['circle'] = QPushButton("&circle", self, enabled=False)
         tools['rectangle'] = QPushButton("&rectangle", self, enabled=False)
         tools['scale'] = QPushButton("&identify scaling", self)
+        tools["scale"].clicked.connect(self.automatic_scaling)
 
         self.tools = QButtonGroup(self)
 
@@ -137,4 +138,16 @@ class MainUI(QWidget):
     def open_output_window(self):
         self.output_window = OutputWindow()
         self.output_window.show()
+
+    def automatic_scaling(self):
+        #only when image is loaded
+        if not self.vispy_canvas_wrapper.start_state:
+            # get seedPoint from sem_db
+            try:
+                seed_point = self.file_handler.sem_db[self.dd_select_sem.currentText()]['SeedPoints']
+                # only actually try to find scaling bar, when data is given by database
+                if seed_point is not None:
+                    self.vispy_canvas_wrapper.find_scaling_bar_width(seed_point)
+            except:
+                self.raise_error("Something went wrong when reading database:")            
 
