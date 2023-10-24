@@ -4,7 +4,7 @@ from FileHandler import FileHandler
 
 class Semmy:
 
-    version = "v0.0.1"
+    version = "v0.1.0"
 
     def __init__(self):
 
