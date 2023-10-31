@@ -52,8 +52,8 @@ class MainUI(QWidget):
         tools = dict()
         tools['move'] = QPushButton("&move", self)
         tools['line'] = QPushButton("&line", self)
-        tools['circle'] = QPushButton("&circle", self, enabled=False)
-        tools['rectangle'] = QPushButton("&rectangle", self, enabled=False)
+        tools['circle'] = QPushButton("&circle", self)
+        tools['rectangle'] = QPushButton("&rectangle", self)
         tools['scale'] = QPushButton("&identify scaling", self)
         tools["scale"].clicked.connect(self.automatic_scaling)
 

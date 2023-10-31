@@ -1,18 +1,21 @@
 import numpy as np
+from numpy.linalg import norm
 import cv2
-from numpy.typing import NDArray
-from vispy.color import Colormap
-from vispy.scene import SceneCanvas, visuals, AxisWidget, Label, transforms
-from vispy.io import load_data_file, read_png
-from vispy.util.event import Event
-           
+from vispy.scene import SceneCanvas, visuals, AxisWidget, Label, transforms, MatrixTransform
+from DrawableObjects import EditEllipseVisual, EditRectVisual
+
+
 class VispyCanvas(SceneCanvas):
-    """ Canvas """
+    """ Canvas for displaying the vispy instance"""
+
     CANVAS_SHAPE = (800, 600)
     main_ui = None
 
     line = None
     line_start = None
+
+    
+
 
     def __init__(self, file_handler):
         
@@ -75,7 +78,13 @@ class VispyCanvas(SceneCanvas):
                                    margin=0)  
               
 
+        # for manipulating shapes
+        self.selected_object = None
+        self.selected_point = None
+        self.mouse_start_pos = [0, 0]
+
         self.freeze()
+
 
     def update_image(self):
 
@@ -122,6 +131,7 @@ class VispyCanvas(SceneCanvas):
     def remove_load_text(self):
         # self.load_image_label.text = ""
         self.load_image_label.visible = False
+
 
     def on_mouse_press(self, event):
         # transform so that coordinates start at 0 in self.view window
@@ -174,6 +184,57 @@ class VispyCanvas(SceneCanvas):
                             
 
                     ## circle
+                    case 2 | 3:
+                        #disable panning
+                        self.view.camera._viewbox.events.mouse_move.disconnect(
+                            self.view.camera.viewbox_mouse_event)
+                        
+                        tr = self.scene.node_transform(self.view.scene)
+                        pos = tr.map(event.pos)
+                        self.view.interactive = False
+                        selected = self.visual_at(event.pos)
+                        self.view.interactive = True
+                        if self.selected_object is not None:
+                            self.selected_object.select(False)
+                            self.selected_object = None
+
+                        if event.button == 1:
+                            
+                            if selected is not None:
+                                self.selected_object = selected.parent
+                                # update transform to selected object
+                                tr = self.scene.node_transform(self.selected_object)
+                                pos = tr.map(event.pos)
+
+                                self.selected_object.select(True, obj=selected)
+                                self.selected_object.start_move(pos)
+                                self.mouse_start_pos = event.pos
+
+                            # create new object:
+                            if self.selected_object is None:
+                                
+                                if self.main_ui.tools.checkedId() == 2:
+                                    new_object = EditEllipseVisual(parent=self.view.scene)
+                                elif self.main_ui.tools.checkedId() == 3:
+                                    new_object = EditRectVisual(parent=self.view.scene)
+
+                                new_object.select_creation_controlpoint()
+                                new_object.set_center(pos[0:2])
+                                self.selected_object = new_object.control_points
+                                self.selected_object.transform = transforms.STTransform(translate=(0, 0, -2))
+                                new_object.transform = transforms.STTransform(translate=(0, 0, -1))
+
+                        if event.button == 2:  # right button deletes object
+                            if selected is not None:
+                                selected.parent.parent = None
+                                self.selected_object = None
+                            
+                        
+                        
+                        
+
+
+
                     ## rectangle
 
 
@@ -239,6 +300,30 @@ class VispyCanvas(SceneCanvas):
                                 self.line.visible = True
                                 self.line.set_data(np.array([self.line_start, mouse_image_coords]))
                     ## circle
+                    case 2 | 3:
+                        if event.button == 1:
+                            if self.selected_object is not None:
+                                # update transform to selected object
+                                # check if letter k is pressed
+                                modifiers = [key.name for key in event.modifiers]
+                                tr = self.scene.node_transform(self.selected_object)
+                                pos = tr.map(event.pos)
+                                if 'Shift' in modifiers:
+                                    
+                                    try:
+                                        x = (pos[0:2] - self.selected_object.center)[0]
+                                        y = (pos[0:2] - self.selected_object.center)[1]
+                                        angle = np.arctan(y/x)
+                                        self.selected_object.rotate(-angle)
+                                    except:
+                                        angle = 90
+                                        self.selected_object.rotate(angle)
+                                else:
+                                    
+                                    self.selected_object.move(pos[0:2])
+
+                        else:
+                            None
                     ## rectangle
 
     # later improvements
