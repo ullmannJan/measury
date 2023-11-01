@@ -33,8 +33,8 @@ class ControlPoints(scene.visuals.Compound):
                                self.parent.bounds(0)[0]),
                         0.5 * (self.parent.bounds(1)[1] +
                                self.parent.bounds(1)[0])]
-        self._width = self.parent.bounds(0)[1] - self.parent.bounds(0)[0]
-        self._height = self.parent.bounds(1)[1] - self.parent.bounds(1)[0]
+        self._width = abs(self.parent.bounds(0)[1] - self.parent.bounds(0)[0])
+        self._height = abs(self.parent.bounds(1)[1] - self.parent.bounds(1)[0])
         self.update_points()
 
     def update_points(self):
@@ -82,8 +82,12 @@ class ControlPoints(scene.visuals.Compound):
         if not self.parent.editable:
             return
         if self.selected_cp is not None:
-            self._width = 2 * (end[0] - self._center[0])
-            self._height = 2 * (end[1] - self._center[1])
+
+            diag = end-self._center
+
+            self._width = abs(2 * (np.cos(self._angle)*diag[0] - np.sin(self._angle)*diag[1]))
+            self._height = abs( 2 * (np.sin(self._angle)*diag[0] + np.cos(self._angle)*diag[1]))
+                
             self.update_points()
             self.parent.update_from_controlpoints()
 
@@ -93,12 +97,17 @@ class ControlPoints(scene.visuals.Compound):
         self._angle = angle
         self.update_points()
         self.parent.update_from_controlpoints()
+        self.parent.update_transform()
 
     def visible(self, v):
         for c in self.control_points:
             c.visible = v
 
     def get_center(self):
+        return self._center
+    
+    @property
+    def center(self):
         return self._center
 
     def set_center(self, val):
@@ -107,14 +116,13 @@ class ControlPoints(scene.visuals.Compound):
 
 
 class EditVisual(scene.visuals.Compound):
-    
-    form = None
-    
+        
     def __init__(self, editable=True, selectable=True, on_select_callback=None,
                  callback_argument=None, *args, **kwargs):
         scene.visuals.Compound.__init__(self, [], *args, **kwargs)
         self.unfreeze()
         self.editable = editable
+        self.form = None
         self._selectable = selectable
         self._on_select_callback = on_select_callback
         self._callback_argument = callback_argument
@@ -184,7 +192,7 @@ class EditVisual(scene.visuals.Compound):
         self.control_points.select(True, self.control_points.control_points[2])
 
 class EditRectVisual(EditVisual):
-    def __init__(self, center=[0, 0], width=50, height=40, *args, **kwargs):
+    def __init__(self, center=[0, 0], width=100, height=50, *args, **kwargs):
         EditVisual.__init__(self, *args, **kwargs)
         self.unfreeze()
         self.form = scene.visuals.Rectangle(center=center, 
@@ -218,7 +226,7 @@ class EditRectVisual(EditVisual):
 
 
 class EditEllipseVisual(EditVisual):
-    def __init__(self, center=[0, 0], radius=[50, 50], *args, **kwargs):
+    def __init__(self, center=[0, 0], radius=[100, 100], *args, **kwargs):
         EditVisual.__init__(self, *args, **kwargs)
         self.unfreeze()
         self.form = scene.visuals.Ellipse(center=center, radius=radius,
@@ -243,3 +251,34 @@ class EditEllipseVisual(EditVisual):
                                    0.5 * abs(self.control_points._height)]
         except ValueError:
             None
+
+class EditLineVisual(scene.visuals.Compound):
+
+    def __init__(self, start=[0,0], end=[1,1]):
+
+        scene.visuals.Compound.__init__(self, [])
+        self.unfreeze()
+
+        self.line_start = start
+        self.line_end = end
+        self.coords = [self.line_start, self.line_end]
+
+        self.line = scene.visuals.Line(pos=np.array([self.line_start, self.line_end]),
+                                        width=5, 
+                                        color=(1,1,1,0.7),
+                                        method='gl',
+                                        antialias=True,
+                                        parent=self)
+        
+        self.marker_start = scene.visuals.Markers(parent=self)
+        self.marker_end = scene.visuals.Markers(parent=self)
+
+        self.markers = [self.marker_start, self.marker_end]
+        for marker, coords in zip(self.markers, self.coords):
+            marker.set_data(pos=np.array([coords], dtype=np.float32),
+                            symbol="s",
+                            edge_color="white",
+                            size=6)
+            marker.interactive = True
+        
+        self.freeze()

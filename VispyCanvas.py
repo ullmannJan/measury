@@ -1,8 +1,8 @@
 import numpy as np
 from numpy.linalg import norm
 import cv2
-from vispy.scene import SceneCanvas, visuals, AxisWidget, Label, transforms, MatrixTransform
-from DrawableObjects import EditEllipseVisual, EditRectVisual
+from vispy.scene import SceneCanvas, visuals, AxisWidget, Label, transforms
+from DrawableObjects import EditEllipseVisual, EditRectVisual, ControlPoints, EditLineVisual
 
 
 class VispyCanvas(SceneCanvas):
@@ -156,12 +156,19 @@ class VispyCanvas(SceneCanvas):
                         # enable panning
                         self.view.camera._viewbox.events.mouse_move.connect(
                             self.view.camera.viewbox_mouse_event)
+                        # unselect object
+                        if self.selected_object is not None:
+                            self.selected_object.select(False)
+                            self.selected_object = None
                     
                     ## line
                     case 1:
                         #disable panning
                         self.view.camera._viewbox.events.mouse_move.disconnect(
                             self.view.camera.viewbox_mouse_event)
+                        
+
+
                         if event.button == 1:
                             if self.line_start is None:
                                 # first point stored
@@ -181,9 +188,11 @@ class VispyCanvas(SceneCanvas):
                         elif event.button == 2:
                             self.line.visible = False
                             self.line_start = None
+                        
+
                             
 
-                    ## circle
+                    ## circle or rectangle
                     case 2 | 3:
                         #disable panning
                         self.view.camera._viewbox.events.mouse_move.disconnect(
@@ -194,6 +203,7 @@ class VispyCanvas(SceneCanvas):
                         self.view.interactive = False
                         selected = self.visual_at(event.pos)
                         self.view.interactive = True
+                        # unselect object to create rom of new one
                         if self.selected_object is not None:
                             self.selected_object.select(False)
                             self.selected_object = None
@@ -202,6 +212,7 @@ class VispyCanvas(SceneCanvas):
                             
                             if selected is not None:
                                 self.selected_object = selected.parent
+
                                 # update transform to selected object
                                 tr = self.scene.node_transform(self.selected_object)
                                 pos = tr.map(event.pos)
@@ -229,14 +240,6 @@ class VispyCanvas(SceneCanvas):
                                 selected.parent.parent = None
                                 self.selected_object = None
                             
-                        
-                        
-                        
-
-
-
-                    ## rectangle
-
 
 
                     ## identify scaling
@@ -302,22 +305,44 @@ class VispyCanvas(SceneCanvas):
                     ## circle
                     case 2 | 3:
                         if event.button == 1:
+
                             if self.selected_object is not None:
                                 # update transform to selected object
                                 # check if letter k is pressed
                                 modifiers = [key.name for key in event.modifiers]
                                 tr = self.scene.node_transform(self.selected_object)
                                 pos = tr.map(event.pos)
+
                                 if 'Shift' in modifiers:
                                     
-                                    try:
-                                        x = (pos[0:2] - self.selected_object.center)[0]
-                                        y = (pos[0:2] - self.selected_object.center)[1]
+                                    x = (pos[0:2] - self.selected_object.center)[0]
+                                    y = (pos[0:2] - self.selected_object.center)[1]
+
+                                    if x != 0:
                                         angle = np.arctan(y/x)
-                                        self.selected_object.rotate(-angle)
-                                    except:
-                                        angle = 90
-                                        self.selected_object.rotate(angle)
+                                    else:
+                                        angle = np.pi/2
+                                    
+                                    # this is a bit of a hack to get the rotation right on control points
+                                    # something still does not feel right
+                                    if isinstance(self.selected_object, ControlPoints):
+                                        width = self.selected_object._width
+                                        height = self.selected_object._height
+                                        if self.selected_object.control_points.index(self.selected_object.selected_cp) %2 ==0:
+                                            beta = -np.tan(height/width)
+                                        else:
+                                            beta = np.tan(height/width)
+                                            
+                                    else:
+                                        width = self.selected_object.control_points._width
+                                        height = self.selected_object.control_points._height
+                                        beta = 0
+
+                                    if width > height:
+                                        self.selected_object.rotate(-angle+beta)
+                                    else:
+                                        self.selected_object.rotate(-angle-beta+np.pi/2)
+
                                 else:
                                     
                                     self.selected_object.move(pos[0:2])
