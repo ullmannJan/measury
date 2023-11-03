@@ -11,9 +11,9 @@ class VispyCanvas(SceneCanvas):
     CANVAS_SHAPE = (800, 600)
     main_ui = None
 
-    def __init__(self, file_handler):
+    def __init__(self, data_handler):
         
-        self.file_handler = file_handler
+        self.data_handler = data_handler
 
         SceneCanvas.__init__(self,size=self.CANVAS_SHAPE, 
                                   bgcolor=(240/255, 240/255, 240/255,1),
@@ -81,17 +81,17 @@ class VispyCanvas(SceneCanvas):
 
     def update_image(self):
 
-        if self.file_handler.img_path is not None:
+        if self.data_handler.img_path is not None:
             try:
-                self.title_label.text = self.file_handler.img_path
+                self.title_label.text = self.data_handler.img_path
 
-                self.file_handler.img_data = cv2.imread(self.file_handler.img_path)
+                self.data_handler.img_data = cv2.imread(self.data_handler.img_path)
                 
                 self.draw_image()
 
                 self.view.camera = "panzoom"
-                self.view.camera.set_range(x=(0,self.file_handler.img_data.shape[1]),
-                                            y=(0,self.file_handler.img_data.shape[0]), margin=0)
+                self.view.camera.set_range(x=(0,self.data_handler.img_data.shape[1]),
+                                            y=(0,self.data_handler.img_data.shape[0]), margin=0)
                 self.view.camera.aspect = 1
                 self.view.camera.flip = (0,1,0)
 
@@ -108,13 +108,13 @@ class VispyCanvas(SceneCanvas):
     
     def draw_image(self, img_data=None):
         if img_data is None:
-            img_data = self.file_handler.img_data
+            img_data = self.data_handler.img_data
         self.image.set_data(img_data)
 
     def center_image(self):
-        if self.file_handler.img_data is not None:
-            self.view.camera.set_range(x=(0,self.file_handler.img_data.shape[1]),
-                                       y=(0,self.file_handler.img_data.shape[0]), margin=0)
+        if self.data_handler.img_data is not None:
+            self.view.camera.set_range(x=(0,self.data_handler.img_data.shape[1]),
+                                       y=(0,self.data_handler.img_data.shape[0]), margin=0)
             
 
     def add_load_text(self):
@@ -193,6 +193,9 @@ class VispyCanvas(SceneCanvas):
                                 self.selected_object = new_object.control_points
                                 self.selected_object.transform = transforms.STTransform(translate=(0, 0, -2))
 
+                                # TODO: save object in database
+                                # structure_name = self.main_ui.structure_edit.text()
+
                         if event.button == 2:  # right button deletes object
                             if selected is not None:
                                 selected.parent.parent = None
@@ -219,7 +222,7 @@ class VispyCanvas(SceneCanvas):
         # The start point needs to be given
 
         # create copy of image which can be modified
-        img_data_modified = self.file_handler.img_data.copy()
+        img_data_modified = self.data_handler.img_data.copy()
         cv2.floodFill(img_data_modified, 
                         None,
                         seed_point,
@@ -230,7 +233,7 @@ class VispyCanvas(SceneCanvas):
         
         self.draw_image(img_data=img_data_modified)
 
-        non_zero_indices = np.nonzero(np.sum(self.file_handler.img_data-img_data_modified, axis=2))
+        non_zero_indices = np.nonzero(np.sum(self.data_handler.img_data-img_data_modified, axis=2))
 
         # plus one to account for the start pixel
         scale_px = np.max(non_zero_indices[1])-np.min(non_zero_indices[1]) + 1

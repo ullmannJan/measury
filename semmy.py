@@ -1,17 +1,17 @@
 from vispy.app import use_app
 from MainWindow import MainWindow
-from FileHandler import FileHandler
+from DataHandler import DataHandler
 
 class Semmy:
 
-    version = "v0.1.0"
-
     def __init__(self):
+
+        self.version = "0.1.0" 
 
         self.app = use_app("pyqt6")
         self.app.create()
-        self.file_handler = FileHandler()
-        self.main_window = MainWindow(self.file_handler)
+        self.data_handler = DataHandler(version=self.version)
+        self.main_window = MainWindow(self.data_handler)
 
     def run(self):
         self.main_window.show()

@@ -5,17 +5,17 @@ from PyQt6.QtWidgets import QMessageBox, QVBoxLayout, QHBoxLayout, \
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QDoubleValidator, QIntValidator
 
-from OutputWindow import OutputWindow
+from SemmyWindow import OutputWindow
 
 class MainUI(QWidget):
     
-    def __init__(self, vispy_canvas_wrapper, file_handler, parent=None):
+    def __init__(self, vispy_canvas_wrapper, data_handler, parent=None):
         
 
         super().__init__(parent)
 
         self.vispy_canvas_wrapper = vispy_canvas_wrapper
-        self.file_handler = file_handler
+        self.data_handler = data_handler
 
 
         self.layout = QVBoxLayout(self)
@@ -26,7 +26,7 @@ class MainUI(QWidget):
         self.layout.addWidget(self.sem_label)
 
         self.dd_select_sem = QComboBox(self)
-        self.dd_select_sem.addItems(self.file_handler.sem_db.keys())
+        self.dd_select_sem.addItems(self.data_handler.sem_db.keys())
         self.layout.addWidget(self.dd_select_sem)
 
         # image settings
@@ -103,7 +103,7 @@ class MainUI(QWidget):
         self.output_box = QGroupBox("Output", self)
         self.output_layout = QVBoxLayout()
 
-        self.structure_edit = QLineEdit(self, placeholderText="enter structure name")
+        self.structure_edit = QLineEdit(self, placeholderText="Enter structure name")
         self.output_layout.addWidget(self.structure_edit)
 
         self.openOutputWindow = QPushButton("Open Output Window", self)
@@ -123,7 +123,7 @@ class MainUI(QWidget):
         self.setLayout(self.layout)
     
     def select_sem_file(self):
-        self.file_handler.img_path = self.openFileNameDialog()
+        self.data_handler.img_path = self.openFileNameDialog()
         self.vispy_canvas_wrapper.update_image()
 
     def openFileNameDialog(self):
@@ -144,7 +144,7 @@ class MainUI(QWidget):
         if not self.vispy_canvas_wrapper.start_state:
             # get seedPoint from sem_db
             try:
-                seed_point = self.file_handler.sem_db[self.dd_select_sem.currentText()]['SeedPoints']
+                seed_point = self.data_handler.sem_db[self.dd_select_sem.currentText()]['SeedPoints']
                 # only actually try to find scaling bar, when data is given by database
                 if seed_point is not None:
                     self.vispy_canvas_wrapper.find_scaling_bar_width(seed_point)
