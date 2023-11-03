@@ -289,7 +289,7 @@ class LineControlPoints(scene.visuals.Compound):
         self.selected_cp = None
 
         self.edge_color = "black"
-        self.face_color = (1,1,1,0.5)
+        self.face_color = (1,1,1,0.2)
         self.marker_size = 8
 
         self.control_points = [scene.visuals.Markers(parent=self)
@@ -376,9 +376,12 @@ class EditLineVisual(EditVisual):
         self.line_start = line_start
         self.line_end = line_end
 
+        self.line_color = (1,1,1,0.6)
+        self.line_width = 5
+
         self.form = scene.visuals.Line(pos=np.array([self.line_start, self.line_end]),
-                                        width=5, 
-                                        color=(1,1,1,0.7),
+                                        width=self.line_width, 
+                                        color=self.line_color,
                                         method='gl',
                                         antialias=True,
                                         parent=self)
@@ -387,6 +390,9 @@ class EditLineVisual(EditVisual):
         self.freeze()
         self.add_subvisual(self.form)
 
+    @property
+    def length(self):
+        return self.control_points.length()
 
     def set_start(self, start):
         self.line_start = start
@@ -417,8 +423,8 @@ class EditLineVisual(EditVisual):
     def update_from_controlpoints(self):
         try:
             self.form.set_data(pos=np.array([self.control_points.start, self.control_points.end]),
-                                width=5, 
-                                color=(1,1,1,0.7))
+                                width=self.line_width, 
+                                color=self.line_color)
         except ValueError:
             None
 
