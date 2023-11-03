@@ -136,8 +136,14 @@ class ControlPoints(scene.visuals.Compound):
 
 class EditVisual(scene.visuals.Compound):
         
-    def __init__(self, editable=True, selectable=True, on_select_callback=None,
-                 callback_argument=None, *args, **kwargs):
+    def __init__(self, 
+                 control_points=None,
+                 editable=True, 
+                 selectable=True, 
+                 on_select_callback=None,
+                 callback_argument=None, 
+                 *args, **kwargs):
+        
         scene.visuals.Compound.__init__(self, [], *args, **kwargs)
         self.unfreeze()
         self.editable = editable
@@ -145,13 +151,17 @@ class EditVisual(scene.visuals.Compound):
         self._selectable = selectable
         self._on_select_callback = on_select_callback
         self._callback_argument = callback_argument
-        self.control_points = ControlPoints(parent=self)
+
+        if control_points == "LineControlPoints":
+            self.control_points = LineControlPoints(parent=self)
+        else:
+            self.control_points = ControlPoints(parent=self)
+        
         self.drag_reference = [0, 0]
         self.freeze()
 
     def add_subvisual(self, visual):
         scene.visuals.Compound.add_subvisual(self, visual)
-        visual.interactive = True
 
     def select(self, val, obj=None):
         if self.selectable:
@@ -225,7 +235,6 @@ class EditRectVisual(EditVisual):
         self.freeze()
         self.add_subvisual(self.form)
         self.control_points.update_bounds()
-        # self.control_points.visible(False)
 
     def set_center(self, val):
         self.control_points.set_center(val[0:2])
@@ -256,7 +265,6 @@ class EditEllipseVisual(EditVisual):
         self.freeze()
         self.add_subvisual(self.form)
         self.control_points.update_bounds()
-        self.control_points.visible(False)
 
     def set_center(self, val):
         self.control_points.set_center(val)
@@ -358,45 +366,27 @@ class LineControlPoints(scene.visuals.Compound):
         self.update_points()
         
 
-class EditLineVisual(scene.visuals.Compound):
+class EditLineVisual(EditVisual):
         
-    def __init__(self, editable=True, selectable=True, on_select_callback=None,
-                 callback_argument=None, *args, **kwargs):
-        scene.visuals.Compound.__init__(self, [], *args, **kwargs)
+    def __init__(self, line_start=[0,0], line_end=[0,0], *args, **kwargs):
+
+        EditVisual.__init__(self, control_points="LineControlPoints", *args, **kwargs)
         self.unfreeze()
-        self.editable = editable
-        self._selectable = selectable
-        self._on_select_callback = on_select_callback
-        self._callback_argument = callback_argument
-        self.control_points = LineControlPoints(parent=self)
-        self.drag_reference = [0, 0]
 
-        self.line_start = [0, 0]
-        self.line_end = [0, 0]
+        self.line_start = line_start
+        self.line_end = line_end
 
-        self.line = scene.visuals.Line(pos=np.array([self.line_start, self.line_end]),
+        self.form = scene.visuals.Line(pos=np.array([self.line_start, self.line_end]),
                                         width=5, 
                                         color=(1,1,1,0.7),
                                         method='gl',
                                         antialias=True,
                                         parent=self)
+        self.form.interactive = True
         
-        self.add_subvisual(self.line)
-        self.line.interactive = True
-
         self.freeze()
+        self.add_subvisual(self.form)
 
-    def add_subvisual(self, visual):
-        scene.visuals.Compound.add_subvisual(self, visual)
-
-    def select(self, val, obj=None):
-        if self.selectable:
-            self.control_points.visible(val)
-            if self._on_select_callback is not None:
-                self._on_select_callback(self._callback_argument)
-
-    def start_move(self, start):
-        self.drag_reference = start[0:2] - self.control_points.get_center()
 
     def set_start(self, start):
         self.line_start = start
@@ -418,9 +408,15 @@ class EditLineVisual(scene.visuals.Compound):
             self.set_center(new_center)
             self.update_from_controlpoints()
 
+    def rotate(self, angle):
+        None
+
+    def update_transform(self):
+        None
+
     def update_from_controlpoints(self):
         try:
-            self.line.set_data([self.control_points.start, self.control_points.end],
+            self.form.set_data([self.control_points.start, self.control_points.end],
                                 width=5, 
                                 color=(1,1,1,0.7))
         except ValueError:
