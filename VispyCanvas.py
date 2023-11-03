@@ -2,7 +2,7 @@ import numpy as np
 from numpy.linalg import norm
 import cv2
 from vispy.scene import SceneCanvas, visuals, AxisWidget, Label, transforms
-from DrawableObjects import EditEllipseVisual, EditRectVisual, ControlPoints, EditLineVisual
+from DrawableObjects import EditEllipseVisual, EditRectVisual, ControlPoints, EditLineVisual, LineControlPoints
 
 
 class VispyCanvas(SceneCanvas):
@@ -10,12 +10,6 @@ class VispyCanvas(SceneCanvas):
 
     CANVAS_SHAPE = (800, 600)
     main_ui = None
-
-    line = None
-    line_start = None
-
-    
-
 
     def __init__(self, file_handler):
         
@@ -81,7 +75,6 @@ class VispyCanvas(SceneCanvas):
         # for manipulating shapes
         self.selected_object = None
         self.selected_point = None
-        self.mouse_start_pos = [0, 0]
 
         self.freeze()
 
@@ -145,14 +138,9 @@ class VispyCanvas(SceneCanvas):
             else:
                 # main use of program
 
-                # transform to get image pixel coordinates
-                tr_image = self.scene.node_transform(self.image)
-                mouse_image_coords = tr_image.map(event.pos)[:2]
-                m_i_x, m_i_y = np.floor(mouse_image_coords).astype(int)
+                match self.main_ui.tools.checkedButton().text():
 
-                match self.main_ui.tools.checkedId():
-                    ## move image
-                    case 0:
+                    case "&move":
                         # enable panning
                         self.view.camera._viewbox.events.mouse_move.connect(
                             self.view.camera.viewbox_mouse_event)
@@ -160,40 +148,8 @@ class VispyCanvas(SceneCanvas):
                         if self.selected_object is not None:
                             self.selected_object.select(False)
                             self.selected_object = None
-                    
-                    ## line
-                    case 1:
-                        #disable panning
-                        self.view.camera._viewbox.events.mouse_move.disconnect(
-                            self.view.camera.viewbox_mouse_event)
-                        
 
-
-                        if event.button == 1:
-                            if self.line_start is None:
-                                # first point stored
-                                self.line_start = mouse_image_coords
-                            else:
-                                # save both points 
-                                print(self.line_start, mouse_image_coords)
-                                scaling_factor = 1
-                                if self.main_ui.length_edit.text() and self.main_ui.pixel_edit.text():
-                                    scaling_factor = float(self.main_ui.length_edit.text())/float(self.main_ui.pixel_edit.text())
-                                print(scaling_factor*abs(np.linalg.norm(self.line_start-mouse_image_coords)))
-                                
-                                # self.main_ui.table.show()
-
-                                #second point captured
-                                self.line_start = None
-                        elif event.button == 2:
-                            self.line.visible = False
-                            self.line_start = None
-                        
-
-                            
-
-                    ## circle or rectangle
-                    case 2 | 3:
+                    case "&line" | "&circle" | "&rectangle":
                         #disable panning
                         self.view.camera._viewbox.events.mouse_move.disconnect(
                             self.view.camera.viewbox_mouse_event)
@@ -219,21 +175,23 @@ class VispyCanvas(SceneCanvas):
 
                                 self.selected_object.select(True, obj=selected)
                                 self.selected_object.start_move(pos)
-                                self.mouse_start_pos = event.pos
 
                             # create new object:
                             if self.selected_object is None:
-                                
-                                if self.main_ui.tools.checkedId() == 2:
+                                # if it is the line object
+                                if self.main_ui.tools.checkedButton().text() == "&line":
+                                    new_object = EditLineVisual(parent=self.view.scene)
+                                if self.main_ui.tools.checkedButton().text() == "&circle":
                                     new_object = EditEllipseVisual(parent=self.view.scene)
-                                elif self.main_ui.tools.checkedId() == 3:
+                                if self.main_ui.tools.checkedButton().text() == "&rectangle":
                                     new_object = EditRectVisual(parent=self.view.scene)
 
-                                new_object.select_creation_controlpoint()
                                 new_object.set_center(pos[0:2])
+                                    
+                                new_object.select_creation_controlpoint()
+                                new_object.transform = transforms.STTransform(translate=(0, 0, -1))
                                 self.selected_object = new_object.control_points
                                 self.selected_object.transform = transforms.STTransform(translate=(0, 0, -2))
-                                new_object.transform = transforms.STTransform(translate=(0, 0, -1))
 
                         if event.button == 2:  # right button deletes object
                             if selected is not None:
@@ -241,15 +199,20 @@ class VispyCanvas(SceneCanvas):
                                 self.selected_object = None
                             
 
-
-                    ## identify scaling
-                    case 4:
+                    case "&identify scaling":
                         #disable panning
                         self.view.camera._viewbox.events.mouse_move.disconnect(
                             self.view.camera.viewbox_mouse_event)
+                        
+                        # transform to get image pixel coordinates
+                        tr_image = self.scene.node_transform(self.image)
+                        mouse_image_coords = tr_image.map(event.pos)[:2]
+                        # mouse_click_coordinates
+                        m_i_x, m_i_y = np.floor(mouse_image_coords).astype(int)
 
                         # get width of scaling bar and show it in image
                         self.find_scaling_bar_width((m_i_x, m_i_y))
+
 
     def find_scaling_bar_width(self, seed_point):
         # get width of scaling bar by floodFilling an area of similar pixels.
@@ -283,37 +246,20 @@ class VispyCanvas(SceneCanvas):
         if not( (tr.map(event.pos)[:2] > self.view.size).any() or (tr.map(event.pos)[:2] < (0,0)).any() ):
             
             if not self.start_state:
-                # transform to get image pixel coordinates
-                tr_image = self.scene.node_transform(self.image)
-                mouse_image_coords = tr_image.map(event.pos)[:2]
 
-                match self.main_ui.tools.checkedId():
-                    ## line
-                    case 1:
-                        if self.line_start is not None:
-                            if self.line is None:
-                                self.line = visuals.Line(pos=np.array([self.line_start, mouse_image_coords]),
-                                                         width=5, 
-                                                         color=(1,1,1,0.7),
-                                                         method='gl',
-                                                         antialias=True,
-                                                         parent=self.view.scene)
-                                self.line.transform = transforms.STTransform(translate=(0, 0, -1))
-                            else:
-                                self.line.visible = True
-                                self.line.set_data(np.array([self.line_start, mouse_image_coords]))
-                    ## circle
-                    case 2 | 3:
-                        if event.button == 1:
+                if event.button == 1:
 
-                            if self.selected_object is not None:
-                                # update transform to selected object
-                                # check if letter k is pressed
-                                modifiers = [key.name for key in event.modifiers]
-                                tr = self.scene.node_transform(self.selected_object)
-                                pos = tr.map(event.pos)
+                    if self.selected_object is not None:
+                        modifiers = [key.name for key in event.modifiers]
+                        tr = self.scene.node_transform(self.selected_object)
+                        pos = tr.map(event.pos)
 
-                                if 'Shift' in modifiers:
+                        match self.main_ui.tools.checkedButton().text():
+                                
+                            case "&line" | "&circle" | "&rectangle":
+                        
+
+                                if 'Shift' in modifiers and not isinstance(self.selected_object, (LineControlPoints, EditLineVisual)):
                                     
                                     x = (pos[0:2] - self.selected_object.center)[0]
                                     y = (pos[0:2] - self.selected_object.center)[1]
@@ -345,11 +291,14 @@ class VispyCanvas(SceneCanvas):
 
                                 else:
                                     
-                                    self.selected_object.move(pos[0:2])
+                                    self.selected_object.move(pos[0:2], modifiers=modifiers)
 
-                        else:
-                            None
-                    ## rectangle
+                else:
+                    None
+
+
+
+
 
     # later improvements
     # def on_key_press(self, event):
