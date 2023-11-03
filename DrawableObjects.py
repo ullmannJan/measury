@@ -416,7 +416,7 @@ class EditLineVisual(EditVisual):
 
     def update_from_controlpoints(self):
         try:
-            self.form.set_data([self.control_points.start, self.control_points.end],
+            self.form.set_data(pos=np.array([self.control_points.start, self.control_points.end]),
                                 width=5, 
                                 color=(1,1,1,0.7))
         except ValueError:

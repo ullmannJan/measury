@@ -293,6 +293,7 @@ class VispyCanvas(SceneCanvas):
                                     
                                     self.selected_object.move(pos[0:2], modifiers=modifiers)
 
+
                 else:
                     None
 
