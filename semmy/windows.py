@@ -28,7 +28,7 @@ class AboutWindow(SemmyWindow):
     """
     The window displaying the about.
     """
-    def __init__(self, version):
+    def __init__(self):
         super().__init__()
         
         self.layout.addWidget(QLabel(f"Semmy v{semmy.__version__}"))

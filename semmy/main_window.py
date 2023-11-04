@@ -66,5 +66,5 @@ class MainWindow(QMainWindow):
     
 
     def open_about_page(self):
-        self.about_window = AboutWindow(version=self.data_handler.version)
+        self.about_window = AboutWindow()
         self.about_window.show()

@@ -6,11 +6,9 @@ class App:
 
     def __init__(self):
 
-        self.version = "0.1.0" 
-
         self.app = use_app("pyqt6")
         self.app.create()
-        self.data_handler = DataHandler(version=self.version)
+        self.data_handler = DataHandler()
         self.main_window = MainWindow(self.data_handler)
 
     def run(self):

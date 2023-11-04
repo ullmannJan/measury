@@ -8,8 +8,7 @@ class DataHandler:
 
 
     # database (dict) of sems with points in scaling bar
-    def __init__(self, version=None):
-        self.version = version
+    def __init__(self):
 
         with open(Path('data/sem_db.yml'), 'r') as file:
             self.sem_db = yaml.safe_load(file)
