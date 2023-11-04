@@ -1,11 +1,11 @@
 
-from MainUI import MainUI
-from VispyCanvas import VispyCanvas
+from semmy.main_ui import MainUI
+from semmy.vispy_canvas import VispyCanvas
 from PyQt6.QtGui import QAction, QIcon, QWindow
 from PyQt6.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QSplitter
 from PyQt6.QtCore import Qt
 
-from SemmyWindow import AboutWindow
+from semmy.windows import AboutWindow
 
 class MainWindow(QMainWindow):
     def __init__(self, data_handler, *args, **kwargs):

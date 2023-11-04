@@ -1,5 +1,6 @@
 from PyQt6.QtWidgets import QVBoxLayout, QLabel, QWidget
 from PyQt6.QtGui import QIcon
+import semmy
 
 class SemmyWindow(QWidget):
     """
@@ -30,4 +31,4 @@ class AboutWindow(SemmyWindow):
     def __init__(self, version):
         super().__init__()
         
-        self.layout.addWidget(QLabel(f"Semmy v{version}"))
+        self.layout.addWidget(QLabel(f"Semmy v{semmy.__version__}"))

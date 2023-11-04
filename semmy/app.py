@@ -1,8 +1,8 @@
 from vispy.app import use_app
-from MainWindow import MainWindow
-from DataHandler import DataHandler
+from semmy.main_window import MainWindow
+from semmy.data_handler import DataHandler
 
-class Semmy:
+class App:
 
     def __init__(self):
 
@@ -16,8 +16,6 @@ class Semmy:
     def run(self):
         self.main_window.show()
         self.app.run()
-        
 
-if __name__ == "__main__":
-    S = Semmy()
-    S.run()
+def run():
+    App().run()

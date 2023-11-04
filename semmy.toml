@@ -1,2 +1,5 @@
-name = "Semmy"
+[project]
+name = "semmy"
 version = "0.1.1"
+readme = "README.md"
+license = {file = "LICENSE"}

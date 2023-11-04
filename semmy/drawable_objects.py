@@ -1,7 +1,6 @@
 import numpy as np
 
-from vispy import app, scene
-from vispy.color import Color
+from vispy import scene
 from vispy.visuals.transforms import MatrixTransform   
 
 

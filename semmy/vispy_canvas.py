@@ -2,7 +2,7 @@ import numpy as np
 from numpy.linalg import norm
 import cv2
 from vispy.scene import SceneCanvas, visuals, AxisWidget, Label, transforms
-from DrawableObjects import EditEllipseVisual, EditRectVisual, ControlPoints, EditLineVisual, LineControlPoints
+from semmy.drawable_objects import EditEllipseVisual, EditRectVisual, ControlPoints, EditLineVisual, LineControlPoints
 
 
 class VispyCanvas(SceneCanvas):

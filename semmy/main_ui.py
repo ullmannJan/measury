@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import QMessageBox, QVBoxLayout, QHBoxLayout, \
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QDoubleValidator, QIntValidator
 
-from SemmyWindow import OutputWindow
+from semmy.windows import OutputWindow
 
 class MainUI(QWidget):
     
