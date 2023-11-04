@@ -16,7 +16,13 @@ Automatic Detection of Scaling bar. Just select the tool *identify scaling* and 
 SEM-Profiles store location of scale bar for even easier readout.
 
 ### Various Measurement Tools
-There are several Tools available to measure your structures. Until now only Line is implemented.
+There are several Tools available to measure your structures.
+
+- Line
+- Rectangle
+    - Square (by pressing Ctrl)
+- Ellipse
+    - Circle (by pressing Ctrl)
 
 #### Line
 Measure the distance between 2 Points.
