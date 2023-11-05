@@ -10,6 +10,7 @@ class App:
         self.app.create()
         self.data_handler = DataHandler()
         self.main_window = MainWindow(self.data_handler)
+        self.data_handler.main_ui = self.main_window.main_ui
 
     def run(self):
         self.main_window.show()

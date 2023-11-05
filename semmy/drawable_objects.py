@@ -320,7 +320,7 @@ class LineControlPoints(scene.visuals.Compound):
         self.coords = np.zeros((num_points,2))
         if num_points > 2:
             self.coords[1:-2] = [0, 50]
-            self.coords[-1] = [50, 50]
+            self.coords[-1] = [50, 0]
         self.selected_cp = None
 
         self.edge_color = "black"

@@ -137,7 +137,7 @@ class MainUI(QWidget):
         msg.exec()
 
     def open_output_window(self):
-        self.output_window = OutputWindow()
+        self.output_window = OutputWindow(parent=self)
         self.output_window.show()
 
     def automatic_scaling(self):

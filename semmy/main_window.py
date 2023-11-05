@@ -13,8 +13,8 @@ class MainWindow(QMainWindow):
 
         self.data_handler = data_handler
         self.vispy_canvas = VispyCanvas(self.data_handler)
-        self.qt_controls = MainUI(self.vispy_canvas, self.data_handler)
-        self.vispy_canvas.main_ui = self.qt_controls
+        self.main_ui = MainUI(self.vispy_canvas, self.data_handler)
+        self.vispy_canvas.main_ui = self.main_ui
 
         self.initUI()
 
@@ -28,7 +28,7 @@ class MainWindow(QMainWindow):
         openAction = QAction(QIcon('open.png'), '&Open File', self)
         openAction.setShortcut('Ctrl+O')
         openAction.setStatusTip('Open document')
-        openAction.triggered.connect(self.qt_controls.select_sem_file)
+        openAction.triggered.connect(self.main_ui.select_sem_file)
         
         centerAction = QAction(QIcon('open.png'), '&Center Image', self)
         centerAction.setShortcut('Ctrl+P')
@@ -55,7 +55,7 @@ class MainWindow(QMainWindow):
         # splitter
         splitter = QSplitter(Qt.Orientation.Horizontal)
         # controls
-        splitter.addWidget(self.qt_controls)
+        splitter.addWidget(self.main_ui)
         # vispy canvas
         splitter.addWidget(self.vispy_canvas.native)
 
@@ -66,5 +66,5 @@ class MainWindow(QMainWindow):
     
 
     def open_about_page(self):
-        self.about_window = AboutWindow()
+        self.about_window = AboutWindow(parent=self)
         self.about_window.show()

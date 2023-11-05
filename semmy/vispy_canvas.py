@@ -199,12 +199,16 @@ class VispyCanvas(SceneCanvas):
                                 self.selected_object.transform = transforms.STTransform(translate=(0, 0, -2))
 
                                 # TODO: save object in database
-                                # structure_name = self.main_ui.structure_edit.text()
+                                structure_name = self.main_ui.structure_edit.text()
+                                self.data_handler.save_object(structure_name, new_object)
+                                
 
                         if event.button == 2:  # right button deletes object
                             if selected is not None:
                                 selected.parent.parent = None
                                 self.selected_object = None
+                                self.data_handler.delete_object(selected.parent)
+                                print(selected.parent)
                             
 
                     case "&identify scaling":
