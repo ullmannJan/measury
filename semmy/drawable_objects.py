@@ -162,10 +162,12 @@ class EditVisual(scene.visuals.Compound):
         self._on_select_callback = on_select_callback
         self._callback_argument = callback_argument
 
-        if control_points == "LineControlPoints":
-            self.control_points = LineControlPoints(parent=self)
-        else:
-            self.control_points = ControlPoints(parent=self)
+        match control_points:
+            case ('LineControlPoints', int()):
+                _, num_points = control_points
+                self.control_points = LineControlPoints(parent=self, num_points=num_points)
+            case _:
+                self.control_points = ControlPoints(parent=self)
         
         self.drag_reference = [0, 0]
         self.drag_reference_angle = 0.0
@@ -310,13 +312,12 @@ class EditEllipseVisual(EditVisual):
 
 class LineControlPoints(scene.visuals.Compound):
 
-    def __init__(self, parent, *args, **kwargs):
+    def __init__(self, parent, num_points=2, *args, **kwargs):
         scene.visuals.Compound.__init__(self, [], *args, **kwargs)
         self.unfreeze()
         self.parent = parent
         self._length = 0.0
-        self.start = [0, 0]
-        self.end = [0, 0]
+        self.coords = np.zeros((num_points,2))
         self.selected_cp = None
 
         self.edge_color = "black"
@@ -324,8 +325,8 @@ class LineControlPoints(scene.visuals.Compound):
         self.marker_size = 8
 
         self.control_points = [scene.visuals.Markers(parent=self)
-                               for i in range(0, 2)]
-        for cpoint, coord in zip(self.control_points, [self.start, self.end]):
+                               for i in range(0, num_points)]
+        for cpoint, coord in zip(self.control_points, self.coords):
             cpoint.set_data(pos=np.array([coord], dtype=np.float32),
                        edge_color=self.edge_color,
                        face_color=self.face_color,
@@ -336,20 +337,20 @@ class LineControlPoints(scene.visuals.Compound):
     
     @property
     def length(self):
-        self._length = abs(np.linalg.norm(self.start-self.end))
+        diff = np.diff(self.coords, axis=0)
+        self._length = np.sum(np.abs(np.linalg.norm(diff, axis=0))) 
+        # deprecated
+        # self._length = abs(np.linalg.norm(self.start-self.end))
 
     def update_points(self):
 
-        self.control_points[0].set_data(
-            pos=np.array([self.start]),
-            edge_color=self.edge_color,
-            face_color=self.face_color,
-            size=self.marker_size)
-        self.control_points[1].set_data(
-            pos=np.array([self.end]),
-            edge_color=self.edge_color,
-            face_color=self.face_color,
-            size=self.marker_size)
+        for cpoint, coord in zip(self.control_points, self.coords):
+            cpoint.set_data(
+                pos=np.array([coord]),
+                edge_color=self.edge_color,
+                face_color=self.face_color,
+                size=self.marker_size)
+
 
     def select(self, val, obj=None):
         self.visible(val)
@@ -367,10 +368,12 @@ class LineControlPoints(scene.visuals.Compound):
         if not self.parent.editable:
             return
         if self.selected_cp is not None:
-            if self.selected_cp == self.control_points[0]:
-                self.start = end
-            elif self.selected_cp == self.control_points[1]:
-                self.end = end
+            index = self.control_points.index(self.selected_cp)
+            self.coords[index] = end[0:2]
+            # if self.selected_cp == self.control_points[0]:
+            #     self.start = end
+            # elif self.selected_cp == self.control_points[1]:
+            #     self.end = end
                 
             self.update_points()
             self.parent.update_from_controlpoints()
@@ -379,38 +382,37 @@ class LineControlPoints(scene.visuals.Compound):
         for c in self.control_points:
             c.visible = v
 
-    def set_start(self, start):
-        self.start = start
-        self.update_points()
-
-    def set_end(self, end):
-        self.end = end
+    def set_coords(self, coords):
+        self.coords = coords
         self.update_points()
 
     def get_center(self):
-        return np.array(self.start) + 0.5*(np.array(self.end) - np.array(self.start))
+        return np.array(self.coords[0]) + 0.5*(np.array(self.coords[-1]) - np.array(self.coords[0]))
 
     def set_center(self, val):
         shift = val-self.get_center()
-        self.start += shift
-        self.end += shift
+        self.coords += shift
+        # self.start += shift
+        # self.end += shift
         self.update_points()
         
 
 class EditLineVisual(EditVisual):
         
-    def __init__(self, line_start=[0,0], line_end=[0,0], *args, **kwargs):
+    def __init__(self, num_points=2, *args, **kwargs):
 
-        EditVisual.__init__(self, control_points="LineControlPoints", *args, **kwargs)
+        EditVisual.__init__(self, 
+                            control_points=("LineControlPoints", num_points), 
+                            *args, **kwargs)
         self.unfreeze()
 
-        self.line_start = line_start
-        self.line_end = line_end
+        self.line_coords = np.zeros((num_points, 2))
 
         self.line_color = (1,1,1,0.6)
         self.line_width = 5
+        
 
-        self.form = scene.visuals.Line(pos=np.array([self.line_start, self.line_end]),
+        self.form = scene.visuals.Line(pos=self.line_coords,
                                         width=self.line_width, 
                                         color=self.line_color,
                                         method='gl',
@@ -424,20 +426,13 @@ class EditLineVisual(EditVisual):
     @property
     def length(self):
         return self.control_points.length()
-
-    def set_start(self, start):
-        self.line_start = start
-        self.control_points.set_start(start)
     
-    def set_end(self, end):
-        self.line_end = end
-        self.control_points.set_end(end)
+    def start_move(self, start):
+        self.drag_reference = start[0:2] - self.control_points.get_center()
 
-    def set_coords(self, start, end):
-        self.line_start = start
-        self.line_end = end
-        self.control_points.set_start(start)
-        self.control_points.set_end(end)
+    def set_coords(self, coords):
+        self.coords = coords
+        self.control_points.set_coords(coords)
 
     def move(self, end, *args, **kwargs):
         if self.editable:
@@ -453,7 +448,7 @@ class EditLineVisual(EditVisual):
 
     def update_from_controlpoints(self):
         try:
-            self.form.set_data(pos=np.array([self.control_points.start, self.control_points.end]),
+            self.form.set_data(pos=self.control_points.coords,
                                 width=self.line_width, 
                                 color=self.line_color)
         except ValueError:
@@ -468,7 +463,7 @@ class EditLineVisual(EditVisual):
         self._selectable = val
 
     def select_creation_controlpoint(self):
-        self.control_points.select(True, self.control_points.control_points[0])
+        self.control_points.select(True, self.control_points.control_points[1])
 
     def set_center(self, val):
         self.control_points.set_center(val[0:2])

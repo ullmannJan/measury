@@ -54,6 +54,7 @@ class MainUI(QWidget):
         tools['line'] = QPushButton("&line", self)
         tools['circle'] = QPushButton("&circle", self)
         tools['rectangle'] = QPushButton("&rectangle", self)
+        tools['angle'] = QPushButton("&angle", self)
         tools['scale'] = QPushButton("&identify scaling", self)
         tools['scale'].clicked.connect(self.automatic_scaling)
 

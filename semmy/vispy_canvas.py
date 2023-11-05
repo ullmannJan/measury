@@ -151,7 +151,7 @@ class VispyCanvas(SceneCanvas):
                             self.selected_object.select(False)
                             self.selected_object = None
 
-                    case "&line" | "&circle" | "&rectangle":
+                    case "&line" | "&circle" | "&rectangle" | "&angle":
                         #disable panning
                         self.view.camera._viewbox.events.mouse_move.disconnect(
                             self.view.camera.viewbox_mouse_event)
@@ -181,12 +181,15 @@ class VispyCanvas(SceneCanvas):
                             # create new object:
                             if self.selected_object is None:
                                 # if it is the line object
-                                if self.main_ui.tools.checkedButton().text() == "&line":
-                                    new_object = EditLineVisual(parent=self.view.scene)
-                                if self.main_ui.tools.checkedButton().text() == "&circle":
-                                    new_object = EditEllipseVisual(parent=self.view.scene)
-                                if self.main_ui.tools.checkedButton().text() == "&rectangle":
-                                    new_object = EditRectVisual(parent=self.view.scene)
+                                match self.main_ui.tools.checkedButton().text():
+                                    case "&line":
+                                        new_object = EditLineVisual(parent=self.view.scene)
+                                    case "&circle":
+                                        new_object = EditEllipseVisual(parent=self.view.scene)
+                                    case "&rectangle":
+                                        new_object = EditRectVisual(parent=self.view.scene)
+                                    case "&angle":
+                                        new_object = EditLineVisual(parent=self.view.scene, num_points=3)
 
                                 new_object.set_center(pos[0:2])
                                     
@@ -268,7 +271,7 @@ class VispyCanvas(SceneCanvas):
 
                         match self.main_ui.tools.checkedButton().text():
                                 
-                            case "&line" | "&circle" | "&rectangle":
+                            case "&line" | "&circle" | "&rectangle" | "&angle":
                         
 
                                 if 'Shift' in modifiers and not isinstance(self.selected_object, (LineControlPoints, EditLineVisual)):
