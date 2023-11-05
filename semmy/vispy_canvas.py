@@ -178,6 +178,9 @@ class VispyCanvas(SceneCanvas):
                                 self.selected_object.select(True, obj=selected)
                                 self.selected_object.start_move(pos)
 
+                                # update ui where data is shown
+                                self.selection_update()
+
                             # create new object:
                             if self.selected_object is None:
                                 # if it is the line object
@@ -201,6 +204,9 @@ class VispyCanvas(SceneCanvas):
                                 # TODO: save object in database
                                 structure_name = self.main_ui.structure_edit.text()
                                 self.data_handler.save_object(structure_name, new_object)
+
+                                # update ui where data is shown
+                                self.selection_update(object=new_object)
                                 
 
                         if event.button == 2:  # right button deletes object
@@ -290,11 +296,21 @@ class VispyCanvas(SceneCanvas):
                                     
                                     self.selected_object.move(pos[0:2], modifiers=modifiers)
 
+                                # update ui where data is shown
+                                if isinstance(self.selected_object, (ControlPoints, LineControlPoints)):
+                                    self.selection_update(self.selected_object.parent)
+                                else:
+                                    self.selection_update(self.selected_object)
+
 
                 else:
                     None
 
-
+    def selection_update(self, object=None):
+        self.main_ui.selected_object_list.clear()
+        if object is None:
+            object = self.selected_object
+        self.main_ui.selected_object_list.insertItem(0, str(object))
 
 
 

@@ -1,7 +1,7 @@
 from pathlib import Path
 from PyQt6.QtWidgets import QMessageBox, QVBoxLayout, QHBoxLayout, \
     QPushButton, QTableWidget, QWidget, QFileDialog, QComboBox, QLabel, \
-        QButtonGroup, QSlider, QLineEdit, QGroupBox
+        QButtonGroup, QSlider, QLineEdit, QGroupBox, QListWidget
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QDoubleValidator, QIntValidator
 
@@ -96,8 +96,20 @@ class MainUI(QWidget):
         self.layout.addWidget(self.scaling_box)
 
 
+        # selected object
+        self.selected_object_box = QGroupBox("Selected Object", self)
+        self.selected_object_layout = QVBoxLayout()
+
+        self.selected_object_list = QListWidget()
+        self.selected_object_layout.addWidget(self.selected_object_list)
+
+        self.selected_object_box.setLayout(self.selected_object_layout)
+        self.layout.addWidget(self.selected_object_box)
+
         # add empty space
         self.layout.addStretch(1)
+
+
         
 
         # Output

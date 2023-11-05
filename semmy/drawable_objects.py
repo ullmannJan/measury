@@ -251,6 +251,7 @@ class EditVisual(scene.visuals.Compound):
     def select_creation_controlpoint(self):
         self.control_points.select(True, self.control_points.control_points[2])
 
+
 class EditRectVisual(EditVisual):
     def __init__(self, center=[0, 0], width=100, height=50, *args, **kwargs):
         EditVisual.__init__(self, *args, **kwargs)
@@ -282,6 +283,14 @@ class EditRectVisual(EditVisual):
             self.form.height = abs(self.control_points._height)
         except ValueError:
             None
+    
+    def __str__(self):
+        return f"EditRectVisual: \
+            \ncenter={self.form.center} \
+            \nwidth={self.form.width} \
+            \nheight={self.form.height} \
+            \nangle={self.control_points._angle}"
+    
 
 
 class EditEllipseVisual(EditVisual):
@@ -309,6 +318,12 @@ class EditEllipseVisual(EditVisual):
                                    0.5 * abs(self.control_points._height)]
         except ValueError:
             None
+    
+    def __str__(self) -> str:
+        return f"EditEllipseVisual: \
+            \ncenter={self.form.center}, \
+            \nradius={self.form.radius}, \
+            \nangle={self.control_points._angle}"
 
 class LineControlPoints(scene.visuals.Compound):
 
@@ -316,9 +331,10 @@ class LineControlPoints(scene.visuals.Compound):
         scene.visuals.Compound.__init__(self, [], *args, **kwargs)
         self.unfreeze()
         self.parent = parent
+        self.num_points = num_points
         self._length = 0.0
-        self.coords = np.zeros((num_points,2))
-        if num_points > 2:
+        self.coords = np.zeros((self.num_points,2))
+        if self.num_points > 2:
             self.coords[1:-2] = [0, 50]
             self.coords[-1] = [50, 0]
         self.selected_cp = None
@@ -328,7 +344,7 @@ class LineControlPoints(scene.visuals.Compound):
         self.marker_size = 8
 
         self.control_points = [scene.visuals.Markers(parent=self)
-                               for i in range(0, num_points)]
+                               for i in range(0, self.num_points)]
         for cpoint, coord in zip(self.control_points, self.coords):
             cpoint.set_data(pos=np.array([coord], dtype=np.float32),
                        edge_color=self.edge_color,
@@ -341,7 +357,8 @@ class LineControlPoints(scene.visuals.Compound):
     @property
     def length(self):
         diff = np.diff(self.coords, axis=0)
-        self._length = np.sum(np.abs(np.linalg.norm(diff, axis=0))) 
+        self._length = np.sum(np.abs(np.linalg.norm(diff, axis=1))) 
+        return self._length
         # deprecated
         # self._length = abs(np.linalg.norm(self.start-self.end))
 
@@ -426,7 +443,14 @@ class EditLineVisual(EditVisual):
 
     @property
     def length(self):
-        return self.control_points.length()
+        return self.control_points.length
+    
+    @property
+    def angles(self):
+        diff = np.diff(self.control_points.coords, axis=0)
+        diff[0] *= -1
+        angles = np.rad2deg(np.arctan2(-diff[:,1], diff[:,0]))
+        return angles
     
     def start_move(self, start):
         self.drag_reference = start[0:2] - self.control_points.get_center()
@@ -468,3 +492,15 @@ class EditLineVisual(EditVisual):
 
     def set_center(self, val):
         self.control_points.set_center(val[0:2])
+
+    
+
+    def __str__(self):
+        
+        if self.control_points.num_points == 2:
+            return f"EditLineVisual: \nlength={self.length}"
+        else:
+            angle = abs(np.diff(self.angles))
+            if angle > 180:
+                angle = 360 - angle
+            return f"EditLineVisual: \nlength={self.length}, \nangle={angle}"
