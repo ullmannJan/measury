@@ -273,8 +273,7 @@ class VispyCanvas(SceneCanvas):
 
                                 if 'Shift' in modifiers and not isinstance(self.selected_object, (LineControlPoints, EditLineVisual)):
                                     
-                                    x = (pos[0:2] - self.selected_object.center)[0]
-                                    y = (pos[0:2] - self.selected_object.center)[1]
+                                    x, y = (pos[0:2] - self.selected_object.center)
 
                                     if x != 0:
                                         angle = np.arctan(y/x)
@@ -290,12 +289,13 @@ class VispyCanvas(SceneCanvas):
                                             beta = -np.tan(height/width)
                                         else:
                                             beta = np.tan(height/width)
-                                            
+                                        
                                     else:
                                         width = self.selected_object.control_points._width
                                         height = self.selected_object.control_points._height
                                         beta = 0
-
+                                    
+                                    print(angle, beta)
                                     if width > height:
                                         self.selected_object.rotate(-angle+beta)
                                     else:

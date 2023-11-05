@@ -110,12 +110,11 @@ class ControlPoints(scene.visuals.Compound):
             self.parent.update_from_controlpoints()
 
     def rotate(self, angle):
-        if not self.parent.editable:
-            return
-        self._angle = angle
-        self.update_points()
-        self.parent.update_from_controlpoints()
-        self.parent.update_transform()
+        if self.parent.editable:
+            self._angle = angle
+            self.update_points()
+            self.parent.update_from_controlpoints()
+            self.parent.update_transform()
 
     def visible(self, v):
         for c in self.control_points:
