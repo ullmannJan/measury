@@ -272,35 +272,13 @@ class VispyCanvas(SceneCanvas):
                         
 
                                 if 'Shift' in modifiers and not isinstance(self.selected_object, (LineControlPoints, EditLineVisual)):
-                                    
-                                    x, y = (pos[0:2] - self.selected_object.center)
 
-                                    if x != 0:
-                                        angle = np.arctan(y/x)
-                                    else:
-                                        angle = np.pi/2
-                                    
-                                    # this is a bit of a hack to get the rotation right on control points
-                                    # something still does not feel right
-                                    if isinstance(self.selected_object, ControlPoints):
-                                        width = self.selected_object._width
-                                        height = self.selected_object._height
-                                        if self.selected_object.control_points.index(self.selected_object.selected_cp) %2 ==0:
-                                            beta = -np.tan(height/width)
-                                        else:
-                                            beta = np.tan(height/width)
-                                        
-                                    else:
-                                        width = self.selected_object.control_points._width
-                                        height = self.selected_object.control_points._height
-                                        beta = 0
-                                    
-                                    print(angle, beta)
-                                    if width > height:
-                                        self.selected_object.rotate(-angle+beta)
-                                    else:
-                                        self.selected_object.rotate(-angle-beta+np.pi/2)
+                                    # calculate angle of current position
+                                    x, y = pos[0:2] - self.selected_object.center
+                                    angle = np.arctan2(-y,x)
 
+                                    self.selected_object.rotate(angle)
+                                    
                                 else:
                                     
                                     self.selected_object.move(pos[0:2], modifiers=modifiers)

@@ -91,7 +91,7 @@ class ControlPoints(scene.visuals.Compound):
                         self.control_points[int((i + n_cp / 2)) % n_cp]
 
     def start_move(self, start):
-        None
+        self.parent.start_move(start)
 
     def move(self, end, modifiers=[], *args, **kwargs):
         if not self.parent.editable:
@@ -111,7 +111,8 @@ class ControlPoints(scene.visuals.Compound):
 
     def rotate(self, angle):
         if self.parent.editable:
-            self._angle = angle
+            # if self.control_points.index(self.selected_cp)%2 == 0:
+            self._angle = angle-self.parent.drag_reference_angle
             self.update_points()
             self.parent.update_from_controlpoints()
             self.parent.update_transform()
@@ -129,6 +130,17 @@ class ControlPoints(scene.visuals.Compound):
 
     def set_center(self, val):
         self._center = val
+        self.update_points()
+    
+    def get_angle(self):
+        return self._angle
+    
+    @property
+    def angle(self):
+        return self._angle
+
+    def set_angle(self, val):
+        self._angle = val
         self.update_points()
 
 
@@ -156,6 +168,7 @@ class EditVisual(scene.visuals.Compound):
             self.control_points = ControlPoints(parent=self)
         
         self.drag_reference = [0, 0]
+        self.drag_reference_angle = 0.0
         self.freeze()
 
     def add_subvisual(self, visual):
@@ -170,16 +183,29 @@ class EditVisual(scene.visuals.Compound):
     def start_move(self, start):
         self.drag_reference = start[0:2] - self.control_points.get_center()
 
+        # calculate angle of drag reference point
+        x,y = self.drag_reference
+        # -y because y-axis is flipped
+        angle_drag = np.arctan2(-y,x)
+        self.drag_reference_angle = angle_drag - self.control_points.get_angle() 
+
     def move(self, end, *args, **kwargs):
         if self.editable:
             shift = end[0:2] - self.drag_reference
             self.set_center(shift)
         
             self.update_transform()
-
+    
     def rotate(self, angle):
+        """
+        Rotate the object by angle (in radians) around its center from the drag reference point."""
+        
         if self.editable:
-            self.control_points.rotate(angle)
+
+            # shift is difference
+            abs_angle = angle-self.drag_reference_angle
+            # rotate control points and therefore shape as well
+            self.set_angle(abs_angle)
             self.update_transform()
 
     def update_transform(self):
@@ -201,6 +227,10 @@ class EditVisual(scene.visuals.Compound):
         self._selectable = val
 
     @property
+    def angle(self):
+        return self.control_points.get_angle()
+
+    @property
     def center(self):
         return self.control_points.get_center()
 
@@ -212,6 +242,9 @@ class EditVisual(scene.visuals.Compound):
     # override this method in subclass
     def set_center(self, val):
         self.control_points.set_center(val[0:2])
+    
+    def set_angle(self, val):
+        self.control_points.set_angle(val)
 
     def select_creation_controlpoint(self):
         self.control_points.select(True, self.control_points.control_points[2])
@@ -328,7 +361,7 @@ class LineControlPoints(scene.visuals.Compound):
                     self.selected_cp = c
 
     def start_move(self, start):
-        None
+        self.parent.start_move(start)
 
     def move(self, end, *args, **kwargs):
         if not self.parent.editable:
