@@ -85,7 +85,9 @@ class VispyCanvas(SceneCanvas):
             try:
                 self.title_label.text = self.data_handler.img_path
 
-                self.data_handler.img_data = cv2.imread(self.data_handler.img_path)
+                # opencv reads images in BGR format, so we need to convert it to RGB
+                BGR_img = cv2.imread(self.data_handler.img_path)
+                self.data_handler.img_data = cv2.cvtColor(BGR_img, cv2.COLOR_BGR2RGB)
                 
                 self.draw_image()
 
@@ -207,14 +209,21 @@ class VispyCanvas(SceneCanvas):
                         self.view.camera._viewbox.events.mouse_move.disconnect(
                             self.view.camera.viewbox_mouse_event)
                         
-                        # transform to get image pixel coordinates
-                        tr_image = self.scene.node_transform(self.image)
-                        mouse_image_coords = tr_image.map(event.pos)[:2]
-                        # mouse_click_coordinates
-                        m_i_x, m_i_y = np.floor(mouse_image_coords).astype(int)
+                        if event.button == 1:
 
-                        # get width of scaling bar and show it in image
-                        self.find_scaling_bar_width((m_i_x, m_i_y))
+                            # transform to get image pixel coordinates
+                            tr_image = self.scene.node_transform(self.image)
+                            mouse_image_coords = tr_image.map(event.pos)[:2]
+                            # mouse_click_coordinates
+                            m_i_x, m_i_y = np.floor(mouse_image_coords).astype(int)
+
+                            # get width of scaling bar and show it in image
+                            self.find_scaling_bar_width((m_i_x, m_i_y))
+                        
+                        # right click to delete scaling identification
+                        if event.button == 2:
+                            self.draw_image(self.data_handler.img_data)
+                            self.main_ui.pixel_edit.setText(None)
 
 
     def find_scaling_bar_width(self, seed_point):

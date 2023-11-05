@@ -3,3 +3,4 @@ vispy
 __pycache__
 build
 dist
+test.py
