@@ -318,6 +318,9 @@ class LineControlPoints(scene.visuals.Compound):
         self.parent = parent
         self._length = 0.0
         self.coords = np.zeros((num_points,2))
+        if num_points > 2:
+            self.coords[1:-2] = [0, 50]
+            self.coords[-1] = [50, 50]
         self.selected_cp = None
 
         self.edge_color = "black"
@@ -406,13 +409,11 @@ class EditLineVisual(EditVisual):
                             *args, **kwargs)
         self.unfreeze()
 
-        self.line_coords = np.zeros((num_points, 2))
-
-        self.line_color = (1,1,1,0.6)
+        self.line_color = (1,1,1,0.5)
         self.line_width = 5
         
 
-        self.form = scene.visuals.Line(pos=self.line_coords,
+        self.form = scene.visuals.Line(pos=self.control_points.coords,
                                         width=self.line_width, 
                                         color=self.line_color,
                                         method='gl',
