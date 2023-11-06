@@ -251,6 +251,9 @@ class EditVisual(scene.visuals.Compound):
     def select_creation_controlpoint(self):
         self.control_points.select(True, self.control_points.control_points[2])
 
+    def output_properties(self):
+        None
+
 
 class EditRectVisual(EditVisual):
     def __init__(self, center=[0, 0], width=100, height=50, *args, **kwargs):
@@ -284,12 +287,20 @@ class EditRectVisual(EditVisual):
         except ValueError:
             None
     
-    def __str__(self):
-        return f"EditRectVisual: \
-            \ncenter={self.form.center} \
-            \nwidth={self.form.width} \
-            \nheight={self.form.height} \
-            \nangle={self.control_points._angle}"
+    def output_properties(self):
+        if self.form.height == self.form.width:
+            return dict(
+                center=self.form.center,
+                width=self.form.width,
+                angle=self.control_points._angle
+                )
+        else:
+            return dict(
+                center=self.form.center,
+                width=self.form.width,
+                height=self.form.height,
+                angle=self.control_points._angle
+                )
     
 
 
@@ -319,11 +330,20 @@ class EditEllipseVisual(EditVisual):
         except ValueError:
             None
     
-    def __str__(self) -> str:
-        return f"EditEllipseVisual: \
-            \ncenter={self.form.center}, \
-            \nradius={self.form.radius}, \
-            \nangle={self.control_points._angle}"
+    def output_properties(self) -> str:
+        
+        if self.form.radius[0] == self.form.radius[1]:
+            return dict(
+                center=self.form.center,
+                radius=self.form.radius[0],
+                angle=self.control_points._angle
+                )
+        else:
+            return dict(
+                center=self.form.center,
+                radius=self.form.radius,
+                angle=self.control_points._angle
+                )
 
 class LineControlPoints(scene.visuals.Compound):
 
@@ -495,12 +515,15 @@ class EditLineVisual(EditVisual):
 
     
 
-    def __str__(self):
+    def output_properties(self):
         
         if self.control_points.num_points == 2:
-            return f"EditLineVisual: \nlength={self.length}"
+            return dict(length=self.length)
         else:
             angle = abs(np.diff(self.angles))
             if angle > 180:
                 angle = 360 - angle
-            return f"EditLineVisual: \nlength={self.length}, \nangle={angle}"
+            return dict(
+                length=self.length,
+                angle=angle
+                )

@@ -58,7 +58,7 @@ class OutputWindow(SemmyWindow):
         self.object_data_list.clear()
         if self.dd_select_object.currentText() != "" and self.object_list.currentItem() != None:
             object = self.parent.data_handler.output_data[self.dd_select_object.currentText()][self.object_list.currentRow()]
-            self.object_data_list.insertItem(0, str(object))
+            self.object_data_list.insertItem(0, object.output_properties())
 
 class AboutWindow(SemmyWindow):
     """

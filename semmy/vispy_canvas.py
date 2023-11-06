@@ -3,7 +3,7 @@ from numpy.linalg import norm
 import cv2
 from vispy.scene import SceneCanvas, visuals, AxisWidget, Label, transforms
 from semmy.drawable_objects import EditEllipseVisual, EditRectVisual, ControlPoints, EditLineVisual, LineControlPoints
-
+import pprint
 
 class VispyCanvas(SceneCanvas):
     """ Canvas for displaying the vispy instance"""
@@ -179,7 +179,10 @@ class VispyCanvas(SceneCanvas):
                                 self.selected_object.start_move(pos)
 
                                 # update ui where data is shown
-                                self.selection_update()
+                                if isinstance(self.selected_object, (ControlPoints, LineControlPoints)):
+                                    self.selection_update(self.selected_object.parent)
+                                else:
+                                    self.selection_update(self.selected_object)
 
                             # create new object:
                             if self.selected_object is None:
@@ -310,8 +313,14 @@ class VispyCanvas(SceneCanvas):
         self.main_ui.selected_object_list.clear()
         if object is None:
             object = self.selected_object
-        self.main_ui.selected_object_list.insertItem(0, str(object))
+        self.main_ui.selected_object_list.insertItem(0, pprint.pformat(object.output_properties()))
 
+        # if self.main_ui.scaling_set
+        #   then convert or display additional converted measurements
+        # if self.main_ui.pixel_edit.text() != "" and self.main_ui.length_edit.text() != "":
+            
+        #     self.main_ui.selected_object_list.insertItem(1, "real length")
+        #     self.main_ui.selected_object_list.insertItem(2, pprint.pformat(object.output_properties()))
 
 
     # later improvements
