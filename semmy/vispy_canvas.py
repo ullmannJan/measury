@@ -5,6 +5,10 @@ from vispy.scene import SceneCanvas, visuals, AxisWidget, Label, transforms
 from semmy.drawable_objects import EditEllipseVisual, EditRectVisual, ControlPoints, EditLineVisual, LineControlPoints
 import pprint
 
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QApplication
+from PyQt6.QtGui import QCursor
+
 class VispyCanvas(SceneCanvas):
     """ Canvas for displaying the vispy instance"""
 
@@ -139,6 +143,7 @@ class VispyCanvas(SceneCanvas):
                 self.main_ui.select_sem_file()
             else:
                 # main use of program
+                QApplication.setOverrideCursor(QCursor(Qt.CursorShape.ArrowCursor))                    
 
                 match self.main_ui.tools.checkedButton().text():
 
@@ -146,6 +151,9 @@ class VispyCanvas(SceneCanvas):
                         # enable panning
                         self.view.camera._viewbox.events.mouse_move.connect(
                             self.view.camera.viewbox_mouse_event)
+                        
+                        QApplication.setOverrideCursor(QCursor(Qt.CursorShape.SizeAllCursor))                    
+
                         # unselect object
                         if self.selected_object is not None:
                             self.selected_object.select(False)
@@ -167,6 +175,8 @@ class VispyCanvas(SceneCanvas):
                             self.selected_object = None
 
                         if event.button == 1:
+                            QApplication.setOverrideCursor(QCursor(Qt.CursorShape.SizeAllCursor))                    
+
                             
                             if selected is not None:
                                 self.selected_object = selected.parent
@@ -276,7 +286,7 @@ class VispyCanvas(SceneCanvas):
             if not self.start_state:
 
                 if event.button == 1:
-
+                    
                     if self.selected_object is not None:
                         modifiers = [key.name for key in event.modifiers]
                         tr = self.scene.node_transform(self.selected_object)
@@ -307,7 +317,9 @@ class VispyCanvas(SceneCanvas):
 
 
                 else:
-                    None
+                    QApplication.setOverrideCursor(Qt.CursorShape.ArrowCursor)
+
+
 
     def selection_update(self, object=None):
         self.main_ui.selected_object_list.clear()

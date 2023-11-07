@@ -262,8 +262,8 @@ class EditRectVisual(EditVisual):
         self.form = scene.visuals.Rectangle(center=center, 
                                             width=width,
                                             height=height,
-                                            color=(1,1,1,0.3),
-                                            border_color="white",
+                                            color= (1,0,0,0.001),
+                                            border_color=(1,0,0,0.5),
                                             border_width=2,
                                             radius=0, 
                                             parent=self)
@@ -309,8 +309,8 @@ class EditEllipseVisual(EditVisual):
         EditVisual.__init__(self, *args, **kwargs)
         self.unfreeze()
         self.form = scene.visuals.Ellipse(center=center, radius=radius,
-                                             color=(1,1,1,0.3),
-                                             border_color="white",
+                                             color= (1,0,0,0.001),
+                                             border_color=(1,0,0,0.5),
                                              border_width=2,
                                              parent=self)
         self.form.interactive = True
@@ -446,8 +446,8 @@ class EditLineVisual(EditVisual):
                             *args, **kwargs)
         self.unfreeze()
 
-        self.line_color = (1,1,1,0.5)
-        self.line_width = 5
+        self.line_color = (1,0,0,0.5)
+        self.line_width = 3
         
 
         self.form = scene.visuals.Line(pos=self.control_points.coords,
@@ -518,12 +518,14 @@ class EditLineVisual(EditVisual):
     def output_properties(self):
         
         if self.control_points.num_points == 2:
-            return dict(length=self.length)
+            angle = self.angles
         else:
             angle = abs(np.diff(self.angles))
+
             if angle > 180:
                 angle = 360 - angle
-            return dict(
-                length=self.length,
-                angle=angle
-                )
+        
+        return dict(
+            length=self.length,
+            angle=angle[0]
+            )
