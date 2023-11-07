@@ -262,7 +262,7 @@ class EditRectVisual(EditVisual):
         self.form = scene.visuals.Rectangle(center=center, 
                                             width=width,
                                             height=height,
-                                            color= (1,0,0,0.001),
+                                            color= (1,0,0,0.1),
                                             border_color=(1,0,0,0.5),
                                             border_width=2,
                                             radius=0, 
@@ -311,7 +311,7 @@ class EditEllipseVisual(EditVisual):
         EditVisual.__init__(self, *args, **kwargs)
         self.unfreeze()
         self.form = scene.visuals.Ellipse(center=center, radius=radius,
-                                             color= (1,0,0,0.001),
+                                             color= (1,0,0,0.1),
                                              border_color=(1,0,0,0.5),
                                              border_width=2,
                                              parent=self)
