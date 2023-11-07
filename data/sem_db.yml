@@ -5,5 +5,8 @@ JSM-6500F - Jeol:
 Zeiss Orion NanoFab:
   SeedPoints: [715, 1039]
 
+Gus SEM:
+  SeedPoints: [21, 729]
+
 Generic SEM: 
   SeedPoints: null

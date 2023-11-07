@@ -100,17 +100,19 @@ class MainUI(QWidget):
         self.selected_object_box = QGroupBox("Selected Object", self)
         self.selected_object_layout = QVBoxLayout()
 
-        self.selected_object_list = QListWidget()
-        self.selected_object_layout.addWidget(self.selected_object_list)
+        self.selected_object_table = QTableWidget()
+        self.selected_object_table.horizontalHeader().setStretchLastSection(True)
+        self.selected_object_table.setRowCount(1)
+        self.selected_object_table.setColumnCount(3)
+        self.selected_object_table.horizontalHeader().hide()
 
+
+        self.selected_object_layout.addWidget(self.selected_object_table)
         self.selected_object_box.setLayout(self.selected_object_layout)
         self.layout.addWidget(self.selected_object_box)
 
         # add empty space
         self.layout.addStretch(1)
-
-
-        
 
         # Output
         self.output_box = QGroupBox("Output", self)
@@ -125,13 +127,6 @@ class MainUI(QWidget):
 
         self.output_box.setLayout(self.output_layout)
         self.layout.addWidget(self.output_box)
-
-        # Table
-        self.table = QTableWidget()
-        self.table.setRowCount(5)
-        self.table.setColumnCount(5)
-        self.layout.addWidget(self.table)
-        self.table.hide()
         
         self.setLayout(self.layout)
     

@@ -322,7 +322,7 @@ class VispyCanvas(SceneCanvas):
 
 
     def selection_update(self, object=None):
-        self.main_ui.selected_object_list.clear()
+        self.main_ui.selected_object_table.clear()
         if object is None:
             object = self.selected_object
         self.main_ui.selected_object_list.insertItem(0, pprint.pformat(object.output_properties()))
