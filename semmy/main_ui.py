@@ -105,6 +105,7 @@ class MainUI(QWidget):
         self.selected_object_table.setRowCount(1)
         self.selected_object_table.setColumnCount(3)
         self.selected_object_table.horizontalHeader().hide()
+        # self.selected_object_table.verticalHeader().hide()
 
 
         self.selected_object_layout.addWidget(self.selected_object_table)

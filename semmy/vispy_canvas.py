@@ -6,7 +6,7 @@ from semmy.drawable_objects import EditEllipseVisual, EditRectVisual, ControlPoi
 import pprint
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QTableWidgetItem
 from PyQt6.QtGui import QCursor
 
 class VispyCanvas(SceneCanvas):
@@ -325,14 +325,18 @@ class VispyCanvas(SceneCanvas):
         self.main_ui.selected_object_table.clear()
         if object is None:
             object = self.selected_object
-        self.main_ui.selected_object_list.insertItem(0, pprint.pformat(object.output_properties()))
-
-        # if self.main_ui.scaling_set
-        #   then convert or display additional converted measurements
-        # if self.main_ui.pixel_edit.text() != "" and self.main_ui.length_edit.text() != "":
+        props = object.output_properties()
+        if self.main_ui.selected_object_table.rowCount() < len(props.keys()):
+            self.main_ui.selected_object_table.setRowCount(len(props.keys()))
+        for i, key in enumerate(props):
+            print(key, props[key])
+            self.main_ui.selected_object_table.setItem(i, 0, QTableWidgetItem(key))
+            self.main_ui.selected_object_table.setItem(i, 1, QTableWidgetItem(str(props[key])))
             
-        #     self.main_ui.selected_object_list.insertItem(1, "real length")
-        #     self.main_ui.selected_object_list.insertItem(2, pprint.pformat(object.output_properties()))
+            # if there is a conversion possible
+            if False:
+                self.main_ui.selected_object_table.setItem(i, 2, QTableWidgetItem(props[key]))
+            
 
 
     # later improvements
