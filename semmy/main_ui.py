@@ -1,7 +1,7 @@
 from pathlib import Path
 from PyQt6.QtWidgets import QMessageBox, QVBoxLayout, QHBoxLayout, \
     QPushButton, QTableWidget, QWidget, QFileDialog, QComboBox, QLabel, \
-        QButtonGroup, QSlider, QLineEdit, QGroupBox, QListWidget
+        QButtonGroup, QSlider, QLineEdit, QGroupBox, QListWidget, QTableWidgetItem
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QDoubleValidator, QIntValidator
 
@@ -73,6 +73,7 @@ class MainUI(QWidget):
 
         # scaling
 
+        self.scaling = 1.
         self.scaling_box = QGroupBox("Scaling", self)
         self.scaling_layout = QVBoxLayout()
 
@@ -84,6 +85,7 @@ class MainUI(QWidget):
         self.pixel_edit.setValidator(posInt)
         self.length_edit = QLineEdit(self, placeholderText="Enter value")
         self.length_edit.setValidator(posDouble)
+        self.length_edit.textChanged.connect(self.update_scaling)
 
         scaling = QHBoxLayout()
         scaling.addWidget(self.pixel_edit)
@@ -103,9 +105,16 @@ class MainUI(QWidget):
         self.selected_object_table = QTableWidget()
         self.selected_object_table.horizontalHeader().setStretchLastSection(True)
         self.selected_object_table.setRowCount(1)
+
         self.selected_object_table.setColumnCount(3)
-        self.selected_object_table.horizontalHeader().hide()
-        # self.selected_object_table.verticalHeader().hide()
+        # self.selected_object_table.horizontalHeader().hide()
+        self.selected_object_table.setHorizontalHeaderItem(0, 
+                                                           QTableWidgetItem(""))
+        self.selected_object_table.setHorizontalHeaderItem(1, 
+                                                           QTableWidgetItem("µm"))
+        self.selected_object_table.setHorizontalHeaderItem(2, 
+                                                           QTableWidgetItem("px"))
+        self.selected_object_table.verticalHeader().hide()
 
 
         self.selected_object_layout.addWidget(self.selected_object_table)
@@ -160,3 +169,20 @@ class MainUI(QWidget):
             except:
                 self.raise_error("Something went wrong when reading database:")            
 
+    def update_scaling(self):
+        length = self.length_edit.text()
+        pixels = self.pixel_edit.text()
+        if length != "" and pixels != "":
+            self.scaling = float(length)/float(pixels)
+        else:
+            self.scaling = 1
+        print(self.scaling)
+
+    def clean_table(self, table: QTableWidget):
+        header_items = []
+        for i in range(table.columnCount()):
+            header_items.append(table.horizontalHeaderItem(i))
+        
+        table.clear()
+        for i, item in enumerate(header_items):
+            table.setHorizontalHeaderItem(i, item)

@@ -292,16 +292,16 @@ class EditRectVisual(EditVisual):
             return dict(
                 center=self.form.center,
                 width=self.form.width,
+                area=self.form.height*self.form.width,
                 angle=self.control_points._angle,
-                area=self.form.height*self.form.width
                 )
         else:
             return dict(
                 center=self.form.center,
                 width=self.form.width,
                 height=self.form.height,
+                area=self.form.height*self.form.width,
                 angle=self.control_points._angle,
-                area=self.form.height*self.form.width
                 )
     
 
@@ -345,8 +345,8 @@ class EditEllipseVisual(EditVisual):
             return dict(
                 center=self.form.center,
                 radius=self.form.radius,
+                area=np.prod(self.form.radius)*np.pi,
                 angle=self.control_points._angle,
-                area=np.prod(self.form.radius)*np.pi
                 )
 
 class LineControlPoints(scene.visuals.Compound):

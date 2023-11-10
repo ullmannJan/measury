@@ -3,11 +3,10 @@ from numpy.linalg import norm
 import cv2
 from vispy.scene import SceneCanvas, visuals, AxisWidget, Label, transforms
 from semmy.drawable_objects import EditEllipseVisual, EditRectVisual, ControlPoints, EditLineVisual, LineControlPoints
-import pprint
 
-from PyQt6.QtCore import Qt
+# from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication, QTableWidgetItem
-from PyQt6.QtGui import QCursor
+# from PyQt6.QtGui import QCursor
 
 class VispyCanvas(SceneCanvas):
     """ Canvas for displaying the vispy instance"""
@@ -143,7 +142,7 @@ class VispyCanvas(SceneCanvas):
                 self.main_ui.select_sem_file()
             else:
                 # main use of program
-                QApplication.setOverrideCursor(QCursor(Qt.CursorShape.ArrowCursor))                    
+                # QApplication.setOverrideCursor(QCursor(Qt.CursorShape.ArrowCursor))  
 
                 match self.main_ui.tools.checkedButton().text():
 
@@ -152,7 +151,7 @@ class VispyCanvas(SceneCanvas):
                         self.view.camera._viewbox.events.mouse_move.connect(
                             self.view.camera.viewbox_mouse_event)
                         
-                        QApplication.setOverrideCursor(QCursor(Qt.CursorShape.SizeAllCursor))                    
+                        # QApplication.setOverrideCursor(QCursor(Qt.CursorShape.SizeAllCursor))                    
 
                         # unselect object
                         if self.selected_object is not None:
@@ -175,7 +174,7 @@ class VispyCanvas(SceneCanvas):
                             self.selected_object = None
 
                         if event.button == 1:
-                            QApplication.setOverrideCursor(QCursor(Qt.CursorShape.SizeAllCursor))                    
+                            # QApplication.setOverrideCursor(QCursor(Qt.CursorShape.SizeAllCursor))                    
 
                             
                             if selected is not None:
@@ -316,27 +315,38 @@ class VispyCanvas(SceneCanvas):
                                     self.selection_update(self.selected_object)
 
 
-                else:
-                    QApplication.setOverrideCursor(Qt.CursorShape.ArrowCursor)
+                # else:
+                    # QApplication.setOverrideCursor(Qt.CursorShape.ArrowCursor)
 
 
 
     def selection_update(self, object=None):
-        self.main_ui.selected_object_table.clear()
+        self.main_ui.selected_object_table.clearContents()
         if object is None:
             object = self.selected_object
         props = object.output_properties()
         if self.main_ui.selected_object_table.rowCount() < len(props.keys()):
             self.main_ui.selected_object_table.setRowCount(len(props.keys()))
         for i, key in enumerate(props):
-            print(key, props[key])
-            self.main_ui.selected_object_table.setItem(i, 0, QTableWidgetItem(key))
-            self.main_ui.selected_object_table.setItem(i, 1, QTableWidgetItem(str(props[key])))
+            self.main_ui.selected_object_table.setItem(i, 0, 
+                                QTableWidgetItem(key))
             
             # if there is a conversion possible
-            if False:
-                self.main_ui.selected_object_table.setItem(i, 2, QTableWidgetItem(props[key]))
+            if self.main_ui.scaling != 1 :
+                scaled_length = 1 * np.array(props[key])
+                if key in ['length', 'area', 'radius', 'width', 'height', 'center']:
+                    scaled_length *= self.main_ui.scaling
+
+                self.main_ui.selected_object_table.setItem(i, 1, 
+                            QTableWidgetItem(str(scaled_length)))
+
+            if True: # if setting selected that pixels should be shown too
+                self.main_ui.selected_object_table.setItem(i, 2, 
+                            QTableWidgetItem(str(props[key])))
             
+        for i in range(self.main_ui.selected_object_table.columnCount()):
+            self.main_ui.selected_object_table.resizeColumnToContents(i)
+
 
 
     # later improvements
