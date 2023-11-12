@@ -143,6 +143,10 @@ class ControlPoints(scene.visuals.Compound):
         self._angle = val
         self.update_points()
 
+    def delete(self):
+        self.parent.delete()
+        # del self
+
 
 class EditVisual(scene.visuals.Compound):
         
@@ -253,6 +257,10 @@ class EditVisual(scene.visuals.Compound):
 
     def output_properties(self):
         None
+
+    def delete(self):
+        self.parent = None
+        del self
 
 
 class EditRectVisual(EditVisual):
@@ -439,6 +447,10 @@ class LineControlPoints(scene.visuals.Compound):
         # self.start += shift
         # self.end += shift
         self.update_points()
+
+    def delete(self):
+        self.parent.delete()
+        del self
         
 
 class EditLineVisual(EditVisual):

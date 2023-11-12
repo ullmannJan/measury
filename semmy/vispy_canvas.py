@@ -18,9 +18,11 @@ class VispyCanvas(SceneCanvas):
         
         self.data_handler = data_handler
 
-        SceneCanvas.__init__(self,size=self.CANVAS_SHAPE, 
-                                  bgcolor=(240/255, 240/255, 240/255,1),
-                                  keys='interactive')
+        SceneCanvas.__init__(self,
+                             size=self.CANVAS_SHAPE, 
+                             bgcolor=(240/255, 240/255, 240/255,1),
+                             keys=dict(delete=self.delete_object)
+                            )
         self.unfreeze()
         
         self.grid = self.central_widget.add_grid(margin=0)
@@ -222,11 +224,10 @@ class VispyCanvas(SceneCanvas):
                                 
 
                         if event.button == 2:  # right button deletes object
+                            # not self.selected_object because we want to delete it on hover too
                             if selected is not None:
-                                selected.parent.parent = None
-                                self.selected_object = None
-                                self.data_handler.delete_object(selected.parent)
-                                print(selected.parent)
+                                self.delete_object(object=selected.parent)
+
                             
 
                     case "&identify scaling":
@@ -347,7 +348,15 @@ class VispyCanvas(SceneCanvas):
         for i in range(self.main_ui.selected_object_table.columnCount()):
             self.main_ui.selected_object_table.resizeColumnToContents(i)
 
-
+    def delete_object(self, object=None):
+        # delete selected object if no other is given
+        if object is None:
+            object = self.selected_object
+        # delete object
+        if object is not None:
+            self.data_handler.delete_object(object)
+            object.delete()
+            self.selected_object = None
 
     # later improvements
     # def on_key_press(self, event):
