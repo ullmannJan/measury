@@ -323,13 +323,14 @@ class VispyCanvas(SceneCanvas):
             object = self.selected_object.parent
 
         self.main_ui.selected_object_table.clearContents()
+        self.main_ui.selected_object_table.setRowCount(0)
+        self.main_ui.selected_object_box.setTitle(f"Selected Object: {object}")
         # if object is still none clear table and return
         if object is None:
             return
         
         props = object.output_properties()
-        if self.main_ui.selected_object_table.rowCount() < len(props.keys()):
-            self.main_ui.selected_object_table.setRowCount(len(props.keys()))
+        self.main_ui.selected_object_table.setRowCount(len(props.keys()))
         for i, key in enumerate(props):
             self.main_ui.selected_object_table.setItem(i, 0, 
                                 QTableWidgetItem(key))

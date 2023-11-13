@@ -109,20 +109,11 @@ class MainUI(QWidget):
         self.selected_object_layout = QVBoxLayout()
 
         self.selected_object_table = QTableWidget()
-        self.selected_object_table.setRowCount(1)
+        self.selected_object_table.setRowCount(0)
 
         self.selected_object_table.setColumnCount(5)
-        self.selected_object_table.setHorizontalHeaderItem(0, 
-                                QTableWidgetItem(""))
-        self.selected_object_table.setHorizontalHeaderItem(1, 
-                                QTableWidgetItem("scaled"))
-        self.selected_object_table.setHorizontalHeaderItem(2, 
-                                QTableWidgetItem(""))
-        self.selected_object_table.setHorizontalHeaderItem(3, 
-                                QTableWidgetItem("px"))
-        self.selected_object_table.setHorizontalHeaderItem(4, 
-                                QTableWidgetItem(""))
-        # self.selected_object_table.horizontalHeader().hide()
+        # do not hide for column headers
+        self.selected_object_table.horizontalHeader().hide()
         self.selected_object_table.verticalHeader().hide()
         self.selected_object_table.resizeColumnsToContents()
         self.selected_object_table.horizontalHeader().setStretchLastSection(True)
