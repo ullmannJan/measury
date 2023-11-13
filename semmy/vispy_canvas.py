@@ -189,11 +189,8 @@ class VispyCanvas(SceneCanvas):
                                 self.selected_object.select(True, obj=selected)
                                 self.selected_object.start_move(pos)
 
-                                # update ui where data is shown
-                                if isinstance(self.selected_object, (ControlPoints, LineControlPoints)):
-                                    self.selection_update(self.selected_object.parent)
-                                else:
-                                    self.selection_update(self.selected_object)
+                                # update ui to display properties of selected object
+                                self.selection_update()
 
                             # create new object:
                             if self.selected_object is None:
@@ -309,11 +306,8 @@ class VispyCanvas(SceneCanvas):
                                     
                                     self.selected_object.move(pos[0:2], modifiers=modifiers)
 
-                                # update ui where data is shown
-                                if isinstance(self.selected_object, (ControlPoints, LineControlPoints)):
-                                    self.selection_update(self.selected_object.parent)
-                                else:
-                                    self.selection_update(self.selected_object)
+                                # update ui to display properties of selected object
+                                self.selection_update()
 
 
                 # else:
@@ -322,9 +316,17 @@ class VispyCanvas(SceneCanvas):
 
 
     def selection_update(self, object=None):
-        self.main_ui.selected_object_table.clearContents()
+
         if object is None:
             object = self.selected_object
+        if isinstance(object, (ControlPoints, LineControlPoints)):
+            object = self.selected_object.parent
+
+        self.main_ui.selected_object_table.clearContents()
+        # if object is still none clear table and return
+        if object is None:
+            return
+        
         props = object.output_properties()
         if self.main_ui.selected_object_table.rowCount() < len(props.keys()):
             self.main_ui.selected_object_table.setRowCount(len(props.keys()))
@@ -332,21 +334,29 @@ class VispyCanvas(SceneCanvas):
             self.main_ui.selected_object_table.setItem(i, 0, 
                                 QTableWidgetItem(key))
             
+            value, unit = props[key]
             # if there is a conversion possible
             if self.main_ui.scaling != 1 :
-                scaled_length = 1 * np.array(props[key])
+                scaled_length = 1 * np.array(value)
                 if key in ['length', 'area', 'radius', 'width', 'height', 'center']:
                     scaled_length *= self.main_ui.scaling
-
+            
+                    self.main_ui.selected_object_table.setItem(i, 2, 
+                            QTableWidgetItem(self.main_ui.units_dd.currentText()))
+                else:
+                    self.main_ui.selected_object_table.setItem(i, 2, 
+                            QTableWidgetItem(unit))
                 self.main_ui.selected_object_table.setItem(i, 1, 
                             QTableWidgetItem(str(scaled_length)))
 
             if True: # if setting selected that pixels should be shown too
-                self.main_ui.selected_object_table.setItem(i, 2, 
-                            QTableWidgetItem(str(props[key])))
+                self.main_ui.selected_object_table.setItem(i, 3, 
+                            QTableWidgetItem(str(value)))
+                self.main_ui.selected_object_table.setItem(i, 4, 
+                            QTableWidgetItem(unit))
             
-        for i in range(self.main_ui.selected_object_table.columnCount()):
-            self.main_ui.selected_object_table.resizeColumnToContents(i)
+        self.main_ui.selected_object_table.resizeColumnsToContents()
+
 
     def delete_object(self, object=None):
         # delete selected object if no other is given
@@ -357,6 +367,7 @@ class VispyCanvas(SceneCanvas):
             self.data_handler.delete_object(object)
             object.delete()
             self.selected_object = None
+        self.selection_update()
 
     # later improvements
     # def on_key_press(self, event):

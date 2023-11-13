@@ -91,7 +91,13 @@ class MainUI(QWidget):
         scaling.addWidget(self.pixel_edit)
         scaling.addWidget(QLabel("px    :  "))
         scaling.addWidget(self.length_edit)
-        scaling.addWidget(QLabel("µm"))
+        self.units_dd = QComboBox()
+        self.units_dd.addItems(self.data_handler.units.keys())
+        # setting for default unit
+        self.units_dd.setCurrentIndex(3)
+        self.units_dd.currentTextChanged.connect(self.units_changed)
+        scaling.addWidget(self.units_dd)
+
 
         self.scaling_layout.addLayout(scaling)
         self.scaling_box.setLayout(self.scaling_layout)
@@ -103,18 +109,24 @@ class MainUI(QWidget):
         self.selected_object_layout = QVBoxLayout()
 
         self.selected_object_table = QTableWidget()
-        self.selected_object_table.horizontalHeader().setStretchLastSection(True)
         self.selected_object_table.setRowCount(1)
 
-        self.selected_object_table.setColumnCount(3)
-        # self.selected_object_table.horizontalHeader().hide()
+        self.selected_object_table.setColumnCount(5)
         self.selected_object_table.setHorizontalHeaderItem(0, 
-                                                           QTableWidgetItem(""))
+                                QTableWidgetItem(""))
         self.selected_object_table.setHorizontalHeaderItem(1, 
-                                                           QTableWidgetItem("µm"))
+                                QTableWidgetItem("scaled"))
         self.selected_object_table.setHorizontalHeaderItem(2, 
-                                                           QTableWidgetItem("px"))
+                                QTableWidgetItem(""))
+        self.selected_object_table.setHorizontalHeaderItem(3, 
+                                QTableWidgetItem("px"))
+        self.selected_object_table.setHorizontalHeaderItem(4, 
+                                QTableWidgetItem(""))
+        # self.selected_object_table.horizontalHeader().hide()
         self.selected_object_table.verticalHeader().hide()
+        self.selected_object_table.resizeColumnsToContents()
+        self.selected_object_table.horizontalHeader().setStretchLastSection(True)
+
 
 
         self.selected_object_layout.addWidget(self.selected_object_table)
@@ -176,13 +188,11 @@ class MainUI(QWidget):
             self.scaling = float(length)/float(pixels)
         else:
             self.scaling = 1
-        print(self.scaling)
+        self.units_changed()
 
-    def clean_table(self, table: QTableWidget):
-        header_items = []
-        for i in range(table.columnCount()):
-            header_items.append(table.horizontalHeaderItem(i))
-        
-        table.clear()
-        for i, item in enumerate(header_items):
-            table.setHorizontalHeaderItem(i, item)
+
+    def units_changed(self):
+         self.selected_object_table.setHorizontalHeaderItem(1, 
+                                QTableWidgetItem(self.units_dd.currentText()))
+         self.vispy_canvas_wrapper.selection_update()
+         

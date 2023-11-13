@@ -6,7 +6,10 @@ class DataHandler:
     img_path = None
     img_data = None
 
-    main_ui = None
+    main_ui: dict|None = None
+    output_data: dict|None
+
+    units: dict
 
 
     # database (dict) of sems with points in scaling bar
@@ -25,6 +28,7 @@ class DataHandler:
         #   ...
         # }
         self.output_data = dict()
+        self.units =  dict(fm=1e-15, pm=1e-12, nm=1e-9, µm=1e-6, mm=1e-3, m=1, km=1e3)
 
     def save_object(self, object_name, object_data):
         if object_name == '':

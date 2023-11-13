@@ -296,20 +296,13 @@ class EditRectVisual(EditVisual):
             None
     
     def output_properties(self):
-        if self.form.height == self.form.width:
-            return dict(
-                center=self.form.center,
-                width=self.form.width,
-                area=self.form.height*self.form.width,
-                angle=self.control_points._angle,
-                )
-        else:
-            return dict(
-                center=self.form.center,
-                width=self.form.width,
-                height=self.form.height,
-                area=self.form.height*self.form.width,
-                angle=self.control_points._angle,
+       
+        return dict(
+                center=(self.form.center, "px"),
+                width=(self.form.width, "px"),
+                height=(self.form.height, "px"),
+                area=(self.form.height*self.form.width, "px²"),
+                angle=(self.control_points._angle, "°"),
                 )
     
 
@@ -343,18 +336,14 @@ class EditEllipseVisual(EditVisual):
     def output_properties(self) -> str:
         
         if self.form.radius[0] == self.form.radius[1]:
-            return dict(
-                center=self.form.center,
-                radius=self.form.radius[0],
-                angle=self.control_points._angle,
-                area=np.prod(self.form.radius)*np.pi
-                )
+            radius = self.form.radius[0]
         else:
-            return dict(
-                center=self.form.center,
-                radius=self.form.radius,
-                area=np.prod(self.form.radius)*np.pi,
-                angle=self.control_points._angle,
+            radius = self.form.radius
+        return dict(
+                center=(self.form.center, "px"),
+                radius=(radius, "px"),
+                area=(np.prod(self.form.radius)*np.pi, "px²"),
+                angle=(self.control_points._angle, "°"),
                 )
 
 class LineControlPoints(scene.visuals.Compound):
@@ -542,6 +531,6 @@ class EditLineVisual(EditVisual):
                 angle = 360 - angle
         
         return dict(
-            length=self.length,
-            angle=angle[0]
+            length=(self.length, "px"),
+            angle=(angle[0], "°")
             )
