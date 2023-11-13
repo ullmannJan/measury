@@ -100,11 +100,11 @@ class ControlPoints(scene.visuals.Compound):
 
             diag = end-self._center
 
-            self._width = abs(2 * (np.cos(self._angle)*diag[0] - np.sin(self._angle)*diag[1]))
+            self._width = 2 * abs(np.cos(self._angle)*diag[0] - np.sin(self._angle)*diag[1])
             if "Control" in modifiers:
                 self._height = self._width
             else:
-                self._height = abs( 2 * (np.sin(self._angle)*diag[0] + np.cos(self._angle)*diag[1]))
+                self._height = 2 * abs(np.sin(self._angle)*diag[0] + np.cos(self._angle)*diag[1])
 
             self.update_points()
             self.parent.update_from_controlpoints()

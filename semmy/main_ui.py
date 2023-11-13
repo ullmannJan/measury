@@ -77,12 +77,13 @@ class MainUI(QWidget):
         self.scaling_box = QGroupBox("Scaling", self)
         self.scaling_layout = QVBoxLayout()
 
-        posDouble = QDoubleValidator()   
+        posDouble = QDoubleValidator()
         posDouble.setBottom(0)
         posInt = QIntValidator()
-        posInt.setRange(0, 100000)
+        posInt.setBottom(0)
         self.pixel_edit = QLineEdit(self, placeholderText="Enter value")
         self.pixel_edit.setValidator(posInt)
+        self.pixel_edit.textChanged.connect(self.update_scaling)
         self.length_edit = QLineEdit(self, placeholderText="Enter value")
         self.length_edit.setValidator(posDouble)
         self.length_edit.textChanged.connect(self.update_scaling)
@@ -176,7 +177,7 @@ class MainUI(QWidget):
         length = self.length_edit.text()
         pixels = self.pixel_edit.text()
         if length != "" and pixels != "":
-            self.scaling = float(length)/float(pixels)
+            self.scaling = float(length.replace(',',''))/float(pixels.replace(',',''))
         else:
             self.scaling = 1
         self.units_changed()
