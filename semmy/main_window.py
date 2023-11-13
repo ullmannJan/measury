@@ -20,7 +20,7 @@ class MainWindow(QMainWindow):
 
     def initUI(self):
         self.setWindowTitle("Semmy")
-        self.setWindowIcon(QIcon("img/logo/tape_measure_125.png"))
+        self.setWindowIcon(QIcon("img/logo/tape_measure_128.png"))
         self.setMinimumSize(300,200)
         # self.setStyleSheet("background-color: white") 
 
