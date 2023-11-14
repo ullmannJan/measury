@@ -22,8 +22,10 @@ class ControlPoints(scene.visuals.Compound):
 
         self.control_points = [scene.visuals.Markers(parent=self)
                                for i in range(0, 4)]
-        for c in self.control_points:
-            c.set_data(pos=np.array([[0, 0]], dtype=np.float32),
+        self.coords = np.zeros((len(self.control_points),1,2), dtype=np.float32)
+
+        for i, c in enumerate(self.control_points):
+            c.set_data(pos=self.coords[i],
                        edge_color=self.edge_color,
                        face_color=self.face_color,
                        size=self.marker_size)
@@ -41,40 +43,34 @@ class ControlPoints(scene.visuals.Compound):
         self.update_points()
 
     def update_points(self):
+        #center-+
+        self.coords[0] = np.array([[self._center[0] - 0.5 * np.cos(self._angle) * self._width 
+                                           + 0.5 * np.sin(self._angle) * self._height,
+                                    self._center[1] + 0.5 * np.sin(self._angle) * self._width
+                                           + 0.5 * np.cos(self._angle) * self._height]])
+        #center++
+        self.coords[1] = np.array([[self._center[0] + 0.5 * np.cos(self._angle) * self._width 
+                                           + 0.5 * np.sin(self._angle) * self._height,
+                                    self._center[1] - 0.5 * np.sin(self._angle) * self._width
+                                           + 0.5 * np.cos(self._angle) * self._height]])
+        #center+-
+        self.coords[2] = np.array([[self._center[0] + 0.5 * np.cos(self._angle) * self._width 
+                                           - 0.5 * np.sin(self._angle) * self._height,
+                                    self._center[1] - 0.5 * np.sin(self._angle) * self._width
+                                           - 0.5 * np.cos(self._angle) * self._height]])
+        #center--
+        self.coords[3] = np.array([[self._center[0] - 0.5 * np.cos(self._angle) * self._width 
+                                           - 0.5 * np.sin(self._angle) * self._height,
+                                    self._center[1] + 0.5 * np.sin(self._angle) * self._width
+                                           - 0.5 * np.cos(self._angle) * self._height]])
+        print(self.coords)
 
-        
-        self.control_points[0].set_data(
-            pos=np.array([[self._center[0] - 0.5 * np.cos(self._angle) * self._width 
-                                           + 0.5 * np.sin(self._angle) * self._height,
-                           self._center[1] + 0.5 * np.sin(self._angle) * self._width
-                                           + 0.5 * np.cos(self._angle) * self._height]]),
-            edge_color=self.edge_color,
-            face_color=self.face_color,
-            size=self.marker_size)
-        self.control_points[1].set_data(
-            pos=np.array([[self._center[0] + 0.5 * np.cos(self._angle) * self._width 
-                                           + 0.5 * np.sin(self._angle) * self._height,
-                           self._center[1] - 0.5 * np.sin(self._angle) * self._width
-                                           + 0.5 * np.cos(self._angle) * self._height]]),
-            edge_color=self.edge_color,
-            face_color=self.face_color,
-            size=self.marker_size)
-        self.control_points[2].set_data(
-            pos=np.array([[self._center[0] + 0.5 * np.cos(self._angle) * self._width 
-                                           - 0.5 * np.sin(self._angle) * self._height,
-                           self._center[1] - 0.5 * np.sin(self._angle) * self._width
-                                           - 0.5 * np.cos(self._angle) * self._height]]),
-            edge_color=self.edge_color,
-            face_color=self.face_color,
-            size=self.marker_size)
-        self.control_points[3].set_data(
-            pos=np.array([[self._center[0] - 0.5 * np.cos(self._angle) * self._width 
-                                           - 0.5 * np.sin(self._angle) * self._height,
-                           self._center[1] + 0.5 * np.sin(self._angle) * self._width
-                                           - 0.5 * np.cos(self._angle) * self._height]]),
-            edge_color=self.edge_color,
-            face_color=self.face_color,
-            size=self.marker_size)
+        for i, c in enumerate(self.control_points):
+            c.set_data(pos=self.coords[i],
+                       edge_color=self.edge_color,
+                       face_color=self.face_color,
+                       size=self.marker_size)
+
 
     def select(self, val, obj=None):
         self.visible(val)
@@ -89,6 +85,10 @@ class ControlPoints(scene.visuals.Compound):
                     self.selected_cp = c
                     self.opposed_cp = \
                         self.control_points[int((i + n_cp / 2)) % n_cp]
+                    
+                    print('selected')
+                    print(i, self.coords[i,0,:])
+                    print(int((i + n_cp / 2)) % n_cp, self.coords[int((i + n_cp / 2)) % n_cp,0,:])
 
     def start_move(self, start):
         self.parent.start_move(start)
@@ -97,17 +97,25 @@ class ControlPoints(scene.visuals.Compound):
         if not self.parent.editable:
             return
         if self.selected_cp is not None:
+            
+            index = self.control_points.index(self.opposed_cp)
+            print('move')
+            print(index)
+            
+            opp = self.coords[index,0,:]
+            diag = end-opp
+            center = opp+0.5*diag
+            print(center)
 
-            diag = end-self._center
-
-            self._width = 2 * abs(np.cos(self._angle)*diag[0] - np.sin(self._angle)*diag[1])
+            self._width = np.cos(self._angle)*diag[0] - np.sin(self._angle)*diag[1]
             if "Control" in modifiers:
                 self._height = self._width
             else:
-                self._height = 2 * abs(np.sin(self._angle)*diag[0] + np.cos(self._angle)*diag[1])
-
-            self.update_points()
+                self._height = np.sin(self._angle)*diag[0] + np.cos(self._angle)*diag[1]
+            
+            self.set_center(center)
             self.parent.update_from_controlpoints()
+            self.parent.update_transform()
 
     def rotate(self, angle):
         if self.parent.editable:
@@ -253,7 +261,7 @@ class EditVisual(scene.visuals.Compound):
         self.control_points.set_angle(val)
 
     def select_creation_controlpoint(self):
-        self.control_points.select(True, self.control_points.control_points[2])
+        self.control_points.select(True, self.control_points.control_points[1])
 
     def output_properties(self):
         None
@@ -264,7 +272,7 @@ class EditVisual(scene.visuals.Compound):
 
 
 class EditRectVisual(EditVisual):
-    def __init__(self, center=[0, 0], width=100, height=50, *args, **kwargs):
+    def __init__(self, center=[0, 0], width=1e-6, height=1e-6, *args, **kwargs):
         EditVisual.__init__(self, *args, **kwargs)
         self.unfreeze()
         self.form = scene.visuals.Rectangle(center=center, 
@@ -294,6 +302,10 @@ class EditRectVisual(EditVisual):
             self.form.height = abs(self.control_points._height)
         except ValueError:
             None
+        try:
+            self.form.center = abs(self.control_points._center)
+        except ValueError:
+            None
     
     def output_properties(self):
        
@@ -308,7 +320,7 @@ class EditRectVisual(EditVisual):
 
 
 class EditEllipseVisual(EditVisual):
-    def __init__(self, center=[0, 0], radius=[100, 100], *args, **kwargs):
+    def __init__(self, center=[0, 0], radius=[1e-6, 1e-6], *args, **kwargs):
         EditVisual.__init__(self, *args, **kwargs)
         self.unfreeze()
         self.form = scene.visuals.Ellipse(center=center, radius=radius,
@@ -330,6 +342,10 @@ class EditEllipseVisual(EditVisual):
         try:
             self.form.radius = [0.5 * abs(self.control_points._width),
                                    0.5 * abs(self.control_points._height)]
+        except ValueError:
+            None
+        try:
+            self.form.center = abs(self.control_points._center)
         except ValueError:
             None
     

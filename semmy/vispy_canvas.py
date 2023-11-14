@@ -14,7 +14,7 @@ class VispyCanvas(SceneCanvas):
     CANVAS_SHAPE = (800, 600)
     main_ui = None
 
-    def __init__(self, data_handler):
+    def __init__(self, data_handler, img=None):
         
         self.data_handler = data_handler
 
@@ -36,8 +36,6 @@ class VispyCanvas(SceneCanvas):
                             parent=self.view.scene)
         
         
-        self.start_state = True
-
         # title
         self.title_label = Label("SEM-Image", color='black', font_size=12)
         self.title_label.height_max = 40
@@ -68,7 +66,6 @@ class VispyCanvas(SceneCanvas):
 
         self.load_image_label = Label("Click here to select\nan image", color='white', font_size=16)
         self.grid.add_widget(self.load_image_label, row=1, col=1)
-
         
         # camera
         self.view.camera.flip = (0,1,0)
@@ -76,6 +73,12 @@ class VispyCanvas(SceneCanvas):
                                    y=(0,1), 
                                    margin=0)  
               
+        # load standard picture in development mode
+        if img is None:
+            self.start_state = True
+        else:
+            self.data_handler.img_path = img
+            self.update_image()
 
         # for manipulating shapes
         self.selected_object = None
@@ -108,7 +111,7 @@ class VispyCanvas(SceneCanvas):
                 self.start_state = False
 
             except Exception as error:
-                # handle the exception                                
+                # handle the exception     
                 self.main_ui.raise_error(error)
             
             self.remove_load_text()
