@@ -108,15 +108,16 @@ class ControlPoints(scene.visuals.Compound):
             center = opp+0.5*diag
             print(center)
 
-            # to select other point
-            if sel_index == 0 or sel_index == 3:
-                diag[0] *= -1
-            if sel_index == 2 or sel_index == 3:
-                diag[1] *= -1
             
 
             self._width = np.cos(self._angle)*diag[0] - np.sin(self._angle)*diag[1]
             self._height = np.sin(self._angle)*diag[0] + np.cos(self._angle)*diag[1]
+            
+            # depending on selected point
+            if sel_index == 0 or sel_index == 3:
+                self._width *= -1
+            if sel_index == 2 or sel_index == 3:
+                self._height *= -1
     
             if "Control" in modifiers:
                 sel = self.coords[sel_index,0,:]
