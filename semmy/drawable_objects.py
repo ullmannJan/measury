@@ -63,8 +63,6 @@ class ControlPoints(scene.visuals.Compound):
                                            - 0.5 * np.sin(self._angle) * self._height,
                                     self._center[1] + 0.5 * np.sin(self._angle) * self._width
                                            - 0.5 * np.cos(self._angle) * self._height]])
-        print(self.coords)
-
         for i, c in enumerate(self.control_points):
             c.set_data(pos=self.coords[i],
                        edge_color=self.edge_color,
@@ -86,10 +84,6 @@ class ControlPoints(scene.visuals.Compound):
                     self.opposed_cp = \
                         self.control_points[int((i + n_cp / 2)) % n_cp]
                     
-                    print('selected')
-                    print(i, self.coords[i,0,:])
-                    print(int((i + n_cp / 2)) % n_cp, self.coords[int((i + n_cp / 2)) % n_cp,0,:])
-
     def start_move(self, start):
         self.parent.start_move(start)
 
@@ -99,37 +93,28 @@ class ControlPoints(scene.visuals.Compound):
         if self.selected_cp is not None:
             
             opp_index = self.control_points.index(self.opposed_cp)
-            sel_index = self.control_points.index(self.selected_cp)
-            print('move')
-            print(opp_index)
             
             opp = self.coords[opp_index,0,:]
             diag = end-opp
-            center = opp+0.5*diag
-            print(center)
-
-            
+            center = opp+0.5*diag            
 
             self._width = np.cos(self._angle)*diag[0] - np.sin(self._angle)*diag[1]
             self._height = np.sin(self._angle)*diag[0] + np.cos(self._angle)*diag[1]
             
             # depending on selected point
-            if sel_index == 0 or sel_index == 3:
+            if opp_index == 2 or opp_index == 1:
                 self._width *= -1
-            if sel_index == 2 or sel_index == 3:
+            if opp_index == 0 or opp_index == 1:
                 self._height *= -1
     
             if "Control" in modifiers:
-                sel = self.coords[sel_index,0,:]
-
-                val = max(self._width, self._height)
-                max_index = [self._width, self._height].index(val)
+                val = min(self._width, self._height)
                 self._width = val
                 self._height = val
+                print(opp, self._angle)
+                center = opp + np.sqrt(2)*val*np.array([np.cos(-self._angle-np.pi/4), np.sin(-self._angle-np.pi/4)])
+                print(center)
 
-                diag = sel-opp
-                center = opp+0.5*diag
-            
             self.set_center(center)
             self.parent.update_from_controlpoints()
             self.parent.update_transform()
