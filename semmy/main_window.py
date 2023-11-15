@@ -8,11 +8,11 @@ from PyQt6.QtCore import Qt
 from semmy.windows import AboutWindow
 
 class MainWindow(QMainWindow):
-    def __init__(self, data_handler, dev_mode=False, *args, **kwargs):
+    def __init__(self, data_handler, development_mode=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.data_handler = data_handler
-        if dev_mode:
+        if development_mode:
             self.vispy_canvas = VispyCanvas(self.data_handler, img=r"img/2023-06-29-D5-11-01.tif")
         else:
             self.vispy_canvas = VispyCanvas(self.data_handler)

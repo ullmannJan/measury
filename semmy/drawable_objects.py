@@ -98,20 +98,36 @@ class ControlPoints(scene.visuals.Compound):
             return
         if self.selected_cp is not None:
             
-            index = self.control_points.index(self.opposed_cp)
+            opp_index = self.control_points.index(self.opposed_cp)
+            sel_index = self.control_points.index(self.selected_cp)
             print('move')
-            print(index)
+            print(opp_index)
             
-            opp = self.coords[index,0,:]
+            opp = self.coords[opp_index,0,:]
             diag = end-opp
             center = opp+0.5*diag
             print(center)
 
+            # to select other point
+            if sel_index == 0 or sel_index == 3:
+                diag[0] *= -1
+            if sel_index == 2 or sel_index == 3:
+                diag[1] *= -1
+            
+
             self._width = np.cos(self._angle)*diag[0] - np.sin(self._angle)*diag[1]
+            self._height = np.sin(self._angle)*diag[0] + np.cos(self._angle)*diag[1]
+    
             if "Control" in modifiers:
-                self._height = self._width
-            else:
-                self._height = np.sin(self._angle)*diag[0] + np.cos(self._angle)*diag[1]
+                sel = self.coords[sel_index,0,:]
+
+                val = max(self._width, self._height)
+                max_index = [self._width, self._height].index(val)
+                self._width = val
+                self._height = val
+
+                diag = sel-opp
+                center = opp+0.5*diag
             
             self.set_center(center)
             self.parent.update_from_controlpoints()
@@ -303,7 +319,7 @@ class EditRectVisual(EditVisual):
         except ValueError:
             None
         try:
-            self.form.center = abs(self.control_points._center)
+            self.form.center = self.control_points._center
         except ValueError:
             None
     
@@ -345,7 +361,7 @@ class EditEllipseVisual(EditVisual):
         except ValueError:
             None
         try:
-            self.form.center = abs(self.control_points._center)
+            self.form.center = self.control_points._center
         except ValueError:
             None
     
