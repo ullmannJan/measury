@@ -92,32 +92,51 @@ class ControlPoints(scene.visuals.Compound):
             return
         if self.selected_cp is not None:
             
-            opp_index = self.control_points.index(self.opposed_cp)
-            
-            opp = self.coords[opp_index,0,:]
-            diag = end-opp
-            center = opp+0.5*diag            
+            # alt for scaling from center mode
+            if 'Alt' in modifiers:
+                diag = end-self._center
 
-            self._width = np.cos(self._angle)*diag[0] - np.sin(self._angle)*diag[1]
-            self._height = np.sin(self._angle)*diag[0] + np.cos(self._angle)*diag[1]
-            
-            # depending on selected point
-            if opp_index == 2 or opp_index == 1:
-                self._width *= -1
-            if opp_index == 0 or opp_index == 1:
-                self._height *= -1
-    
-            if "Control" in modifiers:
-                val = min(self._width, self._height)
-                self._width = val
-                self._height = val
-                print(opp, self._angle)
-                center = opp + np.sqrt(2)*val*np.array([np.cos(-self._angle-np.pi/4), np.sin(-self._angle-np.pi/4)])
-                print(center)
+                self._width = abs(2 * (np.cos(self._angle)*diag[0] - np.sin(self._angle)*diag[1]))
+                if "Control" in modifiers:
+                    self._height = self._width
+                else:
+                    self._height = abs( 2 * (np.sin(self._angle)*diag[0] + np.cos(self._angle)*diag[1]))
 
-            self.set_center(center)
-            self.parent.update_from_controlpoints()
-            self.parent.update_transform()
+                self.update_points()
+                self.parent.update_from_controlpoints()
+            
+            #normal scaling mode where one corner is fixed
+            else:
+                opp_index = self.control_points.index(self.opposed_cp)
+                
+                opp = self.coords[opp_index,0,:]
+                diag = end-opp
+                center = opp+0.5*diag            
+
+                self._width = np.cos(self._angle)*diag[0] - np.sin(self._angle)*diag[1]
+                self._height = np.sin(self._angle)*diag[0] + np.cos(self._angle)*diag[1]
+                
+                # depending on selected point
+                if opp_index == 2 or opp_index == 1:
+                    self._width *= -1
+                if opp_index == 0 or opp_index == 1:
+                    self._height *= -1
+        
+                if "Control" in modifiers:
+                    val = np.max(np.abs([self._width, self._height]))
+                    self._width = np.sign(self._width)*val
+                    self._height = np.sign(self._height)*val
+                    offset = val/np.sqrt(2)*np.array([np.sign(self._width)*np.cos(self._angle-np.pi/4), -np.sign(self._height)*np.sin(self._angle-np.pi/4)])
+                    if opp_index == 2 or opp_index == 1:
+                        offset[0] *= -1
+                    if opp_index == 0 or opp_index == 1:
+                        offset[1] *= -1
+                    center = opp + offset
+                    print(opp, center)
+
+                self.set_center(center)
+                self.parent.update_from_controlpoints()
+                self.parent.update_transform()
 
     def rotate(self, angle):
         if self.parent.editable:
