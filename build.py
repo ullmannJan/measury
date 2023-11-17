@@ -16,8 +16,9 @@ PyInstaller.__main__.run([
     '--windowed',
     '--name', program_name,
     '--specpath', 'build',
+    '--icon', '../img/logo/tape_measure_128.ico',
     # '--add-data', 'data:data',
-    # '--add-data', 'img/logo:img/logo',
+    # '--add-data', '../img/logo:img/logo',
     '--collect-all', 'vispy',
     '--noconfirm'
 ])
