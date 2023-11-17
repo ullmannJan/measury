@@ -174,7 +174,7 @@ class ControlPoints(scene.visuals.Compound):
 
     def delete(self):
         self.parent.delete()
-        # del self
+        del self
 
 
 class EditVisual(scene.visuals.Compound):
