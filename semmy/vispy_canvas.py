@@ -363,9 +363,10 @@ class VispyCanvas(SceneCanvas):
                 scaled_length = 1 * np.array(value)
                 if key in ['length', 'area', 'radius', 'width', 'height', 'center']:
                     scaled_length *= self.main_ui.scaling
-            
+                    exponent = unit[-1] if unit[-1] in ['²', '³'] else ""
+                    print(unit[-1], exponent)
                     self.main_ui.selected_object_table.setItem(i, 2, 
-                            QTableWidgetItem(self.main_ui.units_dd.currentText()))
+                            QTableWidgetItem(self.main_ui.units_dd.currentText()+exponent))
                 else:
                     self.main_ui.selected_object_table.setItem(i, 2, 
                             QTableWidgetItem(unit))
