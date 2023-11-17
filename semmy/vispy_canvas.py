@@ -299,41 +299,41 @@ class VispyCanvas(SceneCanvas):
             if not self.start_state:
                 
                 # Check if the mouse wheel button is being dragged
-                if event.button == 3 and event.is_dragging:  
-                    tr = self.view.node_transform(self.view.scene)
-                    dpos = tr.map(event.last_event.pos)[:2] -tr.map(event.pos)[:2]  # Calculate the change in position of the mouse
-                    self.view.camera.pan(dpos)  # Pan the camera based on the mouse movement
 
-                if event.button == 1 and event.is_dragging: # Check if the left mouse button is being dragged
-                    
-                    if self.selected_object is not None:
-                        modifiers = [key.name for key in event.modifiers]
-                        tr = self.scene.node_transform(self.selected_object)
-                        pos = tr.map(event.pos)
+                match event.button:
+                    case 1: 
+                        if event.is_dragging: # Check if the left mouse button is being dragged
+                            
+                            if self.selected_object is not None:
+                                modifiers = [key.name for key in event.modifiers]
+                                tr = self.scene.node_transform(self.selected_object)
+                                pos = tr.map(event.pos)
 
-                        match self.main_ui.tools.checkedButton().text():
+                                match self.main_ui.tools.checkedButton().text():
+                                        
+                                    case "&line" | "&circle" | "&rectangle" | "&angle":
                                 
-                            case "&line" | "&circle" | "&rectangle" | "&angle":
-                        
 
-                                if 'Shift' in modifiers and not isinstance(self.selected_object, (LineControlPoints, EditLineVisual)):
+                                        if 'Shift' in modifiers and not isinstance(self.selected_object, (LineControlPoints, EditLineVisual)):
 
-                                    # calculate angle of current position
-                                    x, y = pos[0:2] - self.selected_object.center
-                                    angle = np.arctan2(-y,x)
+                                            # calculate angle of current position
+                                            x, y = pos[0:2] - self.selected_object.center
+                                            angle = np.arctan2(-y,x)
 
-                                    self.selected_object.rotate(angle)
-                                    
-                                else:
-                                    
-                                    self.selected_object.move(pos[0:2], modifiers=modifiers)
+                                            self.selected_object.rotate(angle)
+                                            
+                                        else:
+                                            
+                                            self.selected_object.move(pos[0:2], modifiers=modifiers)
 
-                                # update ui to display properties of selected object
-                                self.selection_update()
+                                        # update ui to display properties of selected object
+                                        self.selection_update()
 
-
-                # else:
-                    # QApplication.setOverrideCursor(Qt.CursorShape.ArrowCursor)
+                    case 3:
+                        if event.is_dragging:  
+                            tr = self.view.node_transform(self.view.scene)
+                            dpos = tr.map(event.last_event.pos)[:2] -tr.map(event.pos)[:2]  # Calculate the change in position of the mouse
+                            self.view.camera.pan(dpos)  # Pan the camera based on the mouse movement
 
 
 
