@@ -155,7 +155,6 @@ class MainUI(QWidget):
         
     def raise_error(self, error):        
         msg = QMessageBox.critical(None, "Error", str(error))
-        msg.exec()
 
     def open_output_window(self):
         self.output_window = OutputWindow(parent=self)
