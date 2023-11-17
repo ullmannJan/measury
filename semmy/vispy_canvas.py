@@ -147,109 +147,122 @@ class VispyCanvas(SceneCanvas):
                 self.main_ui.select_sem_file()
             else:
                 # main use of program
-                # QApplication.setOverrideCursor(QCursor(Qt.CursorShape.ArrowCursor))  
+                # QApplication.setOverrideCursor(QCursor(Qt.CursorShape.ArrowCursor)) 
+                 
+                if event.button == 3: # mouse wheel button for changing fov
+                    # enable panning
+                    self.view.camera._viewbox.events.mouse_move.connect(
+                        self.view.camera.viewbox_mouse_event)
+                    
+                    # QApplication.setOverrideCursor(QCursor(Qt.CursorShape.SizeAllCursor))                    
 
-                match self.main_ui.tools.checkedButton().text():
+                    # unselect object
+                    if self.selected_object is not None:
+                        self.selected_object.select(False)
+                        self.selected_object = None
 
-                    case "&move":
-                        # enable panning
-                        self.view.camera._viewbox.events.mouse_move.connect(
-                            self.view.camera.viewbox_mouse_event)
-                        
-                        # QApplication.setOverrideCursor(QCursor(Qt.CursorShape.SizeAllCursor))                    
+                else:
+                    match self.main_ui.tools.checkedButton().text():
 
-                        # unselect object
-                        if self.selected_object is not None:
-                            self.selected_object.select(False)
-                            self.selected_object = None
-
-                    case "&line" | "&circle" | "&rectangle" | "&angle":
-                        #disable panning
-                        self.view.camera._viewbox.events.mouse_move.disconnect(
-                            self.view.camera.viewbox_mouse_event)
-                        
-                        tr = self.scene.node_transform(self.view.scene)
-                        pos = tr.map(event.pos)
-                        self.view.interactive = False
-                        selected = self.visual_at(event.pos)
-                        self.view.interactive = True
-                        # unselect object to create rom of new one
-                        if self.selected_object is not None:
-                            self.selected_object.select(False)
-                            self.selected_object = None
-
-                        if event.button == 1:
+                        case "&move":
+                            # enable panning
+                            self.view.camera._viewbox.events.mouse_move.connect(
+                                self.view.camera.viewbox_mouse_event)
+                            
                             # QApplication.setOverrideCursor(QCursor(Qt.CursorShape.SizeAllCursor))                    
 
+                            # unselect object
+                            if self.selected_object is not None:
+                                self.selected_object.select(False)
+                                self.selected_object = None
+
+                        case "&line" | "&circle" | "&rectangle" | "&angle":
+                            #disable panning
+                            self.view.camera._viewbox.events.mouse_move.disconnect(
+                                self.view.camera.viewbox_mouse_event)
                             
-                            if selected is not None:
-                                self.selected_object = selected.parent
+                            tr = self.scene.node_transform(self.view.scene)
+                            pos = tr.map(event.pos)
+                            self.view.interactive = False
+                            selected = self.visual_at(event.pos)
+                            self.view.interactive = True
+                            # unselect object to create rom of new one
+                            if self.selected_object is not None:
+                                self.selected_object.select(False)
+                                self.selected_object = None
 
-                                # update transform to selected object
-                                tr = self.scene.node_transform(self.selected_object)
-                                pos = tr.map(event.pos)
+                            if event.button == 1:
+                                # QApplication.setOverrideCursor(QCursor(Qt.CursorShape.SizeAllCursor))                    
 
-                                self.selected_object.select(True, obj=selected)
-                                self.selected_object.start_move(pos)
+                                
+                                if selected is not None:
+                                    self.selected_object = selected.parent
 
-                                # update ui to display properties of selected object
-                                self.selection_update()
+                                    # update transform to selected object
+                                    tr = self.scene.node_transform(self.selected_object)
+                                    pos = tr.map(event.pos)
 
-                            # create new object:
-                            if self.selected_object is None:
-                                # if it is the line object
-                                match self.main_ui.tools.checkedButton().text():
-                                    case "&line":
-                                        new_object = EditLineVisual(parent=self.view.scene)
-                                    case "&circle":
-                                        new_object = EditEllipseVisual(parent=self.view.scene)
-                                    case "&rectangle":
-                                        new_object = EditRectVisual(parent=self.view.scene)
-                                    case "&angle":
-                                        new_object = EditLineVisual(parent=self.view.scene, num_points=3)
+                                    self.selected_object.select(True, obj=selected)
+                                    self.selected_object.start_move(pos)
 
-                                new_object.set_center(pos[0:2])
+                                    # update ui to display properties of selected object
+                                    self.selection_update()
+
+                                # create new object:
+                                if self.selected_object is None:
+                                    # if it is the line object
+                                    match self.main_ui.tools.checkedButton().text():
+                                        case "&line":
+                                            new_object = EditLineVisual(parent=self.view.scene)
+                                        case "&circle":
+                                            new_object = EditEllipseVisual(parent=self.view.scene)
+                                        case "&rectangle":
+                                            new_object = EditRectVisual(parent=self.view.scene)
+                                        case "&angle":
+                                            new_object = EditLineVisual(parent=self.view.scene, num_points=3)
+
+                                    new_object.set_center(pos[0:2])
+                                        
+                                    new_object.select_creation_controlpoint()
+                                    new_object.transform = transforms.STTransform(translate=(0, 0, -1))
+                                    self.selected_object = new_object.control_points
+                                    self.selected_object.transform = transforms.STTransform(translate=(0, 0, -2))
+
+                                    # TODO: save object in database
+                                    structure_name = self.main_ui.structure_edit.text()
+                                    self.data_handler.save_object(structure_name, new_object)
+
+                                    # update ui where data is shown
+                                    self.selection_update(object=new_object)
                                     
-                                new_object.select_creation_controlpoint()
-                                new_object.transform = transforms.STTransform(translate=(0, 0, -1))
-                                self.selected_object = new_object.control_points
-                                self.selected_object.transform = transforms.STTransform(translate=(0, 0, -2))
 
-                                # TODO: save object in database
-                                structure_name = self.main_ui.structure_edit.text()
-                                self.data_handler.save_object(structure_name, new_object)
+                            if event.button == 2:  # right button deletes object
+                                # not self.selected_object because we want to delete it on hover too
+                                if selected is not None:
+                                    self.delete_object(object=selected.parent)
 
-                                # update ui where data is shown
-                                self.selection_update(object=new_object)
                                 
 
-                        if event.button == 2:  # right button deletes object
-                            # not self.selected_object because we want to delete it on hover too
-                            if selected is not None:
-                                self.delete_object(object=selected.parent)
-
+                        case "&identify scaling":
+                            #disable panning
+                            self.view.camera._viewbox.events.mouse_move.disconnect(
+                                self.view.camera.viewbox_mouse_event)
                             
+                            if event.button == 1:
 
-                    case "&identify scaling":
-                        #disable panning
-                        self.view.camera._viewbox.events.mouse_move.disconnect(
-                            self.view.camera.viewbox_mouse_event)
-                        
-                        if event.button == 1:
+                                # transform to get image pixel coordinates
+                                tr_image = self.scene.node_transform(self.image)
+                                mouse_image_coords = tr_image.map(event.pos)[:2]
+                                # mouse_click_coordinates
+                                m_i_x, m_i_y = np.floor(mouse_image_coords).astype(int)
 
-                            # transform to get image pixel coordinates
-                            tr_image = self.scene.node_transform(self.image)
-                            mouse_image_coords = tr_image.map(event.pos)[:2]
-                            # mouse_click_coordinates
-                            m_i_x, m_i_y = np.floor(mouse_image_coords).astype(int)
-
-                            # get width of scaling bar and show it in image
-                            self.find_scaling_bar_width((m_i_x, m_i_y))
-                        
-                        # right click to delete scaling identification
-                        if event.button == 2:
-                            self.draw_image(self.data_handler.img_data)
-                            self.main_ui.pixel_edit.setText(None)
+                                # get width of scaling bar and show it in image
+                                self.find_scaling_bar_width((m_i_x, m_i_y))
+                            
+                            # right click to delete scaling identification
+                            if event.button == 2:
+                                self.draw_image(self.data_handler.img_data)
+                                self.main_ui.pixel_edit.setText(None)
 
 
     def find_scaling_bar_width(self, seed_point):
@@ -284,8 +297,14 @@ class VispyCanvas(SceneCanvas):
         if not( (tr.map(event.pos)[:2] > self.view.size).any() or (tr.map(event.pos)[:2] < (0,0)).any() ):
             
             if not self.start_state:
+                
+                # Check if the mouse wheel button is being dragged
+                if event.button == 3 and event.is_dragging:  
+                    tr = self.view.node_transform(self.view.scene)
+                    dpos = tr.map(event.last_event.pos)[:2] -tr.map(event.pos)[:2]  # Calculate the change in position of the mouse
+                    self.view.camera.pan(dpos)  # Pan the camera based on the mouse movement
 
-                if event.button == 1:
+                if event.button == 1 and event.is_dragging: # Check if the left mouse button is being dragged
                     
                     if self.selected_object is not None:
                         modifiers = [key.name for key in event.modifiers]
