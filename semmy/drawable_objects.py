@@ -96,11 +96,12 @@ class ControlPoints(scene.visuals.Compound):
             if 'Alt' in modifiers:
                 diag = end-self._center
 
-                self._width = abs(2 * (np.cos(self._angle)*diag[0] - np.sin(self._angle)*diag[1]))
+                self._width = 2*abs(np.cos(self._angle)*diag[0] - np.sin(self._angle)*diag[1])
+                self._height = 2*abs(np.sin(self._angle)*diag[0] + np.cos(self._angle)*diag[1])
                 if "Control" in modifiers:
-                    self._height = self._width
-                else:
-                    self._height = abs( 2 * (np.sin(self._angle)*diag[0] + np.cos(self._angle)*diag[1]))
+                    val = max(self._width, self._height)
+                    self._width = val
+                    self._height = val
 
                 self.update_points()
                 self.parent.update_from_controlpoints()
@@ -132,7 +133,6 @@ class ControlPoints(scene.visuals.Compound):
                     if opp_index == 0 or opp_index == 1:
                         offset[1] *= -1
                     center = opp + offset
-                    print(opp, center)
 
                 self.set_center(center)
                 self.parent.update_from_controlpoints()
