@@ -1,6 +1,9 @@
+# absolute imports
 from vispy.app import use_app
-from semmy.main_window import MainWindow
-from semmy.data_handler import DataHandler
+
+# relative imports
+from .main_window import MainWindow
+from .data_handler import DataHandler
 
 class App:
 

@@ -1,12 +1,13 @@
 import numpy as np
 
-from vispy import scene
+from vispy.scene.visuals import Compound, Markers, Rectangle, Ellipse, Line 
 from vispy.visuals.transforms import MatrixTransform   
 
 
-class ControlPoints(scene.visuals.Compound):
+# Compound from vispy.scene.visuals
+class ControlPoints(Compound):
     def __init__(self, parent):
-        scene.visuals.Compound.__init__(self, [])
+        Compound.__init__(self, [])
         self.unfreeze()
         self.parent = parent
         self._center = [0, 0]
@@ -20,7 +21,8 @@ class ControlPoints(scene.visuals.Compound):
         self.face_color = (1,1,1,0.5)
         self.marker_size = 8
 
-        self.control_points = [scene.visuals.Markers(parent=self)
+        # Markers from vispy.scene.visuals
+        self.control_points = [Markers(parent=self)
                                for i in range(0, 4)]
         self.coords = np.zeros((len(self.control_points),1,2), dtype=np.float32)
 
@@ -177,7 +179,8 @@ class ControlPoints(scene.visuals.Compound):
         del self
 
 
-class EditVisual(scene.visuals.Compound):
+# from vispy.scene.visuals
+class EditVisual(Compound):
         
     def __init__(self, 
                  control_points=None,
@@ -187,7 +190,8 @@ class EditVisual(scene.visuals.Compound):
                  callback_argument=None, 
                  *args, **kwargs):
         
-        scene.visuals.Compound.__init__(self, [], *args, **kwargs)
+        # from vispy.scene.visuals
+        Compound.__init__(self, [], *args, **kwargs)
         self.unfreeze()
         self.editable = editable
         self.form = None
@@ -207,7 +211,8 @@ class EditVisual(scene.visuals.Compound):
         self.freeze()
 
     def add_subvisual(self, visual):
-        scene.visuals.Compound.add_subvisual(self, visual)
+        # from vispy.scene.visuals
+        Compound.add_subvisual(self, visual)
 
     def select(self, val, obj=None):
         if self.selectable:
@@ -296,7 +301,7 @@ class EditRectVisual(EditVisual):
     def __init__(self, center=[0, 0], width=1e-6, height=1e-6, *args, **kwargs):
         EditVisual.__init__(self, *args, **kwargs)
         self.unfreeze()
-        self.form = scene.visuals.Rectangle(center=center, 
+        self.form = Rectangle(center=center, 
                                             width=width,
                                             height=height,
                                             color= (1,0,0,0.1),
@@ -344,7 +349,7 @@ class EditEllipseVisual(EditVisual):
     def __init__(self, center=[0, 0], radius=[1e-6, 1e-6], *args, **kwargs):
         EditVisual.__init__(self, *args, **kwargs)
         self.unfreeze()
-        self.form = scene.visuals.Ellipse(center=center, radius=radius,
+        self.form = Ellipse(center=center, radius=radius,
                                              color= (1,0,0,0.1),
                                              border_color=(1,0,0,0.5),
                                              border_width=2,
@@ -383,10 +388,10 @@ class EditEllipseVisual(EditVisual):
                 angle=(self.control_points._angle, "°"),
                 )
 
-class LineControlPoints(scene.visuals.Compound):
+class LineControlPoints(Compound):
 
     def __init__(self, parent, num_points=2, *args, **kwargs):
-        scene.visuals.Compound.__init__(self, [], *args, **kwargs)
+        Compound.__init__(self, [], *args, **kwargs)
         self.unfreeze()
         self.parent = parent
         self.num_points = num_points
@@ -401,7 +406,7 @@ class LineControlPoints(scene.visuals.Compound):
         self.face_color = (1,1,1,0.2)
         self.marker_size = 8
 
-        self.control_points = [scene.visuals.Markers(parent=self)
+        self.control_points = [Markers(parent=self)
                                for i in range(0, self.num_points)]
         for cpoint, coord in zip(self.control_points, self.coords):
             cpoint.set_data(pos=np.array([coord], dtype=np.float32),
@@ -492,7 +497,7 @@ class EditLineVisual(EditVisual):
         self.line_width = 3
         
 
-        self.form = scene.visuals.Line(pos=self.control_points.coords,
+        self.form = Line(pos=self.control_points.coords,
                                         width=self.line_width, 
                                         color=self.line_color,
                                         method='gl',

@@ -1,6 +1,9 @@
-from PyQt6.QtWidgets import QVBoxLayout, QLabel, QWidget, QComboBox, QListWidget, QMessageBox
+# absolute imports
+from PyQt6.QtWidgets import QVBoxLayout, QLabel, QWidget, QComboBox, QListWidget
 from PyQt6.QtGui import QIcon
-from semmy import __version__ as semmy_version
+
+# relative imports
+from . import __version__ as semmy_version
 
 class SemmyWindow(QWidget):
     """

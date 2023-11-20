@@ -1,11 +1,11 @@
-from pathlib import Path
+# absolute imports
 from PyQt6.QtWidgets import QMessageBox, QVBoxLayout, QHBoxLayout, \
     QPushButton, QTableWidget, QWidget, QFileDialog, QComboBox, QLabel, \
-        QButtonGroup, QSlider, QLineEdit, QGroupBox, QListWidget, QTableWidgetItem
-from PyQt6.QtCore import Qt
+        QButtonGroup, QLineEdit, QGroupBox, QTableWidgetItem
 from PyQt6.QtGui import QDoubleValidator, QIntValidator
 
-from semmy.windows import OutputWindow
+# relative imports
+from .windows import OutputWindow
 
 class MainUI(QWidget):
     

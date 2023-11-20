@@ -1,12 +1,11 @@
+# absolute imports
 import numpy as np
-from numpy.linalg import norm
 import cv2
 from vispy.scene import SceneCanvas, visuals, AxisWidget, Label, transforms
-from semmy.drawable_objects import EditEllipseVisual, EditRectVisual, ControlPoints, EditLineVisual, LineControlPoints
+from PyQt6.QtWidgets import QTableWidgetItem
 
-# from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QApplication, QTableWidgetItem
-# from PyQt6.QtGui import QCursor
+# relative imports
+from .drawable_objects import EditEllipseVisual, EditRectVisual, ControlPoints, EditLineVisual, LineControlPoints
 
 class VispyCanvas(SceneCanvas):
     """ Canvas for displaying the vispy instance"""

@@ -1,4 +1,5 @@
-import yaml
+# absolute imports
+from yaml import safe_load
 from pathlib import Path
 
 class DataHandler:
@@ -16,10 +17,10 @@ class DataHandler:
     def __init__(self):
 
         with open(Path('data/sem_db.yml'), 'r') as file:
-            self.sem_db = yaml.safe_load(file)
+            self.sem_db = safe_load(file)
         
         with open(Path('data/Settings.yaml'), 'r') as file:
-            self.settings = yaml.safe_load(file)
+            self.settings = safe_load(file)
 
         # output data is a dictionary of the form:
         # {

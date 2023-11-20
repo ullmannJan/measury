@@ -1,14 +1,23 @@
-
-from semmy.main_ui import MainUI
-from semmy.vispy_canvas import VispyCanvas
+# absolute imports
 from PyQt6.QtOpenGLWidgets import QOpenGLWidget
-from PyQt6.QtGui import QAction, QIcon, QWindow
+from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QSplitter, QMessageBox
 from PyQt6.QtCore import Qt
 
-from semmy.windows import AboutWindow
+# relative imports
+from .main_ui import MainUI
+from .vispy_canvas import VispyCanvas
+from .windows import AboutWindow
 
 class MainWindow(QMainWindow):
+    """Qt MainWindow of Application.
+
+    This class represents the Main Window of the application and 
+    contains two subclasses:
+        main_ui : Qt UI interface
+        vispy_canvas_wrapper: vispy_implementation into Qt
+    """
+
     def __init__(self, data_handler, development_mode=False, img=r"img/2023-06-29-D5-11-01.tif", *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setAcceptDrops(True)
