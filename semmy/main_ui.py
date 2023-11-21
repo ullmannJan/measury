@@ -6,10 +6,11 @@ from PyQt6.QtGui import QDoubleValidator, QIntValidator
 
 # relative imports
 from .windows import OutputWindow
+from .vispy_canvas import VispyCanvas
 
 class MainUI(QWidget):
     
-    def __init__(self, vispy_canvas_wrapper, data_handler, parent=None):
+    def __init__(self, vispy_canvas_wrapper: VispyCanvas, data_handler, parent=None):
         
 
         super().__init__(parent)
@@ -134,6 +135,7 @@ class MainUI(QWidget):
 
         self.structure_edit = QLineEdit(self, placeholderText="Enter structure name")
         self.output_layout.addWidget(self.structure_edit)
+        self.structure_edit.textChanged.connect(self.update_output_window)
 
         self.openOutputWindow = QPushButton("Open Output Window", self)
         self.output_layout.addWidget(self.openOutputWindow)
@@ -181,9 +183,15 @@ class MainUI(QWidget):
             self.scaling = 1
         self.units_changed()
 
+    def update_output_window(self):
+        if hasattr(self, 'output_window'):
+            self.output_window.update_window()
+
 
     def units_changed(self):
          self.selected_object_table.setHorizontalHeaderItem(1, 
                                 QTableWidgetItem(self.units_dd.currentText()))
          self.vispy_canvas_wrapper.selection_update()
+         if hasattr(self, 'output_window'):
+             self.output_window.update_object_data_table()
          

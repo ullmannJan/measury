@@ -13,7 +13,7 @@ class VispyCanvas(SceneCanvas):
     CANVAS_SHAPE = (800, 600)
     main_ui = None
 
-    def __init__(self, data_handler, img=None):
+    def __init__(self, data_handler):
         
         self.data_handler = data_handler
 
@@ -71,13 +71,9 @@ class VispyCanvas(SceneCanvas):
         self.view.camera.set_range(x=(0,1),
                                    y=(0,1), 
                                    margin=0)  
-              
-        # load standard picture in development mode
-        if img is None:
-            self.start_state = True
-        else:
-            self.data_handler.img_path = img
-            self.update_image()
+        
+        self.start_state = True
+        self.update_image()
 
         # for manipulating shapes
         self.selected_object = None
@@ -110,8 +106,9 @@ class VispyCanvas(SceneCanvas):
                 self.start_state = False
 
             except Exception as error:
-                # handle the exception     
-                self.main_ui.raise_error(error)
+                # handle the exception  
+                if self.main_ui is not None:      
+                    self.main_ui.raise_error(error)
             
             self.remove_load_text()
     
@@ -206,6 +203,8 @@ class VispyCanvas(SceneCanvas):
 
                                     # update ui to display properties of selected object
                                     self.selection_update()
+                                    self.main_ui.update_output_window()
+
 
                                 # create new object:
                                 if self.selected_object is None:
@@ -233,12 +232,16 @@ class VispyCanvas(SceneCanvas):
 
                                     # update ui where data is shown
                                     self.selection_update(object=new_object)
+                                    self.main_ui.update_output_window()
                                     
 
                             if event.button == 2:  # right button deletes object
                                 # not self.selected_object because we want to delete it on hover too
                                 if selected is not None:
                                     self.delete_object(object=selected.parent)
+                                
+                                    self.main_ui.update_output_window()
+                                
 
                                 
 
@@ -327,6 +330,8 @@ class VispyCanvas(SceneCanvas):
 
                                         # update ui to display properties of selected object
                                         self.selection_update()
+                                        if hasattr(self.main_ui, 'output_window'):
+                                            self.main_ui.output_window.update_object_data_table()
 
                     case 3:
                         if event.is_dragging:  

@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QSplitter, QMessa
 from PyQt6.QtCore import Qt
 
 # relative imports
+from . import run_path
 from .main_ui import MainUI
 from .vispy_canvas import VispyCanvas
 from .windows import AboutWindow
@@ -18,15 +19,12 @@ class MainWindow(QMainWindow):
         vispy_canvas_wrapper: vispy_implementation into Qt
     """
 
-    def __init__(self, data_handler, development_mode=False, img=r"img/2023-06-29-D5-11-01.tif", *args, **kwargs):
+    def __init__(self, data_handler, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setAcceptDrops(True)
 
         self.data_handler = data_handler
-        if development_mode:
-            self.vispy_canvas = VispyCanvas(self.data_handler, img=img)
-        else:
-            self.vispy_canvas = VispyCanvas(self.data_handler)
+        self.vispy_canvas = VispyCanvas(self.data_handler)
 
         self.native_vispy_canvas = DropEnabledQOpenGLWidget(self.vispy_canvas, parent=self)
         self.main_ui = MainUI(self.vispy_canvas, self.data_handler)
@@ -36,7 +34,7 @@ class MainWindow(QMainWindow):
 
     def initUI(self):
         self.setWindowTitle("Semmy")
-        self.setWindowIcon(QIcon("img/logo/tape_measure_128.png"))
+        self.setWindowIcon(QIcon(str(run_path/"img/logo/tape_measure_128.ico")))
         self.setMinimumSize(700,700)
         # self.setStyleSheet("background-color: white") 
 
@@ -95,13 +93,10 @@ class DropEnabledQOpenGLWidget(QOpenGLWidget):
         layout.addWidget(vispy_canvas.native)
 
     def dragEnterEvent(self, event):
-        print('entered')
         if len(event.mimeData().urls()) == 1:
-            print('accepted')
             print(event.mimeData().urls())
             event.accept()
         else:
-            print('denied')
             event.ignore()
 
     def dropEvent(self, event):

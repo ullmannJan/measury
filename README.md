@@ -1,6 +1,6 @@
 # SEMMY
 
-![Semmy_Logo](img/logo/tape_measure_125.png)
+![Semmy_Logo](img/logo/tape_measure_128.ico)
 
 This is the repository for the SEM picture analyzer SEMMY. The Goal ist too simplify and accelerate the measurements of nano-structures.
 

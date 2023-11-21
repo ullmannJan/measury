@@ -1,10 +1,10 @@
 # absolute imports
 from yaml import safe_load
 from pathlib import Path
+from . import run_path
 
 class DataHandler:
 
-    img_path = None
     img_data = None
 
     main_ui: dict|None = None
@@ -14,12 +14,17 @@ class DataHandler:
 
 
     # database (dict) of sems with points in scaling bar
-    def __init__(self):
+    def __init__(self, img_path=None):
 
-        with open(Path('data/sem_db.yml'), 'r') as file:
+        if img_path is not None:
+            self.img_path = str(Path(img_path))
+        else:
+            self.img_path = None
+
+        with open(run_path/Path('data/sem_db.yml'), 'r') as file:
             self.sem_db = safe_load(file)
         
-        with open(Path('data/Settings.yaml'), 'r') as file:
+        with open(run_path/Path('data/Settings.yaml'), 'r') as file:
             self.settings = safe_load(file)
 
         # output data is a dictionary of the form:

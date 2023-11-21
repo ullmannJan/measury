@@ -17,30 +17,13 @@ PyInstaller.__main__.run([
     '--name', program_name,
     '--specpath', 'build',
     '--icon', '../img/logo/tape_measure_128.ico',
-    # '--add-data', 'data:data',
-    # '--add-data', '../img/logo:img/logo',
+    '--add-data', '../data:data',
+    '--add-data', '../img/logo/tape_measure_128.ico:img/logo',
     '--collect-all', 'vispy',
     '--noconfirm'
 ])
 
-# copy data and img/logo
-if method == "onedir":
-
-    output_path = Path(f"dist/{program_name}")
-
-    
-    shutil.copytree("data", str(output_path/"data"))
-    shutil.copytree("img/logo", str(output_path/"img/logo"))
-
-if method == "onefile":
-
-    output_path = Path(f"dist/{program_name}")
-    output_path.mkdir(parents=True, exist_ok=True)
-
-    shutil.move(f"dist/{program_name}.exe", output_path/f"{program_name}.exe")
-    shutil.copytree("data", str(output_path/"data"))
-    shutil.copytree("img/logo", str(output_path/"img/logo"))
-
 # zip output for easy distribution
+output_path = Path(f"dist/{program_name}")
 if zipped:
     shutil.make_archive(output_path, 'zip', output_path)
