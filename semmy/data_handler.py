@@ -58,5 +58,5 @@ class DataHandler:
                 continue
 
     def generate_output_name(self):
-        return f'object_001'
+        return f'structure_001'
     

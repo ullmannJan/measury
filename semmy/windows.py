@@ -45,7 +45,7 @@ class OutputWindow(SemmyWindow):
             objects = self.parent.data_handler.output_data[self.dd_select_object.currentText()]
             types = [type(obj).__name__ for obj in objects]
             self.object_list.insertItems(0, types)
-        self.dd_select_object.currentTextChanged.connect(self.update_object_list)
+        self.dd_select_object.currentTextChanged.connect(self.drop_down_changed)
         self.layout.addWidget(self.object_list)
 
         # data table
@@ -60,20 +60,35 @@ class OutputWindow(SemmyWindow):
         if self.dd_select_object.currentText() != "" and self.object_list.currentItem() is not None:
             self.object_data_list.insertItems(0, types)
 
-        self.object_list.currentItemChanged.connect(self.update_object_data_table)
+        self.object_list.currentItemChanged.connect(self.list_item_changed)
         self.layout.addWidget(self.object_data_table)
 
+    def drop_down_changed(self):
+        self.update_object_list()
+
+    def list_item_changed(self):
+        self.update_object_data_table()
     
+    def update_drop_down(self, structure=None):
+        self.dd_select_object.clear()
+        self.dd_select_object.addItems(self.parent.data_handler.output_data.keys())
+        # if structure is not None:
+        #     if structure in [self.dd_select_object.itemText(i) for i in range(self.dd_select_object.count())]:
+        #         self.dd_select_object.setCurrentText(structure)
+
     def update_object_list(self, list_index=None):
         self.object_list.clear()
-        # if list_index is not None:
-        #     if list_index < len(self.object_list.items()):
-        #         self.object_list.setCurrentIndex(list_index)
-        if self.dd_select_object.currentText() != "" and self.dd_select_object.currentText() is not None:
+
+        if self.dd_select_object.currentText() != "" and \
+           self.dd_select_object.currentText() is not None:
+
             objects = self.parent.data_handler.output_data[self.dd_select_object.currentText()]
             types = [type(obj).__name__ for obj in objects]
             self.object_list.insertItems(0, types)
         
+        if list_index is not None:
+            if list_index < len(self.object_list.items()):
+                self.object_list.setCurrentIndex(list_index)
 
     def update_object_data_table(self):
         
@@ -111,12 +126,6 @@ class OutputWindow(SemmyWindow):
             
         self.object_data_table.resizeColumnsToContents()
     
-    def update_drop_down(self, structure=None):
-        self.dd_select_object.clear()
-        self.dd_select_object.addItems(self.parent.data_handler.output_data.keys())
-        # if structure is not None:
-        #     if structure in [self.dd_select_object.itemText(i) for i in range(self.dd_select_object.count())]:
-        #         self.dd_select_object.setCurrentText(structure)
 
     def update_window(self):
         self.update_drop_down()

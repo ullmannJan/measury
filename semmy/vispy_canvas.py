@@ -203,7 +203,8 @@ class VispyCanvas(SceneCanvas):
 
                                     # update ui to display properties of selected object
                                     self.selection_update()
-                                    self.main_ui.update_output_window()
+                                    # Needs change
+                                    # self.main_ui.update_output_window()
 
 
                                 # create new object:
@@ -232,7 +233,8 @@ class VispyCanvas(SceneCanvas):
 
                                     # update ui where data is shown
                                     self.selection_update(object=new_object)
-                                    self.main_ui.update_output_window()
+                                    # Needs change
+                                    # self.main_ui.update_output_window()
                                     
 
                             if event.button == 2:  # right button deletes object
@@ -240,7 +242,8 @@ class VispyCanvas(SceneCanvas):
                                 if selected is not None:
                                     self.delete_object(object=selected.parent)
                                 
-                                    self.main_ui.update_output_window()
+                                    # Needs change
+                                    # self.main_ui.update_output_window()
                                 
 
                                 
@@ -330,8 +333,9 @@ class VispyCanvas(SceneCanvas):
 
                                         # update ui to display properties of selected object
                                         self.selection_update()
-                                        if hasattr(self.main_ui, 'output_window'):
-                                            self.main_ui.output_window.update_object_data_table()
+                                        # Needs change
+                                        # if hasattr(self.main_ui, 'output_window'):
+                                        #     self.main_ui.output_window.update_object_data_table()
 
                     case 3:
                         if event.is_dragging:  

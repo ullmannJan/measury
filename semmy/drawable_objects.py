@@ -125,11 +125,22 @@ class ControlPoints(Compound):
                 if opp_index == 0 or opp_index == 1:
                     self._height *= -1
         
+                print(self._width, self._height)
                 if "Control" in modifiers:
                     val = np.max(np.abs([self._width, self._height]))
                     self._width = np.sign(self._width)*val
                     self._height = np.sign(self._height)*val
-                    offset = val/np.sqrt(2)*np.array([np.sign(self._width)*np.cos(self._angle-np.pi/4), -np.sign(self._height)*np.sin(self._angle-np.pi/4)])
+
+                    if opp_index == 2 or opp_index == 0:
+                        offset = val/np.sqrt(2)*\
+                            np.array([np.sign(self._width)  *np.cos(np.pi/4+np.sign(self._width)*np.sign(self._height)*self.angle), 
+                                      np.sign(self._height) *np.sin(np.pi/4+np.sign(self._width)*np.sign(self._height)*self.angle)])
+                    else:
+                        offset = val/np.sqrt(2)*\
+                            np.array([np.sign(self._width)  *np.cos(np.pi/4-np.sign(self._width)*np.sign(self._height)*self.angle), 
+                                      np.sign(self._height) *np.sin(np.pi/4-np.sign(self._width)*np.sign(self._height)*self.angle)])
+                        
+                        print(opp_index)
                     if opp_index == 2 or opp_index == 1:
                         offset[0] *= -1
                     if opp_index == 0 or opp_index == 1:
@@ -245,7 +256,7 @@ class EditVisual(Compound):
             # shift is difference
             abs_angle = angle-self.drag_reference_angle
             # rotate control points and therefore shape as well
-            self.set_angle(abs_angle)
+            self.set_angle(abs_angle%(2*np.pi))
             self.update_transform()
 
     def update_transform(self):
@@ -340,7 +351,7 @@ class EditRectVisual(EditVisual):
                 width=(self.form.width, "px"),
                 height=(self.form.height, "px"),
                 area=(self.form.height*self.form.width, "px²"),
-                angle=(self.control_points._angle, "°"),
+                angle=(np.rad2deg(self.control_points._angle), "°"),
                 )
     
 
@@ -385,7 +396,7 @@ class EditEllipseVisual(EditVisual):
                 center=(self.form.center, "px"),
                 radius=(radius, "px"),
                 area=(np.prod(self.form.radius)*np.pi, "px²"),
-                angle=(self.control_points._angle, "°"),
+                angle=(np.rad2deg(self.control_points._angle), "°"),
                 )
 
 class LineControlPoints(Compound):
@@ -574,5 +585,5 @@ class EditLineVisual(EditVisual):
         
         return dict(
             length=(self.length, "px"),
-            angle=(angle[0], "°")
+            angle=(np.rad2deg(angle[0]), "°")
             )
