@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import QMessageBox, QVBoxLayout, QHBoxLayout, \
         QPushButton, QTableWidget, QWidget, QFileDialog, QComboBox, QLabel, \
         QButtonGroup, QLineEdit, QGroupBox, QTableWidgetItem
 from PyQt6.QtGui import QDoubleValidator, QIntValidator
+from pathlib import Path
 
 # relative imports
 from .windows import OutputWindow
@@ -147,7 +148,7 @@ class MainUI(QWidget):
         self.setLayout(self.layout)
     
     def select_sem_file(self):
-        self.data_handler.img_path = self.openFileNameDialog()
+        self.data_handler.img_path = Path(self.openFileNameDialog())
         self.vispy_canvas_wrapper.update_image()
 
     def openFileNameDialog(self):

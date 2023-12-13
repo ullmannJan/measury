@@ -386,7 +386,7 @@ class EditEllipseVisual(EditVisual):
         except ValueError:
             None
     
-    def output_properties(self) -> str:
+    def output_properties(self):
         
         if self.form.radius[0] == self.form.radius[1]:
             radius = self.form.radius[0]
@@ -577,6 +577,7 @@ class EditLineVisual(EditVisual):
         
         if self.control_points.num_points == 2:
             angle = self.angles
+            print(angle)
         else:
             angle = abs(np.diff(self.angles))
 
@@ -585,5 +586,5 @@ class EditLineVisual(EditVisual):
         
         return dict(
             length=(self.length, "px"),
-            angle=(np.rad2deg(angle[0]), "°")
+            angle=(angle[0], "°")
             )

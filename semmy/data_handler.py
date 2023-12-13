@@ -3,6 +3,10 @@ from yaml import safe_load
 from pathlib import Path
 from . import run_path
 
+from os import startfile
+from subprocess import Popen
+from sys import platform
+
 
 class DataHandler:
     img_data = None
@@ -15,7 +19,7 @@ class DataHandler:
     # database (dict) of sems with points in scaling bar
     def __init__(self, img_path=None):
         if img_path is not None:
-            self.img_path = str(Path(img_path))
+            self.img_path = Path(img_path)
         else:
             self.img_path = None
 
@@ -69,3 +73,18 @@ class DataHandler:
 
     def generate_output_name(self):
         return "structure_001"
+    
+    
+    def open_file_location(self, path: Path):
+        if path is not None:
+           
+            if platform == "win32":
+                # For Windows
+                startfile(path.parent)
+            elif platform == "darwin":
+                # For MacOS
+                Popen(["open", str(path.parent)])
+            else:
+                # For Linux
+                Popen(["xdg-open", str(path.parent)])
+

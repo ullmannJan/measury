@@ -85,10 +85,10 @@ class VispyCanvas(SceneCanvas):
 
         if self.data_handler.img_path is not None:
             try:
-                self.title_label.text = self.data_handler.img_path
+                self.title_label.text = self.data_handler.img_path.name
 
                 # opencv reads images in BGR format, so we need to convert it to RGB
-                BGR_img = cv2.imread(self.data_handler.img_path)
+                BGR_img = cv2.imread(str(self.data_handler.img_path))
                 self.data_handler.img_data = cv2.cvtColor(BGR_img, cv2.COLOR_BGR2RGB)
                 
                 self.draw_image()
@@ -265,6 +265,10 @@ class VispyCanvas(SceneCanvas):
                             if event.button == 2:
                                 self.draw_image(self.data_handler.img_data)
                                 self.main_ui.pixel_edit.setText(None)
+        
+        # if click is not in box
+        elif tr.map(event.pos)[1] < 0 and tr.map(event.pos)[0] > 0 and tr.map(event.pos)[0] < self.view.size[0] :
+            self.data_handler.open_file_location(self.data_handler.img_path)
 
 
     def find_scaling_bar_width(self, seed_point):
