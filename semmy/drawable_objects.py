@@ -125,12 +125,13 @@ class ControlPoints(Compound):
                 if opp_index == 0 or opp_index == 1:
                     self._height *= -1
         
-                print(self._width, self._height)
+                # square rectangle when holding Ctrl
                 if "Control" in modifiers:
                     val = np.max(np.abs([self._width, self._height]))
                     self._width = np.sign(self._width)*val
                     self._height = np.sign(self._height)*val
 
+                    # I have forgotten why this works
                     if opp_index == 2 or opp_index == 0:
                         offset = val/np.sqrt(2)*\
                             np.array([np.sign(self._width)  *np.cos(np.pi/4+np.sign(self._width)*np.sign(self._height)*self.angle), 
@@ -140,7 +141,6 @@ class ControlPoints(Compound):
                             np.array([np.sign(self._width)  *np.cos(np.pi/4-np.sign(self._width)*np.sign(self._height)*self.angle), 
                                       np.sign(self._height) *np.sin(np.pi/4-np.sign(self._width)*np.sign(self._height)*self.angle)])
                         
-                        print(opp_index)
                     if opp_index == 2 or opp_index == 1:
                         offset[0] *= -1
                     if opp_index == 0 or opp_index == 1:

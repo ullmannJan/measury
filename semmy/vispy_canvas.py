@@ -23,7 +23,7 @@ class VispyCanvas(SceneCanvas):
                              keys=dict(delete=self.delete_object)
                             )
         self.unfreeze()
-        
+                
         self.grid = self.central_widget.add_grid(margin=0)
 
         self.view = self.grid.add_view(row=1, col=1, bgcolor='black')

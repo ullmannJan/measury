@@ -1,6 +1,6 @@
 # absolute imports
 from PyQt6.QtWidgets import QMessageBox, QVBoxLayout, QHBoxLayout, \
-    QPushButton, QTableWidget, QWidget, QFileDialog, QComboBox, QLabel, \
+        QPushButton, QTableWidget, QWidget, QFileDialog, QComboBox, QLabel, \
         QButtonGroup, QLineEdit, QGroupBox, QTableWidgetItem
 from PyQt6.QtGui import QDoubleValidator, QIntValidator
 
@@ -17,7 +17,6 @@ class MainUI(QWidget):
 
         self.vispy_canvas_wrapper = vispy_canvas_wrapper
         self.data_handler = data_handler
-
 
         self.layout = QVBoxLayout(self)
         self.setMinimumWidth(175)
