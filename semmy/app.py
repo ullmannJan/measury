@@ -19,6 +19,8 @@ class App:
     def run(self):
         
         self.main_window.show()
+        # update axis because when creating the qt application the transformations change implicitely
+        self.main_window.vispy_canvas.center_image()
         self.app.run()
 
 def run(img_path=None):
@@ -26,3 +28,4 @@ def run(img_path=None):
         App(img_path=argv[1]).run()
     else:
         App(img_path=img_path).run()
+        

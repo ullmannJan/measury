@@ -14,9 +14,10 @@ class MainWindow(QMainWindow):
     """Qt MainWindow of Application.
 
     This class represents the Main Window of the application and 
-    contains two subclasses:
+    contains several subclasses:
         main_ui : Qt UI interface
-        vispy_canvas_wrapper: vispy_implementation into Qt
+        vispy_canvas: vispy_implementation into Qt
+        data_handler: data structure
     """
 
     def __init__(self, data_handler, *args, **kwargs):
@@ -25,12 +26,12 @@ class MainWindow(QMainWindow):
 
         self.data_handler = data_handler
         self.vispy_canvas = VispyCanvas(self.data_handler)
-
+        
         self.native_vispy_canvas = DropEnabledQOpenGLWidget(self.vispy_canvas, parent=self)
         self.main_ui = MainUI(self.vispy_canvas, self.data_handler)
         self.vispy_canvas.main_ui = self.main_ui
 
-        self.initUI()
+        self.initUI()        
 
     def initUI(self):
         self.setWindowTitle("Semmy")

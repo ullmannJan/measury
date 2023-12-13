@@ -74,13 +74,12 @@ class VispyCanvas(SceneCanvas):
         
         self.start_state = True
         self.update_image()
-
+        
         # for manipulating shapes
         self.selected_object = None
         self.selected_point = None
 
         self.freeze()
-
 
     def update_image(self):
 
@@ -95,8 +94,7 @@ class VispyCanvas(SceneCanvas):
                 self.draw_image()
 
                 self.view.camera = "panzoom"
-                self.view.camera.set_range(x=(0,self.data_handler.img_data.shape[1]),
-                                            y=(0,self.data_handler.img_data.shape[0]), margin=0)
+                self.center_image()
                 self.view.camera.aspect = 1
                 self.view.camera.flip = (0,1,0)
 
@@ -130,7 +128,6 @@ class VispyCanvas(SceneCanvas):
     def remove_load_text(self):
         # self.load_image_label.text = ""
         self.load_image_label.visible = False
-
 
     def on_mouse_press(self, event):
         # transform so that coordinates start at 0 in self.view window
