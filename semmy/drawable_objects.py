@@ -577,7 +577,6 @@ class EditLineVisual(EditVisual):
         
         if self.control_points.num_points == 2:
             angle = self.angles
-            print(angle)
         else:
             angle = abs(np.diff(self.angles))
 
