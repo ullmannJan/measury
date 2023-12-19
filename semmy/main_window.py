@@ -1,7 +1,9 @@
 # absolute imports
+import typing
+from PyQt6 import QtGui
 from PyQt6.QtOpenGLWidgets import QOpenGLWidget
 from PyQt6.QtGui import QAction, QIcon
-from PyQt6.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QSplitter, QMessageBox
+from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QSplitter, QMessageBox
 from PyQt6.QtCore import Qt
 
 # relative imports
@@ -83,6 +85,9 @@ class MainWindow(QMainWindow):
     def open_about_page(self):
         self.about_window = AboutWindow(parent=self)
         self.about_window.show()
+        
+    def closeEvent(self, event):
+        QApplication.closeAllWindows()
 
 class DropEnabledQOpenGLWidget(QOpenGLWidget):
     def __init__(self, vispy_canvas, parent=None):

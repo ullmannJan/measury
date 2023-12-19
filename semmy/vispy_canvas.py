@@ -67,7 +67,6 @@ class VispyCanvas(SceneCanvas):
         self.grid.add_widget(self.load_image_label, row=1, col=1)
         
         # camera
-        self.view.camera.flip = (0,1,0)
         self.view.camera.set_range(x=(0,1),
                                    y=(0,1), 
                                    margin=0)  
@@ -87,10 +86,12 @@ class VispyCanvas(SceneCanvas):
             try:
                 self.title_label.text = self.data_handler.img_path.name
 
-                # opencv reads images in BGR format, so we need to convert it to RGB
-                BGR_img = cv2.imread(str(self.data_handler.img_path))
-                self.data_handler.img_data = cv2.cvtColor(BGR_img, cv2.COLOR_BGR2RGB)
-                
+                # if semmy file is loaded we have already collected data of photo
+                if self.data_handler.img_path.suffix not in [".semmy", ".sem"]:
+                    # opencv reads images in BGR format, so we need to convert it to RGB
+                    BGR_img = cv2.imread(str(self.data_handler.img_path))
+                    self.data_handler.img_data = cv2.cvtColor(BGR_img, cv2.COLOR_BGR2RGB)
+                    
                 self.draw_image()
 
                 self.view.camera = "panzoom"
@@ -102,13 +103,14 @@ class VispyCanvas(SceneCanvas):
                 self.yaxis.link_view(self.view)
                 
                 self.start_state = False
-
+                
             except Exception as error:
                 # handle the exception  
                 if self.main_ui is not None:      
                     self.main_ui.raise_error(error)
             
             self.remove_load_text()
+            
     
     def draw_image(self, img_data=None):
         if img_data is None:
@@ -217,21 +219,12 @@ class VispyCanvas(SceneCanvas):
                                         case "&angle":
                                             new_object = EditLineVisual(parent=self.view.scene, num_points=3)
 
-                                    new_object.set_center(pos[0:2])
-                                        
-                                    new_object.select_creation_controlpoint()
-                                    new_object.transform = transforms.STTransform(translate=(0, 0, -1))
-                                    self.selected_object = new_object.control_points
-                                    self.selected_object.transform = transforms.STTransform(translate=(0, 0, -2))
-
-                                    # TODO: save object in database
-                                    structure_name = self.main_ui.structure_edit.text()
-                                    self.data_handler.save_object(structure_name, new_object)
-
-                                    # update ui where data is shown
-                                    self.selection_update(object=new_object)
+                                    self.create_new_object(new_object, pos=pos, selected=True)
                                     # Needs change
                                     # self.main_ui.update_output_window()
+                                    
+                                    # update ui where data is shown
+                                    self.selection_update(object=new_object)
                                     
 
                             if event.button == 2:  # right button deletes object
@@ -266,10 +259,24 @@ class VispyCanvas(SceneCanvas):
                                 self.draw_image(self.data_handler.img_data)
                                 self.main_ui.pixel_edit.setText(None)
         
-        # if click is not in box
+        # if click is above box
         elif tr.map(event.pos)[1] < 0 and tr.map(event.pos)[0] > 0 and tr.map(event.pos)[0] < self.view.size[0] :
             self.data_handler.open_file_location(self.data_handler.img_path)
 
+    def create_new_object(self, new_object, pos=None, selected=False, structure_name=None):
+        if pos is not None:
+            new_object.set_center(pos[0:2])
+        
+        new_object.select(selected)
+        if selected:                             
+            new_object.select_creation_controlpoint()
+            self.selected_object = new_object.control_points
+            
+            
+        # TODO: save object in database
+        if structure_name is None:
+            structure_name = self.main_ui.structure_edit.text()
+        self.data_handler.save_object(structure_name, new_object)
 
     def find_scaling_bar_width(self, seed_point):
         # get width of scaling bar by floodFilling an area of similar pixels.

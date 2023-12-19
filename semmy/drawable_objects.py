@@ -1,7 +1,7 @@
 import numpy as np
 
 from vispy.scene.visuals import Compound, Markers, Rectangle, Ellipse, Line 
-from vispy.visuals.transforms import MatrixTransform   
+from vispy.visuals.transforms import MatrixTransform, linear
 
 
 # Compound from vispy.scene.visuals
@@ -10,7 +10,7 @@ class ControlPoints(Compound):
         Compound.__init__(self, [])
         self.unfreeze()
         self.parent = parent
-        self._center = [0, 0]
+        self._center = np.array([0, 0], dtype=np.float64)
         self._width = 0.0
         self._height = 0.0
         self._angle = 0.0 # in radians
@@ -33,13 +33,15 @@ class ControlPoints(Compound):
                        size=self.marker_size)
             c.interactive = True
         
+        self.transform = linear.STTransform(translate=(0, 0, -2))
+        
         self.freeze()
 
     def update_bounds(self):
-        self._center = [0.5 * (self.parent.bounds(0)[1] +
-                               self.parent.bounds(0)[0]),
-                        0.5 * (self.parent.bounds(1)[1] +
-                               self.parent.bounds(1)[0])]
+        self._center = np.array([0.5 * (self.parent.bounds(0)[1] +
+                                    self.parent.bounds(0)[0]),
+                                 0.5 * (self.parent.bounds(1)[1] +
+                                    self.parent.bounds(1)[0])], dtype=np.float64)
         self._width = abs(self.parent.bounds(0)[1] - self.parent.bounds(0)[0])
         self._height = abs(self.parent.bounds(1)[1] - self.parent.bounds(1)[0])
         self.update_points()
@@ -174,14 +176,12 @@ class ControlPoints(Compound):
         self._center = val
         self.update_points()
     
-    def get_angle(self):
-        return self._angle
-    
     @property
     def angle(self):
         return self._angle
-
-    def set_angle(self, val):
+    
+    @angle.setter
+    def angle(self, val):
         self._angle = val
         self.update_points()
 
@@ -199,14 +199,15 @@ class EditVisual(Compound):
                  selectable=True, 
                  on_select_callback=None,
                  callback_argument=None, 
+                 angle=0,
                  *args, **kwargs):
         
         # from vispy.scene.visuals
         Compound.__init__(self, [], *args, **kwargs)
         self.unfreeze()
         self.editable = editable
-        self.form = None
         self._selectable = selectable
+        self.form = None
         self._on_select_callback = on_select_callback
         self._callback_argument = callback_argument
 
@@ -216,9 +217,12 @@ class EditVisual(Compound):
                 self.control_points = LineControlPoints(parent=self, num_points=num_points)
             case _:
                 self.control_points = ControlPoints(parent=self)
+                self.angle = angle
         
-        self.drag_reference = [0, 0]
+        self.drag_reference = np.array([0, 0], dtype=np.float64)
         self.drag_reference_angle = 0.0
+        
+        self.transform = linear.STTransform(translate=(0,0,-1))
         self.freeze()
 
     def add_subvisual(self, visual):
@@ -238,7 +242,7 @@ class EditVisual(Compound):
         x,y = self.drag_reference
         # -y because y-axis is flipped
         angle_drag = np.arctan2(-y,x)
-        self.drag_reference_angle = angle_drag - self.control_points.get_angle() 
+        self.drag_reference_angle = angle_drag - self.control_points.angle 
 
     def move(self, end, *args, **kwargs):
         if self.editable:
@@ -249,20 +253,21 @@ class EditVisual(Compound):
     
     def rotate(self, angle):
         """
-        Rotate the object by angle (in radians) around its center from the drag reference point."""
+        Rotate the object by angle (in radians) around its center from the drag reference point.
+        """
         
         if self.editable:
 
             # shift is difference
             abs_angle = angle-self.drag_reference_angle
             # rotate control points and therefore shape as well
-            self.set_angle(abs_angle%(2*np.pi))
+            self.angle = abs_angle%(2*np.pi)
             self.update_transform()
 
     def update_transform(self):
         tr = MatrixTransform()
         tr.translate(-self.center)
-        tr.rotate(np.rad2deg(self.control_points._angle), (0,0,-1))
+        tr.rotate(np.rad2deg(self.angle), (0,0,-1))
         tr.translate(self.center)
         self.form.transform = tr
 
@@ -279,8 +284,12 @@ class EditVisual(Compound):
 
     @property
     def angle(self):
-        return self.control_points.get_angle()
-
+        return self.control_points.angle
+    
+    @angle.setter
+    def angle(self, val):
+        self.control_points.angle = val
+    
     @property
     def center(self):
         return self.control_points.get_center()
@@ -293,9 +302,6 @@ class EditVisual(Compound):
     # override this method in subclass
     def set_center(self, val):
         self.control_points.set_center(val[0:2])
-    
-    def set_angle(self, val):
-        self.control_points.set_angle(val)
 
     def select_creation_controlpoint(self):
         self.control_points.select(True, self.control_points.control_points[1])
@@ -309,23 +315,43 @@ class EditVisual(Compound):
 
 
 class EditRectVisual(EditVisual):
-    def __init__(self, center=[0, 0], width=1e-6, height=1e-6, *args, **kwargs):
+    def __init__(self, 
+                 center=np.array([0, 0], dtype=np.float64), 
+                 width=1e-6, 
+                 height=1e-6, 
+                 *args, **kwargs):
+        
         EditVisual.__init__(self, *args, **kwargs)
         self.unfreeze()
         self.form = Rectangle(center=center, 
-                                            width=width,
-                                            height=height,
-                                            color= (1,0,0,0.1),
-                                            border_color=(1,0,0,0.5),
-                                            border_width=2,
-                                            radius=0, 
-                                            parent=self)
+                                width=width,
+                                height=height,
+                                color= (1,0,0,0.1),
+                                border_color=(1,0,0,0.5),
+                                border_width=2,
+                                radius=0, 
+                                parent=self)
         self.form.interactive = True
 
         self.freeze()
         self.add_subvisual(self.form)
         self.control_points.update_bounds()
-
+        self.rotate(self.angle)
+    
+    @property
+    def height(self):
+        return self.form.height
+    @height.setter
+    def height(self, val):
+        self.form.height = val
+        
+    @property
+    def width(self):
+        return self.form.width
+    @width.setter
+    def width(self, val):
+        self.form.width = val
+    
     def set_center(self, val):
         self.control_points.set_center(val[0:2])
         self.form.center = val[0:2]
@@ -340,7 +366,7 @@ class EditRectVisual(EditVisual):
         except ValueError:
             None
         try:
-            self.form.center = self.control_points._center
+            self.form.center = self.control_points.center
         except ValueError:
             None
     
@@ -353,23 +379,38 @@ class EditRectVisual(EditVisual):
                 area=(self.form.height*self.form.width, "px²"),
                 angle=(np.rad2deg(self.control_points._angle), "°"),
                 )
+        
+    def save(self):
+        return dict(
+                center=self.form.center,
+                width=self.form.width,
+                height=self.form.height,
+                angle=self.angle,
+                )
     
 
 
 class EditEllipseVisual(EditVisual):
-    def __init__(self, center=[0, 0], radius=[1e-6, 1e-6], *args, **kwargs):
+    def __init__(self, 
+                 center=np.array([0, 0], dtype=np.float64), 
+                 radius=np.array([1e-6, 1e-6], dtype=np.float64), 
+                 *args, **kwargs):
+        
         EditVisual.__init__(self, *args, **kwargs)
         self.unfreeze()
-        self.form = Ellipse(center=center, radius=radius,
-                                             color= (1,0,0,0.1),
-                                             border_color=(1,0,0,0.5),
-                                             border_width=2,
-                                             parent=self)
+        self.form = Ellipse(center=center, 
+                            radius=radius,
+                            color= (1,0,0,0.1),
+                            border_color=(1,0,0,0.5),
+                            border_width=2,
+                            parent=self)
+        
         self.form.interactive = True
 
         self.freeze()
         self.add_subvisual(self.form)
         self.control_points.update_bounds()
+        self.rotate(self.angle)
 
     def set_center(self, val):
         self.control_points.set_center(val)
@@ -377,12 +418,12 @@ class EditEllipseVisual(EditVisual):
 
     def update_from_controlpoints(self):
         try:
-            self.form.radius = [0.5 * abs(self.control_points._width),
-                                   0.5 * abs(self.control_points._height)]
+            self.form.radius = np.array([0.5 * abs(self.control_points._width),
+                                0.5 * abs(self.control_points._height)], dtype=np.float64)
         except ValueError:
             None
         try:
-            self.form.center = self.control_points._center
+            self.form.center = self.control_points.center
         except ValueError:
             None
     
@@ -398,6 +439,13 @@ class EditEllipseVisual(EditVisual):
                 area=(np.prod(self.form.radius)*np.pi, "px²"),
                 angle=(np.rad2deg(self.control_points._angle), "°"),
                 )
+    
+    def save(self):
+        return dict(
+                center=self.form.center,
+                radius=np.array(self.form.radius),
+                angle=self.angle,
+                )
 
 class LineControlPoints(Compound):
 
@@ -407,7 +455,7 @@ class LineControlPoints(Compound):
         self.parent = parent
         self.num_points = num_points
         self._length = 0.0
-        self.coords = np.zeros((self.num_points,2))
+        self.coords = np.zeros((self.num_points,2), dtype=np.float64)
         if self.num_points > 2:
             self.coords[1:-2] = [0, 50]
             self.coords[-1] = [50, 0]
@@ -425,6 +473,8 @@ class LineControlPoints(Compound):
                        face_color=self.face_color,
                        size=self.marker_size)
             cpoint.interactive = True
+        
+        self.transform = linear.STTransform(translate=(0, 0, -2))
         
         self.freeze()
     
@@ -497,7 +547,7 @@ class LineControlPoints(Compound):
 
 class EditLineVisual(EditVisual):
         
-    def __init__(self, num_points=2, *args, **kwargs):
+    def __init__(self, num_points=2, coords=None, *args, **kwargs):
 
         EditVisual.__init__(self, 
                             control_points=("LineControlPoints", num_points), 
@@ -506,14 +556,15 @@ class EditLineVisual(EditVisual):
 
         self.line_color = (1,0,0,0.5)
         self.line_width = 3
-        
+        if coords is not None:
+            self.set_coords(coords)    
 
-        self.form = Line(pos=self.control_points.coords,
-                                        width=self.line_width, 
-                                        color=self.line_color,
-                                        method='gl',
-                                        antialias=True,
-                                        parent=self)
+        self.form = Line(pos=self.coords,
+                        width=self.line_width, 
+                        color=self.line_color,
+                        method='gl',
+                        antialias=True,
+                        parent=self)
         self.form.interactive = True
         
         self.freeze()
@@ -530,11 +581,17 @@ class EditLineVisual(EditVisual):
         angles = np.rad2deg(np.arctan2(-diff[:,1], diff[:,0]))
         return angles
     
+    @property
+    def angle(self):
+        return self.angles[0]
+    
     def start_move(self, start):
         self.drag_reference = start[0:2] - self.control_points.get_center()
 
+    @property
+    def coords(self):
+        return self.control_points.coords
     def set_coords(self, coords):
-        self.coords = coords
         self.control_points.set_coords(coords)
 
     def move(self, end, *args, **kwargs):
@@ -551,7 +608,7 @@ class EditLineVisual(EditVisual):
 
     def update_from_controlpoints(self):
         try:
-            self.form.set_data(pos=self.control_points.coords,
+            self.form.set_data(pos=self.coords,
                                 width=self.line_width, 
                                 color=self.line_color)
         except ValueError:
@@ -584,6 +641,11 @@ class EditLineVisual(EditVisual):
                 angle = 360 - angle
         
         return dict(
-            length=(self.length, "px"),
-            angle=(angle[0], "°")
+            length=[self.length, "px"],
+            angle=[angle[0], "°"]
             )
+    
+    def save(self):
+        return dict(
+                coords=self.coords
+                )

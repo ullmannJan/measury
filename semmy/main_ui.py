@@ -135,8 +135,6 @@ class MainUI(QWidget):
 
         self.structure_edit = QLineEdit(self, placeholderText="Enter structure name")
         self.output_layout.addWidget(self.structure_edit)
-        # Needs change
-        self.structure_edit.textChanged.connect(self.update_output_window)
 
         self.openOutputWindow = QPushButton("Open Output Window", self)
         self.output_layout.addWidget(self.openOutputWindow)
@@ -148,8 +146,36 @@ class MainUI(QWidget):
         self.setLayout(self.layout)
     
     def select_sem_file(self):
-        self.data_handler.img_path = Path(self.openFileNameDialog())
-        self.vispy_canvas_wrapper.update_image()
+        file_path = self.openFileNameDialog()
+        if file_path:
+            file_path = Path(file_path)
+            
+            # check if some measurements will be overwritten
+            if self.data_handler.drawing_data:
+                # ask for deletion of drawing data
+                reply = QMessageBox.warning(self, "Warning",
+                    "Do you want to load a new image?\n\nThis will replace the current image and remove the measurements.",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No)
+
+                # if we want to overwrite the data, otherwise do nothing
+                if reply == QMessageBox.StandardButton.Yes:
+                    self.data_handler.delete_all_objects()
+                    
+                    if file_path.suffix == ".semmy" or file_path.suffix == ".sem":
+                        self.data_handler.load_storage_file(file_path, vispy_instance=self.vispy_canvas_wrapper)
+                    else:
+                        self.data_handler.img_path = file_path
+            
+            # just do it if there is no measurement data
+            else:
+                
+                if file_path.suffix == ".semmy" or file_path.suffix == ".sem":
+                    self.data_handler.load_storage_file(file_path, vispy_instance=self.vispy_canvas_wrapper)
+                else:
+                    self.data_handler.img_path = file_path
+
+                
 
     def openFileNameDialog(self):
         fileName, _ = QFileDialog.getOpenFileName(self,"Select SEM Image", "","All Files (*);;Python Files (*.py)")
@@ -184,17 +210,9 @@ class MainUI(QWidget):
             self.scaling = 1
         self.units_changed()
 
-    # Needs change
-    def update_output_window(self):
-        if hasattr(self, 'output_window'):
-            self.output_window.update_window()
-
 
     def units_changed(self):
         self.selected_object_table.setHorizontalHeaderItem(1, 
                             QTableWidgetItem(self.units_dd.currentText()))
         self.vispy_canvas_wrapper.selection_update()
-        # Needs change
-        if hasattr(self, 'output_window'):
-            self.output_window.update_object_data_table()
          
