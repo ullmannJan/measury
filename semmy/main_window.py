@@ -47,6 +47,11 @@ class MainWindow(QMainWindow):
         openAction.setStatusTip('Open document')
         openAction.triggered.connect(self.main_ui.select_sem_file)
         
+        saveAction = QAction(QIcon('save.png'), '&Save File', self)
+        saveAction.setShortcut('Ctrl+S')
+        saveAction.setStatusTip('Save')
+        saveAction.triggered.connect(self.main_ui.open_save_window)
+        
         centerAction = QAction(QIcon('open.png'), '&Center Image', self)
         centerAction.setShortcut('Ctrl+P')
         centerAction.setStatusTip('Center Image')
@@ -60,6 +65,7 @@ class MainWindow(QMainWindow):
         menuBar = self.menuBar()
         fileMenu = menuBar.addMenu('&File')
         fileMenu.addAction(openAction)
+        fileMenu.addAction(saveAction)
         settingsMenu = menuBar.addMenu('&Settings')
         viewMenu = menuBar.addMenu('&View')
         viewMenu.addAction(centerAction)

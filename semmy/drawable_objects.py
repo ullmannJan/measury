@@ -554,6 +554,7 @@ class EditLineVisual(EditVisual):
                             *args, **kwargs)
         self.unfreeze()
 
+        self.num_points = num_points
         self.line_color = (1,0,0,0.5)
         self.line_width = 3
         if coords is not None:
@@ -647,5 +648,6 @@ class EditLineVisual(EditVisual):
     
     def save(self):
         return dict(
-                coords=self.coords
+                coords=self.coords,
+                num_points=self.num_points
                 )

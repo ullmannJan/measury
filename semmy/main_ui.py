@@ -6,7 +6,7 @@ from PyQt6.QtGui import QDoubleValidator, QIntValidator
 from pathlib import Path
 
 # relative imports
-from .windows import OutputWindow
+from .windows import SaveWindow
 from .vispy_canvas import VispyCanvas
 
 class MainUI(QWidget):
@@ -23,12 +23,6 @@ class MainUI(QWidget):
         self.setMinimumWidth(175)
 
         # sem settings
-        self.sem_label = QLabel("Select SEM", self)
-        self.layout.addWidget(self.sem_label)
-
-        self.dd_select_sem = QComboBox(self)
-        self.dd_select_sem.addItems(self.data_handler.sem_db.keys())
-        self.layout.addWidget(self.dd_select_sem)
 
         # image settings
         self.image_box = QGroupBox("Image Settings", self)
@@ -36,11 +30,19 @@ class MainUI(QWidget):
 
         self.select_image_button = QPushButton("Select SEM File", self)
         self.image_layout.addWidget(self.select_image_button)
-        self.select_image_button.clicked.connect(self.select_sem_file)
+        
+        self.select_image_button.clicked.connect(lambda _: self.select_sem_file(file_path=None))
 
         self.center_image_button = QPushButton("Center Image", self)
         self.image_layout.addWidget(self.center_image_button)
         self.center_image_button.clicked.connect(self.vispy_canvas_wrapper.center_image)
+        
+        self.sem_label = QLabel("Select SEM", self)
+        self.image_layout.addWidget(self.sem_label)
+
+        self.dd_select_sem = QComboBox(self)
+        self.dd_select_sem.addItems(self.data_handler.sem_db.keys())
+        self.image_layout.addWidget(self.dd_select_sem)
 
         self.image_box.setLayout(self.image_layout)
         self.layout.addWidget(self.image_box)
@@ -52,6 +54,7 @@ class MainUI(QWidget):
 
         tools = dict()
         tools['move'] = QPushButton("&move", self)
+        tools['select'] = QPushButton("&select", self)
         tools['line'] = QPushButton("&line", self)
         tools['circle'] = QPushButton("&circle", self)
         tools['rectangle'] = QPushButton("&rectangle", self)
@@ -109,6 +112,9 @@ class MainUI(QWidget):
         # selected object
         self.selected_object_box = QGroupBox("Selected Object", self)
         self.selected_object_layout = QVBoxLayout()
+        
+        self.structure_edit = QLineEdit(self, placeholderText="Enter structure name")
+        self.selected_object_layout.addWidget(self.structure_edit)
 
         self.selected_object_table = QTableWidget()
         self.selected_object_table.setRowCount(0)
@@ -129,24 +135,18 @@ class MainUI(QWidget):
         # add empty space
         self.layout.addStretch(1)
 
-        # Output
-        self.output_box = QGroupBox("Output", self)
-        self.output_layout = QVBoxLayout()
+        # Save
 
-        self.structure_edit = QLineEdit(self, placeholderText="Enter structure name")
-        self.output_layout.addWidget(self.structure_edit)
 
-        self.openOutputWindow = QPushButton("Open Output Window", self)
-        self.output_layout.addWidget(self.openOutputWindow)
-        self.openOutputWindow.clicked.connect(self.open_output_window)
-
-        self.output_box.setLayout(self.output_layout)
-        self.layout.addWidget(self.output_box)
+        self.openSaveWindow = QPushButton("Save", self)
+        self.layout.addWidget(self.openSaveWindow)
+        self.openSaveWindow.clicked.connect(self.open_save_window)
         
         self.setLayout(self.layout)
     
-    def select_sem_file(self):
-        file_path = self.openFileNameDialog()
+    def select_sem_file(self, file_path=None):
+        if file_path is None:
+            file_path = self.openFileNameDialog()
         if file_path:
             file_path = Path(file_path)
             
@@ -154,7 +154,7 @@ class MainUI(QWidget):
             if self.data_handler.drawing_data:
                 # ask for deletion of drawing data
                 reply = QMessageBox.warning(self, "Warning",
-                    "Do you want to load a new image?\n\nThis will replace the current image and remove the measurements.",
+                    "Do you want to load a new image?\n\nThis might replace the current image and remove the measurements.",
                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                     QMessageBox.StandardButton.No)
 
@@ -162,19 +162,11 @@ class MainUI(QWidget):
                 if reply == QMessageBox.StandardButton.Yes:
                     self.data_handler.delete_all_objects()
                     
-                    if file_path.suffix == ".semmy" or file_path.suffix == ".sem":
-                        self.data_handler.load_storage_file(file_path, vispy_instance=self.vispy_canvas_wrapper)
-                    else:
-                        self.data_handler.img_path = file_path
+                    self.data_handler.open_file(file_path, self.vispy_canvas_wrapper)
             
             # just do it if there is no measurement data
             else:
-                
-                if file_path.suffix == ".semmy" or file_path.suffix == ".sem":
-                    self.data_handler.load_storage_file(file_path, vispy_instance=self.vispy_canvas_wrapper)
-                else:
-                    self.data_handler.img_path = file_path
-
+                self.data_handler.open_file(file_path, self.vispy_canvas_wrapper)
                 
 
     def openFileNameDialog(self):
@@ -185,9 +177,10 @@ class MainUI(QWidget):
     def raise_error(self, error):        
         msg = QMessageBox.critical(None, "Error", str(error))
 
-    def open_output_window(self):
-        self.output_window = OutputWindow(parent=self)
-        self.output_window.show()
+    def open_save_window(self):
+        if not self.vispy_canvas_wrapper.start_state:
+            self.save_window = SaveWindow(parent=self)
+            self.save_window.show()
 
     def automatic_scaling(self):
         #only when image is loaded

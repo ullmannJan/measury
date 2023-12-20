@@ -4,32 +4,27 @@ from pathlib import Path
 from PyQt6.QtWidgets import QFileDialog
 from . import run_path
 import pickle
-import yaml
-import numpy as np
-from vispy.scene import transforms
+
+from .drawable_objects import EditRectVisual, EditLineVisual, EditEllipseVisual
 
 from os import startfile
 from subprocess import Popen
 from sys import platform
 from copy import deepcopy
 
-from .drawable_objects import EditRectVisual, EditEllipseVisual, EditLineVisual
-
-
 class DataHandler:
     img_data = None
+    file_path: Path | None = None
 
     main_ui: dict | None = None
-    drawing_data: dict | None
+    drawing_data: dict
 
     units: dict
+    
+    file_extensions = ('.sem', '.semmy')
 
     # database (dict) of sems with points in scaling bar
-    def __init__(self, img_path=None):
-        if img_path is not None:
-            self.img_path = Path(img_path)
-        else:
-            self.img_path = None
+    def __init__(self):
 
         with open(run_path / Path("data/sem_db.yml"), "r", encoding='utf8') as file:
             self.sem_db = safe_load(file)
@@ -37,7 +32,7 @@ class DataHandler:
         with open(run_path / Path("data/Settings.yaml"), "r", encoding='utf8') as file:
             self.settings = safe_load(file)
 
-        # output data is a dictionary of the form:
+        # drawing data is a dictionary of the form:
         # {
         #   'object 1': [measured_line, measured_line, ...],
         #   'object 2': [measured_circle, measured_circle, ...],
@@ -112,9 +107,9 @@ class DataHandler:
         if filename:
             return filename
         
-    def save_output_file(self, **kwargs):
+    def save_storage_file(self, save_image=True, **kwargs):
         
-        filename = self.save_file_dialog()
+        filename = self.save_file_dialog(file_name=str(self.file_path.with_suffix('.semmy')))
         if filename is None:
             return
         
@@ -123,7 +118,10 @@ class DataHandler:
             structure_data[key] = [[obj.__class__, deepcopy(obj.save())] for obj in val]
         
         #TODO: scalebar length
-        output = (self.img_data, structure_data)
+        if save_image:
+            output = (self.img_data, structure_data)
+        else:
+            output = (None, structure_data)
         with open(filename, 'wb') as save_file:
             pickle.dump(output, save_file, pickle.HIGHEST_PROTOCOL, **kwargs)
         # with open(filename, 'w') as save_file:
@@ -133,23 +131,31 @@ class DataHandler:
 
         with open(file_path, 'rb') as file:
         
-            self.img_data, structure_data = pickle.load(file)
-            self.img_path = file_path
-
-            vispy_instance.update_image()
+            img_data, structure_data = pickle.load(file)
+            # data: dict = yaml.load(file, Loader=yaml.Loader)
+            
+            if img_data is None:
+                if self.img_data is None:
+                    return
+            else:
+                
+                self.img_data = img_data
+                self.file_path = file_path
+                vispy_instance.update_image()
 
             
-            # data: dict = yaml.load(file, Loader=yaml.Loader)
             for key, val in structure_data.items():
                 for obj_type, obj_data in val:
-                    new_object = None
-                    if obj_type is EditRectVisual:                    
-                        new_object = EditRectVisual(**obj_data, parent=vispy_instance.view.scene)
-                    elif obj_type is EditEllipseVisual:                    
-                        new_object = EditEllipseVisual(**obj_data, parent=vispy_instance.view.scene)
-                    elif obj_type is EditLineVisual:                    
-                        new_object = EditLineVisual(**obj_data, parent=vispy_instance.view.scene)
-                    else:
-                        continue
+                    new_object = obj_type(**obj_data, parent=vispy_instance.view.scene)
                     vispy_instance.create_new_object(new_object, structure_name=key)            
+    
+    def open_file(self, file_path: str|Path|None, vispy_instance):
         
+        if file_path:
+            file_path = Path(file_path)
+            
+            if file_path.suffix in self.file_extensions:
+                self.load_storage_file(file_path, vispy_instance=vispy_instance)
+            else:
+                self.file_path = file_path
+                vispy_instance.update_image()

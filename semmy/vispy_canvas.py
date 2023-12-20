@@ -82,14 +82,14 @@ class VispyCanvas(SceneCanvas):
 
     def update_image(self):
 
-        if self.data_handler.img_path is not None:
+        if self.data_handler.file_path is not None:
             try:
-                self.title_label.text = self.data_handler.img_path.name
+                self.title_label.text = self.data_handler.file_path.name
 
                 # if semmy file is loaded we have already collected data of photo
-                if self.data_handler.img_path.suffix not in [".semmy", ".sem"]:
+                if self.data_handler.file_path.suffix not in [".semmy", ".sem"]:
                     # opencv reads images in BGR format, so we need to convert it to RGB
-                    BGR_img = cv2.imread(str(self.data_handler.img_path))
+                    BGR_img = cv2.imread(str(self.data_handler.file_path))
                     self.data_handler.img_data = cv2.cvtColor(BGR_img, cv2.COLOR_BGR2RGB)
                     
                 self.draw_image()
@@ -170,7 +170,39 @@ class VispyCanvas(SceneCanvas):
                             if self.selected_object is not None:
                                 self.selected_object.select(False)
                                 self.selected_object = None
+                        
+                        case "&select":
+                            #disable panning
+                            self.view.camera._viewbox.events.mouse_move.disconnect(
+                                self.view.camera.viewbox_mouse_event)
+                            
+                            tr = self.scene.node_transform(self.view.scene)
+                            pos = tr.map(event.pos)
+                            self.view.interactive = False
+                            selected = self.visual_at(event.pos)
+                            self.view.interactive = True
 
+                            if event.button == 1:
+                                
+                                if selected is not None:
+                                    # unselect object to create room of new one
+                                    if self.selected_object is not None:
+                                        self.selected_object.select(False)
+                                        self.selected_object = None
+                                        
+                                    self.selected_object = selected.parent
+
+                                    # update transform to selected object
+                                    tr = self.scene.node_transform(self.selected_object)
+                                    pos = tr.map(event.pos)
+
+                                    self.selected_object.select(True, obj=selected)
+                                    self.selected_object.start_move(pos)
+
+                                    # update ui to display properties of selected object
+                                    self.selection_update()
+                                    
+                                    
                         case "&line" | "&circle" | "&rectangle" | "&angle":
                             #disable panning
                             self.view.camera._viewbox.events.mouse_move.disconnect(
@@ -181,7 +213,7 @@ class VispyCanvas(SceneCanvas):
                             self.view.interactive = False
                             selected = self.visual_at(event.pos)
                             self.view.interactive = True
-                            # unselect object to create rom of new one
+                            # unselect object to create room of new one
                             if self.selected_object is not None:
                                 self.selected_object.select(False)
                                 self.selected_object = None
@@ -203,12 +235,12 @@ class VispyCanvas(SceneCanvas):
                                     # update ui to display properties of selected object
                                     self.selection_update()
                                     # Needs change
-                                    # self.main_ui.update_output_window()
+                                    # self.main_ui.update_save_window()
 
 
                                 # create new object:
                                 if self.selected_object is None:
-                                    # if it is the line object
+                                    
                                     match self.main_ui.tools.checkedButton().text():
                                         case "&line":
                                             new_object = EditLineVisual(parent=self.view.scene)
@@ -221,7 +253,7 @@ class VispyCanvas(SceneCanvas):
 
                                     self.create_new_object(new_object, pos=pos, selected=True)
                                     # Needs change
-                                    # self.main_ui.update_output_window()
+                                    # self.main_ui.update_save_window()
                                     
                                     # update ui where data is shown
                                     self.selection_update(object=new_object)
@@ -233,7 +265,7 @@ class VispyCanvas(SceneCanvas):
                                     self.delete_object(object=selected.parent)
                                 
                                     # Needs change
-                                    # self.main_ui.update_output_window()
+                                    # self.main_ui.update_save_window()
                                 
 
                                 
@@ -261,7 +293,7 @@ class VispyCanvas(SceneCanvas):
         
         # if click is above box
         elif tr.map(event.pos)[1] < 0 and tr.map(event.pos)[0] > 0 and tr.map(event.pos)[0] < self.view.size[0] :
-            self.data_handler.open_file_location(self.data_handler.img_path)
+            self.data_handler.open_file_location(self.data_handler.file_path)
 
     def create_new_object(self, new_object, pos=None, selected=False, structure_name=None):
         if pos is not None:
@@ -342,8 +374,8 @@ class VispyCanvas(SceneCanvas):
                                         # update ui to display properties of selected object
                                         self.selection_update()
                                         # Needs change
-                                        # if hasattr(self.main_ui, 'output_window'):
-                                        #     self.main_ui.output_window.update_object_data_table()
+                                        # if hasattr(self.main_ui, 'save_window'):
+                                        #     self.main_ui.save_window.update_object_data_table()
 
                     case 3:
                         if event.is_dragging:  

@@ -1,7 +1,7 @@
 # absolute imports
 import numpy as np
 from PyQt6.QtWidgets import QVBoxLayout, QLabel, QWidget, \
-    QGroupBox, QLineEdit, QPushButton
+    QGroupBox, QLineEdit, QPushButton, QCheckBox
 from PyQt6.QtGui import QIcon
 
 
@@ -27,29 +27,34 @@ class SemmyWindow(QWidget):
         self.setMinimumSize(300,200)
 
 
-class OutputWindow(SemmyWindow):
+class SaveWindow(SemmyWindow):
     """
-    The window displayed to output the data.
+    The window displayed to save the data.
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.setWindowTitle("Output Dialog")
-        # Output
-        self.output_box = QGroupBox("Output", self)
-        self.output_layout = QVBoxLayout()
+        self.setWindowTitle("Save Dialog")
+                
+        #Save Options 
+        self.options_box = QGroupBox("Options", self)
+        self.options_layout = QVBoxLayout()
+        self.options_box.setLayout(self.options_layout)
+        self.layout.addWidget(self.options_box)
+        
+        self.save_img_checkbox = QCheckBox(text="Save Image")
+        self.save_img_checkbox.setChecked(True)
+        self.options_layout.addWidget(self.save_img_checkbox)
 
-        self.structure_edit = QLineEdit(self, placeholderText="Enter structure name")
-        self.output_layout.addWidget(self.structure_edit)
-
+        # Save Button
         self.saveButton = QPushButton("Save", self)
-        self.saveButton.clicked.connect(self.parent.data_handler.save_output_file)
-        self.output_layout.addWidget(self.saveButton)
+        self.saveButton.clicked.connect(self.save)
+        self.layout.addWidget(self.saveButton)
 
-
-        self.output_box.setLayout(self.output_layout)
-        self.layout.addWidget(self.output_box)
+    def save(self):
+        print(self.save_img_checkbox.isChecked())
+        return self.parent.data_handler.save_storage_file(save_image=self.save_img_checkbox.isChecked())
 
 
 class AboutWindow(SemmyWindow):
