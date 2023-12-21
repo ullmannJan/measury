@@ -36,13 +36,6 @@ class MainUI(QWidget):
         self.center_image_button = QPushButton("Center Image", self)
         self.image_layout.addWidget(self.center_image_button)
         self.center_image_button.clicked.connect(self.vispy_canvas_wrapper.center_image)
-        
-        self.sem_label = QLabel("Select SEM", self)
-        self.image_layout.addWidget(self.sem_label)
-
-        self.dd_select_sem = QComboBox(self)
-        self.dd_select_sem.addItems(self.data_handler.sem_db.keys())
-        self.image_layout.addWidget(self.dd_select_sem)
 
         self.image_box.setLayout(self.image_layout)
         self.layout.addWidget(self.image_box)
@@ -64,14 +57,23 @@ class MainUI(QWidget):
 
         self.tools = QButtonGroup(self)
 
-
         for i, tool in enumerate(tools.values()):
             tool.setCheckable(True)
             self.tools.addButton(tool, id=i)
             self.tools_layout.addWidget(tool)
         
-        self.tools.button(0).setChecked(True)
+        self.tools.button(1).setChecked(True)
 
+        # select SEM/HIM
+        select_sem_layout = QHBoxLayout()
+        self.sem_label = QLabel("Select Microscope:", self)
+        select_sem_layout.addWidget(self.sem_label)
+
+        self.dd_select_sem = QComboBox(self)
+        self.dd_select_sem.addItems(self.data_handler.sem_db.keys())
+        select_sem_layout.addWidget(self.dd_select_sem)
+        self.tools_layout.addLayout(select_sem_layout)
+        
         self.tools_box.setLayout(self.tools_layout)
         self.layout.addWidget(self.tools_box)
 
@@ -102,6 +104,7 @@ class MainUI(QWidget):
         self.units_dd.setCurrentIndex(3)
         self.units_dd.currentTextChanged.connect(self.units_changed)
         scaling.addWidget(self.units_dd)
+        
 
 
         self.scaling_layout.addLayout(scaling)
