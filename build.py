@@ -7,7 +7,7 @@ from semmy import __version__ as semmy_version
 # set program name and method
 program_name = "Semmy" + "_" + semmy_version
 method = "onedir"
-zipped = False
+zipped = True
 
 # run pyinstaller
 PyInstaller.__main__.run([

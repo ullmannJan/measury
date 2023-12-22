@@ -1,8 +1,8 @@
 from semmy import app
 
 if __name__ == '__main__':
-    # app.run()
-    app.run(file_path=r"img/2023-04-24_PTB_D5_10-01.semmy")
+    app.run()
+    # app.run(file_path=r"img/2023-04-24_PTB_D5_10-01.semmy")
 
 # TODO
 #
