@@ -1,7 +1,7 @@
 # absolute imports
 from PyQt6.QtWidgets import QMessageBox, QVBoxLayout, QHBoxLayout, \
         QPushButton, QTableWidget, QWidget, QFileDialog, QComboBox, QLabel, \
-        QButtonGroup, QLineEdit, QGroupBox, QTableWidgetItem
+        QButtonGroup, QLineEdit, QGroupBox, QTableWidgetItem, QListWidget
 from PyQt6.QtGui import QDoubleValidator, QIntValidator
 from pathlib import Path
 
@@ -116,8 +116,17 @@ class MainUI(QWidget):
         self.selected_object_box = QGroupBox("Selected Object", self)
         self.selected_object_layout = QVBoxLayout()
         
-        self.structure_edit = QLineEdit(self, placeholderText="Enter structure name")
-        self.selected_object_layout.addWidget(self.structure_edit)
+        self.structure_dd = QComboBox(self)
+        self.structure_dd.setEditable(True)
+        self.structure_dd.setPlaceholderText("Enter structure name")
+        self.structure_dd.currentTextChanged.connect(self.structure_dd_changed)
+        self.selected_object_layout.addWidget(self.structure_dd)
+        
+        # object list
+        self.object_list = QListWidget()
+        self.object_list.itemClicked.connect(self.list_object_selected)
+        self.selected_object_layout.addWidget(self.object_list)
+
 
         self.selected_object_table = QTableWidget()
         self.selected_object_table.setRowCount(0)
@@ -128,7 +137,6 @@ class MainUI(QWidget):
         self.selected_object_table.verticalHeader().hide()
         self.selected_object_table.resizeColumnsToContents()
         self.selected_object_table.horizontalHeader().setStretchLastSection(True)
-
 
 
         self.selected_object_layout.addWidget(self.selected_object_table)
@@ -211,4 +219,44 @@ class MainUI(QWidget):
         self.selected_object_table.setHorizontalHeaderItem(1, 
                             QTableWidgetItem(self.units_dd.currentText()))
         self.vispy_canvas_wrapper.selection_update()
-         
+        
+    def update_structure_dd(self):
+        self.structure_dd.addItems(self.data_handler.drawing_data.keys())
+        
+    def add_to_structure_dd(self, name):
+        if name not in [self.structure_dd.itemText(i) for i in range(self.structure_dd.count())]:
+            self.structure_dd.addItem(name)
+        
+        self.structure_dd.setCurrentText(name)
+        
+    def remove_from_structure_dd(self, name):
+        names = [self.structure_dd.itemText(i) for i in range(self.structure_dd.count())]
+        if name in names:
+            self.structure_dd.removeItem(names.index(name))
+            self.structure_dd.setCurrentIndex(0) 
+            
+    def structure_dd_changed(self):
+        self.update_object_list()
+        # self.vispy_canvas_wrapper.unselect()
+        
+        
+    def update_object_list(self):
+        self.object_list.clear()
+        if self.structure_dd.currentText() != "":
+            objects = self.data_handler.drawing_data[self.structure_dd.currentText()]
+            types = [type(obj).__name__ for obj in objects]
+            self.object_list.insertItems(0, types)
+            
+    def clear_object_table(self):
+        self.selected_object_table.clearContents()
+        self.selected_object_table.setRowCount(0)
+        
+    def list_object_selected(self):
+        
+        structure = self.structure_dd.currentText()
+        index = self.object_list.currentRow()
+        print(structure, index)
+        
+        self.vispy_canvas_wrapper.unselect()
+        object = self.data_handler.drawing_data[structure][index]
+        self.vispy_canvas_wrapper.select(object)

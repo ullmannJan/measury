@@ -152,9 +152,7 @@ class VispyCanvas(SceneCanvas):
                     # QApplication.setOverrideCursor(QCursor(Qt.CursorShape.SizeAllCursor))                    
 
                     # unselect object
-                    if self.selected_object is not None:
-                        self.selected_object.select(False)
-                        self.selected_object = None
+                    self.unselect()
 
                 else:
                     match self.main_ui.tools.checkedButton().text():
@@ -167,9 +165,7 @@ class VispyCanvas(SceneCanvas):
                             # QApplication.setOverrideCursor(QCursor(Qt.CursorShape.SizeAllCursor))                    
 
                             # unselect object
-                            if self.selected_object is not None:
-                                self.selected_object.select(False)
-                                self.selected_object = None
+                            self.unselect()
                         
                         case "&select":
                             #disable panning
@@ -186,9 +182,7 @@ class VispyCanvas(SceneCanvas):
                                 
                                 if selected is not None:
                                     # unselect object to create room of new one
-                                    if self.selected_object is not None:
-                                        self.selected_object.select(False)
-                                        self.selected_object = None
+                                    self.unselect()
                                         
                                     self.selected_object = selected.parent
 
@@ -214,9 +208,7 @@ class VispyCanvas(SceneCanvas):
                             selected = self.visual_at(event.pos)
                             self.view.interactive = True
                             # unselect object to create room of new one
-                            if self.selected_object is not None:
-                                self.selected_object.select(False)
-                                self.selected_object = None
+                            self.unselect()
 
                             if event.button == 1:
                                 # QApplication.setOverrideCursor(QCursor(Qt.CursorShape.SizeAllCursor))                    
@@ -224,7 +216,6 @@ class VispyCanvas(SceneCanvas):
                                 
                                 if selected is not None:
                                     self.selected_object = selected.parent
-
                                     # update transform to selected object
                                     tr = self.scene.node_transform(self.selected_object)
                                     pos = tr.map(event.pos)
@@ -304,11 +295,13 @@ class VispyCanvas(SceneCanvas):
             new_object.select_creation_controlpoint()
             self.selected_object = new_object.control_points
             
-            
-        # TODO: save object in database
+        # save object in data_handler.drawing_data
         if structure_name is None:
-            structure_name = self.main_ui.structure_edit.text()
+            structure_name = self.main_ui.structure_dd.currentText()
         self.data_handler.save_object(structure_name, new_object)
+        
+        # update canvas
+        self.main_ui.update_object_list()
 
     def find_scaling_bar_width(self, seed_point):
         # get width of scaling bar by floodFilling an area of similar pixels.
@@ -392,13 +385,14 @@ class VispyCanvas(SceneCanvas):
         if isinstance(object, (ControlPoints, LineControlPoints)):
             object = self.selected_object.parent
 
-        self.main_ui.selected_object_table.clearContents()
-        self.main_ui.selected_object_table.setRowCount(0)
-        self.main_ui.selected_object_box.setTitle(f"Selected Object: {object}")
-        # if object is still none clear table and return
-        if object is None:
-            return
+        structure, index = self.data_handler.find_object(object)
+        self.main_ui.add_to_structure_dd(structure)
+        self.main_ui.update_object_list()
+        self.main_ui.object_list.item(index).setSelected(True)
         
+        # selection table
+        self.main_ui.clear_object_table()
+
         props = object.output_properties()
         self.main_ui.selected_object_table.setRowCount(len(props.keys()))
         for i, key in enumerate(props):
@@ -438,8 +432,20 @@ class VispyCanvas(SceneCanvas):
             self.data_handler.delete_object(object)
             object.delete()
             self.selected_object = None
-        self.selection_update()
+        self.main_ui.update_object_list()
+        self.main_ui.clear_object_table()
 
+    def select(self, obj):
+        self.selected_object = obj
+        self.selected_object.select(True, obj=obj)
+        self.selection_update()
+    
+    def unselect(self):
+        if self.selected_object is not None:
+            self.selected_object.select(False)
+            self.selected_object = None
+        
+    
     # later improvements
     # def on_key_press(self, event):
     #     print(event.key)

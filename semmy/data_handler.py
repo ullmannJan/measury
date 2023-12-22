@@ -50,7 +50,6 @@ class DataHandler:
         """
         if structure_name == "":
             structure_name = self.generate_output_name()
-            self.main_ui.structure_edit.setText(structure_name)
 
         # if not in output dict then add an empty list
         if structure_name not in self.drawing_data.keys():
@@ -68,6 +67,7 @@ class DataHandler:
                 object_list.remove(object)
                 # If the list is empty after removal, delete the key from the dictionary
                 if not object_list:
+                    self.main_ui.remove_from_structure_dd(object_name)
                     del self.drawing_data[object_name]
 
             except ValueError:
@@ -80,6 +80,12 @@ class DataHandler:
                object.delete()
             
         self.drawing_data = dict()
+        
+    def find_object(self, object):
+        for k, val in self.drawing_data.items():
+            if object in val:
+                return k, val.index(object)
+        raise LookupError("Object could not be found in drawing_data")
     
 
     def generate_output_name(self):
@@ -147,7 +153,9 @@ class DataHandler:
             for key, val in structure_data.items():
                 for obj_type, obj_data in val:
                     new_object = obj_type(**obj_data, parent=vispy_instance.view.scene)
-                    vispy_instance.create_new_object(new_object, structure_name=key)            
+                    vispy_instance.create_new_object(new_object, structure_name=key) 
+            
+            self.main_ui.update_structure_dd()           
     
     def open_file(self, file_path: str|Path|None, vispy_instance):
         
