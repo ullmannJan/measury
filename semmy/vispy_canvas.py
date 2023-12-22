@@ -382,6 +382,9 @@ class VispyCanvas(SceneCanvas):
 
         if object is None:
             object = self.selected_object
+        if self.selected_object is None:
+            self.main_ui.clear_object_table()
+            return
         if isinstance(object, (ControlPoints, LineControlPoints)):
             object = self.selected_object.parent
 

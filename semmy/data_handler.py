@@ -82,10 +82,11 @@ class DataHandler:
         self.drawing_data = dict()
         
     def find_object(self, object):
-        for k, val in self.drawing_data.items():
-            if object in val:
-                return k, val.index(object)
-        raise LookupError("Object could not be found in drawing_data")
+        if self.drawing_data:
+            for k, val in self.drawing_data.items():
+                if object in val:
+                    return k, val.index(object)
+            raise LookupError("Object could not be found in drawing_data")
     
 
     def generate_output_name(self):

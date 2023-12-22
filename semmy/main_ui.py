@@ -119,7 +119,7 @@ class MainUI(QWidget):
         self.structure_dd = QComboBox(self)
         self.structure_dd.setEditable(True)
         self.structure_dd.setPlaceholderText("Enter structure name")
-        self.structure_dd.currentTextChanged.connect(self.structure_dd_changed)
+        self.structure_dd.currentIndexChanged.connect(self.structure_dd_changed)
         self.selected_object_layout.addWidget(self.structure_dd)
         
         # object list
@@ -255,7 +255,6 @@ class MainUI(QWidget):
         
         structure = self.structure_dd.currentText()
         index = self.object_list.currentRow()
-        print(structure, index)
         
         self.vispy_canvas_wrapper.unselect()
         object = self.data_handler.drawing_data[structure][index]

@@ -53,7 +53,6 @@ class SaveWindow(SemmyWindow):
         self.layout.addWidget(self.saveButton)
 
     def save(self):
-        print(self.save_img_checkbox.isChecked())
         return self.parent.data_handler.save_storage_file(save_image=self.save_img_checkbox.isChecked())
 
 

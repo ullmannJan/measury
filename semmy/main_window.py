@@ -106,7 +106,6 @@ class DropEnabledQOpenGLWidget(QOpenGLWidget):
 
     def dragEnterEvent(self, event):
         if len(event.mimeData().urls()) == 1:
-            print(event.mimeData().urls())
             event.accept()
         else:
             event.ignore()
