@@ -14,4 +14,4 @@ if __name__ == '__main__':
 # Settings
 # - proper output of settings file
 # - settings page
-# - sem_db with more propertiese
+# - sem_db with more properties

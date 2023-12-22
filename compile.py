@@ -7,7 +7,7 @@ from semmy import __version__ as semmy_version
 # set program name and method
 program_name = "Semmy" + "_" + semmy_version
 method = "onedir"
-zipped = True
+zipped = False
 
 # run pyinstaller
 PyInstaller.__main__.run([
@@ -17,8 +17,6 @@ PyInstaller.__main__.run([
     '--name', program_name,
     '--specpath', 'build',
     '--icon', '../img/logo/tape_measure_128.ico',
-    '--add-data', '../data:data',
-    '--add-data', '../img/logo/tape_measure_128.ico:img/logo',
     '--collect-all', 'vispy',
     '--noconfirm'
 ])

@@ -2,15 +2,16 @@
 from yaml import safe_load
 from pathlib import Path
 from PyQt6.QtWidgets import QFileDialog
-from . import run_path
 import pickle
-
-from .drawable_objects import EditRectVisual, EditLineVisual, EditEllipseVisual
-
 from os import startfile
 from subprocess import Popen
 from sys import platform
 from copy import deepcopy
+
+from . import semmy_path
+# you need this as they are implicitly used
+from .drawable_objects import EditRectVisual, EditLineVisual, EditEllipseVisual
+
 
 class DataHandler:
     img_data = None
@@ -26,10 +27,10 @@ class DataHandler:
     # database (dict) of sems with points in scaling bar
     def __init__(self):
 
-        with open(run_path / Path("data/sem_db.yml"), "r", encoding='utf8') as file:
+        with open(semmy_path / Path("data/sem_db.yml"), "r", encoding='utf8') as file:
             self.sem_db = safe_load(file)
 
-        with open(run_path / Path("data/Settings.yaml"), "r", encoding='utf8') as file:
+        with open(semmy_path / Path("data/settings.yaml"), "r", encoding='utf8') as file:
             self.settings = safe_load(file)
 
         # drawing data is a dictionary of the form:

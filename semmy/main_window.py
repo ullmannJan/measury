@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QSp
 from PyQt6.QtCore import Qt
 
 # relative imports
-from . import run_path
+from . import semmy_path
 from .main_ui import MainUI
 from .vispy_canvas import VispyCanvas
 from .windows import AboutWindow
@@ -37,7 +37,7 @@ class MainWindow(QMainWindow):
 
     def initUI(self):
         self.setWindowTitle("Semmy")
-        self.setWindowIcon(QIcon(str(run_path/"img/logo/tape_measure_128.ico")))
+        self.setWindowIcon(QIcon(str(semmy_path/"data/tape_measure_128.ico")))
         self.setMinimumSize(700,700)
         # self.setStyleSheet("background-color: white") 
 

@@ -7,7 +7,7 @@ from PyQt6.QtGui import QIcon
 
 # relative imports
 from . import __version__ as semmy_version
-from . import run_path
+from . import semmy_path
 
 class SemmyWindow(QWidget):
     """
@@ -23,7 +23,7 @@ class SemmyWindow(QWidget):
         self.setLayout(self.layout)
 
         self.setWindowTitle("Semmy: Output window")
-        self.setWindowIcon(QIcon(str(run_path/"img/logo/tape_measure_128.ico")))
+        self.setWindowIcon(QIcon(str(semmy_path/"data/tape_measure_128.ico")))
         self.setMinimumSize(300,200)
 
 

@@ -1,4 +1,4 @@
 from pathlib import Path
 
-__version__ = "0.4.1"
-run_path = Path(__file__).parent.parent.resolve()
+__version__ = "0.4.2"
+semmy_path = Path(__file__).parent.resolve()
