@@ -5,12 +5,13 @@ if __name__ == '__main__':
     app.run(file_path=r"img/2023-04-24_PTB_D5_10-01.semmy")
 
 # TODO
-# Output
-# - implement selection of object in vispy canvas
-# - proper update of the shown elements and properties
+#
+# Saving
+# - readable output
+# - restrict to one type of measurement per structure
+# - average over measurements
 #
 # Settings
 # - proper output of settings file
 # - settings page
-#
 # - sem_db with more properties
