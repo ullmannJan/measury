@@ -13,6 +13,7 @@ dependencies = [
     'PyQt6',
     'pyopengl',
     'pyyaml',
+    'opencv-python',
     'importlib-metadata; python_version<"3.11"',
 ]
 classifiers = [
@@ -26,9 +27,9 @@ classifiers = [
 ]
 dynamic = ["version", "readme"]
 
-[tool.setuptools]
-packages = ["semmy"]
-
 [tool.setuptools.dynamic]
 version = {attr = "semmy.__version__"}
 readme = {file = "README.md"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -18,6 +18,7 @@ PyInstaller.__main__.run([
     '--specpath', 'build',
     '--icon', '../img/logo/tape_measure_128.ico',
     '--collect-all', 'vispy',
+    '--collect-all', 'semmy',
     '--noconfirm'
 ])
 
