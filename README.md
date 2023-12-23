@@ -48,6 +48,19 @@ To run Semmy simply
 
     python run.py
 
+### Running tests
+
+To run tests you will need to install pytest as well
+
+    pip install pytest
+
+Then, simply calling pytest will run the tests
+
+    pytest     
+    #or
+    python -m pytest
+
+
 ## Compiling
 
 To compile the project you first have to go through all steps that are needed for running it.
