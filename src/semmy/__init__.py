@@ -1,4 +1,9 @@
 from pathlib import Path
+from importlib.metadata import version, PackageNotFoundError
 
-__version__ = "0.4.2"
+try:
+    __version__ = version("semmy")
+except PackageNotFoundError:
+    __version__ = "unknown version"
+
 semmy_path = Path(__file__).parent.resolve()
