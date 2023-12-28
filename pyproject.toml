@@ -34,3 +34,4 @@ readme = { file = "README.md" }
 where = ["src"]
 
 [tool.setuptools_scm]
+write_to = "src/semmy/_version.py"
