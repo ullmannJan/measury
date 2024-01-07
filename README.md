@@ -2,40 +2,36 @@
 
 ![Semmy_Logo](img/logo/tape_measure_128.png)
 
-This is the repository for the SEM picture analyzer SEMMY. The Goal ist too simplify and accelerate the measurements of nano-structures.
+This is the repository for the SEM picture analyzer SEMMY. The Goal ist to simplify and accelerate the measurements of structures from images.
 
 ## Functionality
 
 <!-- Add image of program -->
 
 ### Load Images
-Supports all image formats supported by opencv.
-
-### SEM-Profiles
+Supports all image formats supported by ```opencv```.
 
 ### Automatic-Scaling
 Automatic Detection of Scaling bar. Just select the tool *identify scaling* and click on the scale bar. 
-SEM-Profiles store location of scale bar for even easier readout.
+SEM-Profiles can store locations of scale bar for certain types of microscopes for easier detection.
+
+### Moving/Handling
+You can move the image by dragging the mouse wheel or by selecting *move* mode
 
 ### Various Measurement Tools
 There are several Tools available to measure your structures.
 
+- Select (select objects without changing them)
 - Line
 - Rectangle
     - Square (by pressing Ctrl)
 - Ellipse
     - Circle (by pressing Ctrl)
-
-#### Line
-Measure the distance between 2 Points.
-
-#### Rectangle
-
-#### Circle
+- Angle
 
 ## Running
 
-To compile this project it is advised to use pyinstaller. First create an empty miniconda environment
+First create an empty miniconda environment
 
     conda create -n semmy
     conda activate semmy
@@ -63,13 +59,22 @@ Then, simply calling pytest will run the tests
 
 ## Compiling
 
-To compile the project you first have to go through all steps that are needed for running it.
-Then you will have to install pyinstaller. Install it via pip or conda
+To compile this project it is advised to use ```pyinstaller```. 
+This guides you through all steps that are needed for running it.
+First, ```pyinstaller``` should be installed via pip or conda
 
-    # pip install pyinstaller # I have not tried this but should work too
+    # pip install pyinstaller # this results in some dll error, but I haven't looked into why
     conda install -c conda-forge pyinstaller
 
 Finally, run the compiling script which calls pyinstaller
 
     python compile.py
+
+This will result in a folder ```dist``` where the compiled project will be placed.
+
+The ```compile.py``` script has the option to create a compressed .zip file of the project. You can set 
+
+    zipped = True
+
+to achieve this behavior.
 
