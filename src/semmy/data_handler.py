@@ -1,12 +1,13 @@
 # absolute imports
 from yaml import safe_load
 from pathlib import Path
-from PyQt6.QtWidgets import QFileDialog
+from PyQt6.QtWidgets import QFileDialog, QMessageBox
 import pickle
 from os import startfile
 from subprocess import Popen
 from sys import platform
 from copy import deepcopy
+import logging
 
 from . import semmy_path
 # you need this as they are implicitly used
@@ -64,18 +65,18 @@ class DataHandler:
             object_data (class:object): the object that should be deleted
         """
         for object_name, object_list in list(self.drawing_data.items()):
-            try:
+            if object in object_list:
                 object_list.remove(object)
-                # If the list is empty after removal, delete the key from the dictionary
-                if not object_list:
-                    self.main_ui.remove_from_structure_dd(object_name)
-                    del self.drawing_data[object_name]
-
-            except ValueError:
-                # The object was not in this list, so we can continue to the next one
-                continue
+            if object.parent in object_list:
+                object_list.remove(object.parent)
+            # If the list is empty after removal, delete the key from the dictionary
+            if not object_list:
+                self.main_ui.remove_from_structure_dd(object_name)
+                del self.drawing_data[object_name]
+                self.main_ui.structure_dd.setCurrentText("")
             
     def delete_all_objects(self):
+        logging.info("Deleted all measurements")
         for structure_list in list(self.drawing_data.values()):
             for object in structure_list:
                object.delete()
@@ -138,24 +139,54 @@ class DataHandler:
     def load_storage_file(self, file_path, vispy_instance):
 
         with open(file_path, 'rb') as file:
-        
+            
+            logging.info(f"opened file: {file_path}")
             img_data, structure_data = pickle.load(file)
             # data: dict = yaml.load(file, Loader=yaml.Loader)
             
-            if img_data is None:
-                if self.img_data is None:
-                    return
-            else:
-                
-                self.img_data = img_data
-                self.file_path = file_path
-                vispy_instance.update_image()
-
+            reply = QMessageBox.StandardButton.Yes
+            question = None
             
-            for key, val in structure_data.items():
-                for obj_type, obj_data in val:
-                    new_object = obj_type(**obj_data, parent=vispy_instance.view.scene)
-                    vispy_instance.create_new_object(new_object, structure_name=key) 
+            if self.img_data is None and img_data is None:
+                self.main_ui.raise_error("You can't load measurements without loading an image first.")
+                return
+            
+            if self.drawing_data or self.img_data is not None:
+                if img_data is None:
+                    if structure_data:
+                        # only measurments / no image
+                        question = "Do you want to load new measurements?\n\nThis will remove the current measurements."  
+                    else:
+                        # if the file is empty
+                        return 
+                else:
+                    # image included
+                    if structure_data:
+                        question = "Do you want to load a new image with other measurements?\n\nThis will replace the current image and measurements."
+                    else:     
+                        question = "Do you want to load a new image?\n\nThis will replace the current image and remove the measurements."
+            
+            if question is not None:
+                reply = QMessageBox.warning(self.main_ui, "Warning",
+                        question,
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                        QMessageBox.StandardButton.No)
+            
+            if reply is QMessageBox.StandardButton.Yes:
+                
+                self.delete_all_objects()
+                self.file_path = file_path
+                if img_data is not None:
+                    self.img_data = img_data
+                    logging.debug("set data_handler.img_data to loaded file data")
+                    vispy_instance.update_image()
+                
+
+            if structure_data:
+                for key, val in structure_data.items():
+                    for obj_type, obj_data in val:
+                        new_object = obj_type(**obj_data, parent=vispy_instance.view.scene)
+                        vispy_instance.create_new_object(new_object, structure_name=key) 
             
             self.main_ui.update_structure_dd()           
     
@@ -166,6 +197,16 @@ class DataHandler:
             
             if file_path.suffix in self.file_extensions:
                 self.load_storage_file(file_path, vispy_instance=vispy_instance)
+            
             else:
-                self.file_path = file_path
-                vispy_instance.update_image()
+                reply = QMessageBox.StandardButton.Yes
+                if self.img_data is not None:
+                    reply = QMessageBox.warning(self.main_ui, "Warning",
+                        "Do you want to load a new image?\n\nThis will replace the current image and remove the measurements.",
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                        QMessageBox.StandardButton.No)
+                
+                if reply == QMessageBox.StandardButton.Yes:
+                    self.file_path = file_path
+                    self.delete_all_objects()
+                    vispy_instance.update_image()

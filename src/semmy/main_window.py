@@ -2,7 +2,7 @@
 import typing
 from PyQt6 import QtGui
 from PyQt6.QtOpenGLWidgets import QOpenGLWidget
-from PyQt6.QtGui import QAction, QIcon
+from PyQt6.QtGui import QAction, QIcon, QKeyEvent
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QSplitter, QMessageBox
 from PyQt6.QtCore import Qt
 
@@ -67,6 +67,7 @@ class MainWindow(QMainWindow):
         fileMenu.addAction(openAction)
         fileMenu.addAction(saveAction)
         settingsMenu = menuBar.addMenu('&Settings')
+        measurementsMenu = menuBar.addMenu('&Measurements')
         viewMenu = menuBar.addMenu('&View')
         viewMenu.addAction(centerAction)
         miscMenu = menuBar.addMenu('&Misc')
@@ -94,6 +95,18 @@ class MainWindow(QMainWindow):
         
     def closeEvent(self, event):
         QApplication.closeAllWindows()
+    
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_Delete:
+            if not self.vispy_canvas.start_state:
+                if self.vispy_canvas.selected_object is not None:
+                    reply = QMessageBox.warning(self, "Warning",
+                        "Do you want to delete the selected object?",
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                        QMessageBox.StandardButton.Yes)
+
+                    if reply == QMessageBox.StandardButton.Yes:
+                        self.vispy_canvas.delete_object()
 
 class DropEnabledQOpenGLWidget(QOpenGLWidget):
     def __init__(self, vispy_canvas, parent=None):
@@ -113,23 +126,6 @@ class DropEnabledQOpenGLWidget(QOpenGLWidget):
     def dropEvent(self, event):
         if len(event.mimeData().urls()) == 1:
             img_path = event.mimeData().urls()[0].toLocalFile()
-
-            update = True
-
-            # if there is a file loaded, ask if the user wants to load a new picture
-            if not self.vispy_canvas.start_state:
-                reply = QMessageBox.warning(self, "Warning",
-                        "Do you want to load a new image?\n\nThis will replace the current image.",
-                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                        QMessageBox.StandardButton.No)
-
-                if reply == QMessageBox.StandardButton.Yes:
-                    update = True
-                else:
-                    update = False
-
-            if update:
-                self.vispy_canvas.data_handler.img_path = img_path
-                self.vispy_canvas.update_image()
             
+            self.vispy_canvas.data_handler.open_file(img_path, self.vispy_canvas)
                   

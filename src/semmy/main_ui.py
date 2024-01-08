@@ -160,26 +160,9 @@ class MainUI(QWidget):
             file_path = self.openFileNameDialog()
         if file_path:
             file_path = Path(file_path)
-            
-            # check if some measurements will be overwritten
-            if self.data_handler.drawing_data:
-                # ask for deletion of drawing data
-                reply = QMessageBox.warning(self, "Warning",
-                    "Do you want to load a new image?\n\nThis might replace the current image and remove the measurements.",
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                    QMessageBox.StandardButton.No)
-
-                # if we want to overwrite the data, otherwise do nothing
-                if reply == QMessageBox.StandardButton.Yes:
-                    self.data_handler.delete_all_objects()
                     
-                    self.data_handler.open_file(file_path, self.vispy_canvas_wrapper)
+            self.data_handler.open_file(file_path, self.vispy_canvas_wrapper)
             
-            # just do it if there is no measurement data
-            else:
-                self.data_handler.open_file(file_path, self.vispy_canvas_wrapper)
-                
-
     def openFileNameDialog(self):
         fileName, _ = QFileDialog.getOpenFileName(self,"Select SEM Image", "","All Files (*);;Python Files (*.py)")
         if fileName:
@@ -221,7 +204,9 @@ class MainUI(QWidget):
         self.vispy_canvas_wrapper.selection_update()
         
     def update_structure_dd(self):
-        self.structure_dd.addItems(self.data_handler.drawing_data.keys())
+        if self.data_handler.drawing_data.keys():
+            self.structure_dd.addItems(self.data_handler.drawing_data.keys())
+            self.structure_dd.setCurrentIndex(0)
         
     def add_to_structure_dd(self, name):
         if name not in [self.structure_dd.itemText(i) for i in range(self.structure_dd.count())]:

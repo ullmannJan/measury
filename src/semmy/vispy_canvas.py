@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 from vispy.scene import SceneCanvas, visuals, AxisWidget, Label, transforms
 from PyQt6.QtWidgets import QTableWidgetItem
-
+import logging
 # relative imports
 from .drawable_objects import EditEllipseVisual, EditRectVisual, ControlPoints, EditLineVisual, LineControlPoints
 
@@ -85,13 +85,12 @@ class VispyCanvas(SceneCanvas):
         if self.data_handler.file_path is not None:
             try:
                 self.title_label.text = self.data_handler.file_path.name
-
                 # if semmy file is loaded we have already collected data of photo
-                if self.data_handler.file_path.suffix not in [".semmy", ".sem"]:
+                if self.data_handler.file_path.suffix not in self.data_handler.file_extensions:
                     # opencv reads images in BGR format, so we need to convert it to RGB
+                    logging.debug(f"update data_handler.img_data = {self.data_handler.file_path}")
                     BGR_img = cv2.imread(str(self.data_handler.file_path))
                     self.data_handler.img_data = cv2.cvtColor(BGR_img, cv2.COLOR_BGR2RGB)
-                    
                 self.draw_image()
 
                 self.view.camera = "panzoom"
@@ -115,6 +114,7 @@ class VispyCanvas(SceneCanvas):
     def draw_image(self, img_data=None):
         if img_data is None:
             img_data = self.data_handler.img_data
+        logging.debug(f"set vispy image data")
         self.image.set_data(img_data)
 
     def center_image(self):
