@@ -42,25 +42,30 @@ class MainWindow(QMainWindow):
         # self.setStyleSheet("background-color: white") 
 
         # Create actions for menu bar
-        openAction = QAction(QIcon('open.png'), '&Open File', self)
+        openAction = QAction(QIcon('open.png'), 'Open File', self)
         openAction.setShortcut('Ctrl+O')
         openAction.setStatusTip('Open document')
         openAction.triggered.connect(self.main_ui.select_sem_file)
         
-        saveAction = QAction(QIcon('save.png'), '&Save File', self)
+        saveAction = QAction(QIcon('save.png'), 'Save File', self)
         saveAction.setShortcut('Ctrl+S')
         saveAction.setStatusTip('Save')
         saveAction.triggered.connect(self.main_ui.open_save_window)
         
-        centerAction = QAction(QIcon('open.png'), '&Center Image', self)
+        centerAction = QAction(QIcon('open.png'), 'Center Image', self)
         centerAction.setShortcut('Ctrl+P')
         centerAction.setStatusTip('Center Image')
         centerAction.triggered.connect(self.vispy_canvas.center_image)
 
-        aboutAction = QAction(QIcon('open.png'), '&About', self)
+        aboutAction = QAction(QIcon('open.png'), 'About', self)
         aboutAction.setStatusTip('Show information about Semmy')
         aboutAction.triggered.connect(self.open_about_page)
-
+        
+        measurementAction = QAction(QIcon('open.png'), 'Data Overview', self)
+        measurementAction.setShortcut('Ctrl+D')
+        measurementAction.setStatusTip('Show an overview of all measured data')
+        measurementAction.triggered.connect(self.open_about_page)
+        
         # Create menu bar
         menuBar = self.menuBar()
         fileMenu = menuBar.addMenu('&File')
@@ -68,6 +73,7 @@ class MainWindow(QMainWindow):
         fileMenu.addAction(saveAction)
         settingsMenu = menuBar.addMenu('&Settings')
         measurementsMenu = menuBar.addMenu('&Measurements')
+        measurementsMenu.addAction(measurementAction)
         viewMenu = menuBar.addMenu('&View')
         viewMenu.addAction(centerAction)
         miscMenu = menuBar.addMenu('&Misc')

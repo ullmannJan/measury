@@ -151,13 +151,10 @@ class VispyCanvas(SceneCanvas):
                     
                     # QApplication.setOverrideCursor(QCursor(Qt.CursorShape.SizeAllCursor))                    
 
-                    # unselect object
-                    self.unselect()
-
                 else:
                     match self.main_ui.tools.checkedButton().text():
 
-                        case "&move":
+                        case "move":
                             # enable panning
                             self.view.camera._viewbox.events.mouse_move.connect(
                                 self.view.camera.viewbox_mouse_event)
@@ -167,7 +164,7 @@ class VispyCanvas(SceneCanvas):
                             # unselect object
                             self.unselect()
                         
-                        case "&select":
+                        case "select":
                             #disable panning
                             self.view.camera._viewbox.events.mouse_move.disconnect(
                                 self.view.camera.viewbox_mouse_event)
@@ -197,7 +194,7 @@ class VispyCanvas(SceneCanvas):
                                     self.selection_update()
                                     
                                     
-                        case "&line" | "&circle" | "&rectangle" | "&angle":
+                        case "line" | "circle" | "rectangle" | "angle":
                             #disable panning
                             self.view.camera._viewbox.events.mouse_move.disconnect(
                                 self.view.camera.viewbox_mouse_event)
@@ -233,13 +230,13 @@ class VispyCanvas(SceneCanvas):
                                 if self.selected_object is None:
                                     
                                     match self.main_ui.tools.checkedButton().text():
-                                        case "&line":
+                                        case "line":
                                             new_object = EditLineVisual(parent=self.view.scene)
-                                        case "&circle":
+                                        case "circle":
                                             new_object = EditEllipseVisual(parent=self.view.scene)
-                                        case "&rectangle":
+                                        case "rectangle":
                                             new_object = EditRectVisual(parent=self.view.scene)
-                                        case "&angle":
+                                        case "angle":
                                             new_object = EditLineVisual(parent=self.view.scene, num_points=3)
 
                                     self.create_new_object(new_object, pos=pos, selected=True)
@@ -261,7 +258,7 @@ class VispyCanvas(SceneCanvas):
 
                                 
 
-                        case "&identify scaling":
+                        case "identify scaling":
                             #disable panning
                             self.view.camera._viewbox.events.mouse_move.disconnect(
                                 self.view.camera.viewbox_mouse_event)
@@ -349,7 +346,7 @@ class VispyCanvas(SceneCanvas):
 
                                 match self.main_ui.tools.checkedButton().text():
                                         
-                                    case "&line" | "&circle" | "&rectangle" | "&angle":
+                                    case "line" | "circle" | "rectangle" | "angle":
                                 
 
                                         if 'Shift' in modifiers and not isinstance(self.selected_object, (LineControlPoints, EditLineVisual)):
