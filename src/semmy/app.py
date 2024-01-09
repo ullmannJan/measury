@@ -1,6 +1,5 @@
 # absolute imports
 from vispy.app import use_app
-from sys import argv
 
 # relative imports
 from .main_window import MainWindow
@@ -10,24 +9,23 @@ class App:
 
     def __init__(self, file_path=None):
 
-        self.app = use_app("pyqt6")
-        self.app.create()
+        self.vispy_app = use_app("pyqt6")
+        self.vispy_app.create()
         self.data_handler = DataHandler()
         self.main_window = MainWindow(self.data_handler)
         self.data_handler.main_ui = self.main_window.main_ui
         self.data_handler.open_file(file_path=file_path, 
                                     vispy_instance=self.main_window.vispy_canvas)
 
-    def run(self):
+    def run(self, run_vispy=True):
         
         self.main_window.show()
         # update axis because when creating the qt application the transformations change implicitely
         self.main_window.vispy_canvas.center_image()
-        self.app.run()
+        if run_vispy:
+            self.vispy_app.run()
+    
+    def close(self):
+        self.main_window.close()
+        self.vispy_app.quit()
 
-def run(file_path=None):
-    if len(argv) > 1:
-        App(file_path=argv[1]).run()
-    else:
-        App(file_path=file_path).run()
-        

@@ -31,7 +31,7 @@ class MainUI(QWidget):
         self.select_image_button = QPushButton("Select SEM File", self)
         self.image_layout.addWidget(self.select_image_button)
         
-        self.select_image_button.clicked.connect(lambda _: self.select_sem_file(file_path=None))
+        self.select_image_button.clicked.connect(lambda : self.select_sem_file(file_path=None))
 
         self.center_image_button = QPushButton("Center Image", self)
         self.image_layout.addWidget(self.center_image_button)

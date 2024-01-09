@@ -45,7 +45,7 @@ class MainWindow(QMainWindow):
         openAction = QAction(QIcon('open.png'), 'Open File', self)
         openAction.setShortcut('Ctrl+O')
         openAction.setStatusTip('Open document')
-        openAction.triggered.connect(self.main_ui.select_sem_file)
+        openAction.triggered.connect(lambda : self.main_ui.select_sem_file(file_path=None))
         
         saveAction = QAction(QIcon('save.png'), 'Save File', self)
         saveAction.setShortcut('Ctrl+S')
