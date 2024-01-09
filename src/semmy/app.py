@@ -26,6 +26,6 @@ class App:
             self.vispy_app.run()
     
     def close(self):
-        self.main_window.close()
         self.vispy_app.quit()
+        self.main_window.close()
 

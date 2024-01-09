@@ -1,4 +1,5 @@
 from semmy.app import App
+from pathlib import Path
 
 def test_main_program():
     
@@ -6,14 +7,14 @@ def test_main_program():
     app.run(run_vispy=False)
     app.vispy_app.process_events()
     # app.vispy_app.sleep(1)
-    app.vispy_app.quit()
     app.close()
     
-def test_load_storage_file():
+def test_open_file():
     
     app = App()
     app.run(run_vispy=False)
     app.vispy_app.process_events()
-    app.data_handler.load_storage_file("")
-    app.vispy_app.quit()
+    app.data_handler.open_file(Path(__file__).parent/Path("test_data/test_file.semmy"), 
+                                       vispy_instance=app.main_window.vispy_canvas)
     app.close()
+    
