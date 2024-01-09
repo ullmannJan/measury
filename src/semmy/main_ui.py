@@ -105,8 +105,6 @@ class MainUI(QWidget):
         self.units_dd.currentTextChanged.connect(self.units_changed)
         scaling.addWidget(self.units_dd)
         
-
-
         self.scaling_layout.addLayout(scaling)
         self.scaling_box.setLayout(self.scaling_layout)
         self.layout.addWidget(self.scaling_box)
@@ -228,9 +226,10 @@ class MainUI(QWidget):
     def update_object_list(self):
         self.object_list.clear()
         if self.structure_dd.currentText() != "":
-            objects = self.data_handler.drawing_data[self.structure_dd.currentText()]
-            types = [type(obj).__name__ for obj in objects]
-            self.object_list.insertItems(0, types)
+            if self.structure_dd.currentText() in self.data_handler.drawing_data:
+                objects = self.data_handler.drawing_data[self.structure_dd.currentText()]
+                types = [type(obj).__name__ for obj in objects]
+                self.object_list.insertItems(0, types)
             
     def clear_object_table(self):
         self.selected_object_table.clearContents()

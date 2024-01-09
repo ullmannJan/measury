@@ -57,6 +57,7 @@ class DataHandler:
         if structure_name not in self.drawing_data.keys():
             self.drawing_data[structure_name] = list()
         self.drawing_data[structure_name].append(object)
+        logging.info(f"object {object} saved in drawing_data")
 
     def delete_object(self, object):
         """delete object from the storage dict
@@ -76,12 +77,12 @@ class DataHandler:
                 self.main_ui.structure_dd.setCurrentText("")
             
     def delete_all_objects(self):
-        logging.info("Deleted all measurements")
         for structure_list in list(self.drawing_data.values()):
             for object in structure_list:
                object.delete()
             
         self.drawing_data = dict()
+        logging.info("Deleted all measurements")
         
     def find_object(self, object):
         if self.drawing_data:
