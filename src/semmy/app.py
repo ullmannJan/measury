@@ -1,5 +1,6 @@
 # absolute imports
 from vispy.app import use_app
+from sys import argv
 
 # relative imports
 from .main_window import MainWindow
@@ -29,3 +30,10 @@ class App:
         self.vispy_app.quit()
         self.main_window.close()
 
+def run(file_path=None):
+    if len(argv) > 1:
+        app = App(file_path=argv[1])
+    else:
+        app = App(file_path=file_path)
+    
+    app.run()

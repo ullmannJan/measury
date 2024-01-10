@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import QMessageBox, QVBoxLayout, QHBoxLayout, \
         QButtonGroup, QLineEdit, QGroupBox, QTableWidgetItem, QListWidget
 from PyQt6.QtGui import QDoubleValidator, QIntValidator
 from pathlib import Path
+from sys import modules as sys_modules
 
 # relative imports
 from .windows import SaveWindow
@@ -166,8 +167,11 @@ class MainUI(QWidget):
         if fileName:
             return fileName
         
-    def raise_error(self, error):        
-        msg = QMessageBox.critical(None, "Error", str(error))
+    def raise_error(self, error):  
+        if 'pytest' in sys_modules:
+            raise Exception(error)
+        else:   
+            msg = QMessageBox.critical(None, "Error", str(error))
 
     def open_save_window(self):
         if not self.vispy_canvas_wrapper.start_state:
