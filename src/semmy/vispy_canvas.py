@@ -2,7 +2,7 @@
 import numpy as np
 import cv2
 from vispy.scene import SceneCanvas, visuals, AxisWidget, Label, transforms
-from PyQt6.QtWidgets import QTableWidgetItem
+from PyQt6.QtWidgets import QTableWidgetItem, QInputDialog
 import logging
 # relative imports
 from .drawable_objects import EditEllipseVisual, EditRectVisual, ControlPoints, EditLineVisual, LineControlPoints
@@ -239,12 +239,12 @@ class VispyCanvas(SceneCanvas):
                                         case "angle":
                                             new_object = EditLineVisual(parent=self.view.scene, num_points=3)
 
-                                    self.create_new_object(new_object, pos=pos, selected=True)
-                                    # Needs change
-                                    # self.main_ui.update_save_window()
-                                    
-                                    # update ui where data is shown
-                                    self.selection_update(object=new_object)
+                                    if self.check_creation_allowed(new_object):
+
+                                        self.create_new_object(new_object, pos=pos, selected=True)
+                                                                        
+                                        # update ui where data is shown
+                                        self.selection_update(object=new_object)
                                     
 
                             if event.button == 2:  # right button deletes object
@@ -299,6 +299,29 @@ class VispyCanvas(SceneCanvas):
         
         # update canvas
         self.main_ui.update_object_list()
+
+    def check_creation_allowed(self, new_object, structure_name=None):
+        # check if object is allowed to be created
+        if structure_name is None:
+            structure_name = self.main_ui.structure_dd.currentText()
+
+        if structure_name in self.data_handler.drawing_data.keys():
+            structure_type = type(self.data_handler.drawing_data[structure_name][0])
+        else:
+            return True
+        
+        if isinstance(new_object, (structure_type)):
+            return True
+        else:
+            # raise prompt to change structure name
+            text, ok = QInputDialog.getText(None, "Warning",
+                                    f"This structure is of a different type: {structure_type}.\n"
+                                    "Please change the structure name to create this object.",
+                                    text=self.data_handler.generate_output_name())
+            if ok:
+                # After the user closes the QInputDialog, you can get the text from the QLineEdit
+                self.main_ui.structure_dd.setCurrentText(text)
+            return False
 
     def find_scaling_bar_width(self, seed_point):
         # get width of scaling bar by floodFilling an area of similar pixels.

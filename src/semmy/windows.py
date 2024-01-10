@@ -3,6 +3,7 @@ import numpy as np
 from PyQt6.QtWidgets import QVBoxLayout, QLabel, QWidget, \
     QGroupBox, QLineEdit, QPushButton, QCheckBox
 from PyQt6.QtGui import QIcon
+from PyQt6.QtCore import Qt
 
 
 # relative imports
@@ -64,3 +65,21 @@ class AboutWindow(SemmyWindow):
         super().__init__(*args, **kwargs)
         
         self.layout.addWidget(QLabel(f"Semmy v{semmy_version}"))
+
+class DataWindow(SemmyWindow):
+    """
+    The window displaying the data results.
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.setWindowTitle("Measurements")
+        
+        label = QLabel(self.parent.data_handler.calculate_results_string())
+        label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)  # Make the text selectable
+        self.layout.addWidget(label)
+
+        # Save Button
+        self.saveButton = QPushButton("Save", self)
+        self.saveButton.clicked.connect(self.parent.data_handler.save_measurements_file)
+        self.layout.addWidget(self.saveButton)

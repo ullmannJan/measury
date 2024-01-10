@@ -8,6 +8,7 @@ from subprocess import Popen
 from sys import platform
 from copy import deepcopy
 import logging
+from numpy import mean, std, sqrt
 
 from . import semmy_path
 # you need this as they are implicitly used
@@ -93,27 +94,35 @@ class DataHandler:
     
 
     def generate_output_name(self):
-        return "structure_001"
+        # return string that is not in the drawing_data keys and increases each time
+        i = 1
+        while f"structure_{i:03d}" in self.drawing_data.keys():
+            i += 1
+        return f"structure_{i:03d}"
     
     
     def open_file_location(self, path: Path):
-        if path is not None:
-           
-            if platform == "win32":
-                # For Windows
-                startfile(path.parent)
-            elif platform == "darwin":
-                # For MacOS
-                Popen(["open", str(path.parent)])
-            else:
-                # For Linux
-                Popen(["xdg-open", str(path.parent)])
-                   
-    def save_file_dialog(self, file_name="semmy.semmy"):
+        try:
+            if path is not None:
+            
+                if platform == "win32":
+                    # For Windows
+                    startfile(path.parent)
+                elif platform == "darwin":
+                    # For MacOS
+                    Popen(["open", str(path.parent)])
+                else:
+                    # For Linux
+                    Popen(["xdg-open", str(path.parent)])
+        except Exception as error:
+            logging.warning(f"Could not open file location: {path.parent}:\n{error}")
+            self.main_ui.raise_error(f"Could not open file location: {path.parent}")
+
+    def save_file_dialog(self, file_name="semmy.semmy", extensions="Semmy Files (*.semmy *.sem)"):
         filename, _ = QFileDialog.getSaveFileName(self.main_ui, 
                                                 "Save", 
                                                 file_name, 
-                                                "Semmy Files (*.semmy *.sem)")
+                                                extensions)
         if filename:
             return filename
         
@@ -211,3 +220,45 @@ class DataHandler:
                     self.file_path = file_path
                     self.delete_all_objects()
                     vispy_instance.update_image()
+
+    def calculate_results(self):
+        """calculate the average and standard deviation of 
+        the measurements for each structure in drawing_data
+        """
+        
+
+        results = dict()
+        for structure_name, object_list in self.drawing_data.items():
+            results[structure_name] = dict()
+            props = object_list[0].output_properties().keys()
+            for prop in props:
+                data = [obj.output_properties()[prop][0] for obj in object_list]
+                unit = object_list[0].output_properties()[prop][1]
+                if self.main_ui.scaling != 1 :
+                    if prop in ['length', 'area', 'radius', 'width', 'height', 'center']:
+                        data = [d*self.main_ui.scaling for d in data]
+                        exponent = unit[-1] if unit[-1] in ['²', '³'] else ""
+                        unit = self.main_ui.units_dd.currentText() + exponent
+                
+                results[structure_name][prop] = (mean(data),std(data)/sqrt(len(object_list)), unit)
+        return results
+    
+    def calculate_results_string(self):
+        results = self.calculate_results()
+        results_string = ""
+        for structure_name, structure_results in results.items():
+            results_string += f"{structure_name}:\n"
+            for prop, prop_results in structure_results.items():
+                results_string += f"\t{prop}:\t ({prop_results[0]:.1f}"
+                results_string += f" ± {prop_results[1]:.1f}) {prop_results[2]}\n"
+            results_string += "\n"
+        return results_string
+    
+    def save_measurements_file(self):
+        filename = self.save_file_dialog(file_name=str(self.file_path.with_suffix('.meas')),extensions="Measurement File (*.meas)")
+        if filename is None:
+            return
+        
+        with open(filename, 'wb') as save_file:
+            # write to text file
+            save_file.write(self.calculate_results_string().encode('utf-8'))

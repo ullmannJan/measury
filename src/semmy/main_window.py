@@ -10,7 +10,7 @@ from PyQt6.QtCore import Qt
 from . import semmy_path
 from .main_ui import MainUI
 from .vispy_canvas import VispyCanvas
-from .windows import AboutWindow
+from .windows import AboutWindow, DataWindow
 
 class MainWindow(QMainWindow):
     """Qt MainWindow of Application.
@@ -64,7 +64,7 @@ class MainWindow(QMainWindow):
         measurementAction = QAction(QIcon('open.png'), 'Data Overview', self)
         measurementAction.setShortcut('Ctrl+D')
         measurementAction.setStatusTip('Show an overview of all measured data')
-        measurementAction.triggered.connect(self.open_about_page)
+        measurementAction.triggered.connect(self.open_data_page)
         
         # Create menu bar
         menuBar = self.menuBar()
@@ -98,6 +98,10 @@ class MainWindow(QMainWindow):
     def open_about_page(self):
         self.about_window = AboutWindow(parent=self)
         self.about_window.show()
+
+    def open_data_page(self):
+        self.data_window = DataWindow(parent=self)
+        self.data_window.show()
         
     def closeEvent(self, event):
         QApplication.closeAllWindows()
