@@ -30,7 +30,7 @@ class MainWindow(QMainWindow):
         self.vispy_canvas = VispyCanvas(self.data_handler)
         
         self.native_vispy_canvas = DropEnabledQOpenGLWidget(self.vispy_canvas, parent=self)
-        self.main_ui = MainUI(self.vispy_canvas, self.data_handler)
+        self.main_ui = MainUI(self.vispy_canvas, self.data_handler, parent=self)
         self.vispy_canvas.main_ui = self.main_ui
 
         self.initUI()        

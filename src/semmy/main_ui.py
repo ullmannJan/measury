@@ -8,14 +8,13 @@ from sys import modules as sys_modules
 
 # relative imports
 from .windows import SaveWindow
-from .vispy_canvas import VispyCanvas
 
 class MainUI(QWidget):
     
-    def __init__(self, vispy_canvas_wrapper: VispyCanvas, data_handler, parent=None):
+    def __init__(self, vispy_canvas_wrapper, data_handler, parent=None):
         
-
-        super().__init__(parent)
+        self.parent = parent
+        super().__init__(self.parent)
 
         self.vispy_canvas_wrapper = vispy_canvas_wrapper
         self.data_handler = data_handler
@@ -86,10 +85,10 @@ class MainUI(QWidget):
 
         posDouble = QDoubleValidator()
         posDouble.setBottom(0)
-        posInt = QIntValidator()
-        posInt.setBottom(0)
+        # posInt = QIntValidator()
+        # posInt.setBottom(0)
         self.pixel_edit = QLineEdit(self, placeholderText="Enter value")
-        self.pixel_edit.setValidator(posInt)
+        self.pixel_edit.setValidator(posDouble)
         self.pixel_edit.textChanged.connect(self.update_scaling)
         self.length_edit = QLineEdit(self, placeholderText="Enter value")
         self.length_edit.setValidator(posDouble)
@@ -145,9 +144,12 @@ class MainUI(QWidget):
         # add empty space
         self.layout.addStretch(1)
 
+        # Overview
+        self.openSaveWindow = QPushButton("Show Measurements", self)
+        self.layout.addWidget(self.openSaveWindow)
+        self.openSaveWindow.clicked.connect(self.parent.open_data_page)
+
         # Save
-
-
         self.openSaveWindow = QPushButton("Save", self)
         self.layout.addWidget(self.openSaveWindow)
         self.openSaveWindow.clicked.connect(self.open_save_window)

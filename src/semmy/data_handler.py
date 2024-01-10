@@ -225,7 +225,6 @@ class DataHandler:
         """calculate the average and standard deviation of 
         the measurements for each structure in drawing_data
         """
-        
 
         results = dict()
         for structure_name, object_list in self.drawing_data.items():
