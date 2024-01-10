@@ -100,8 +100,9 @@ class MainWindow(QMainWindow):
         self.about_window.show()
 
     def open_data_page(self):
-        self.data_window = DataWindow(parent=self)
-        self.data_window.show()
+        if self.data_handler.drawing_data:
+            self.data_window = DataWindow(parent=self)
+            self.data_window.show()
         
     def closeEvent(self, event):
         QApplication.closeAllWindows()
