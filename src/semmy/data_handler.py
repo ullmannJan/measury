@@ -51,7 +51,7 @@ class DataHandler:
             structure_name (string): _description_
             object_data (_type_): _description_
         """
-        if structure_name == "":
+        if structure_name == "" or structure_name.isspace():
             structure_name = self.generate_output_name()
 
         # if not in output dict then add an empty list
@@ -244,6 +244,8 @@ class DataHandler:
     
     def calculate_results_string(self):
         results = self.calculate_results()
+        # sort dict
+        results = dict(sorted(results.items()))
         results_string = ""
         for structure_name, structure_results in results.items():
             results_string += f"{structure_name}:\n"
@@ -261,3 +263,15 @@ class DataHandler:
         with open(filename, 'wb') as save_file:
             # write to text file
             save_file.write(self.calculate_results_string().encode('utf-8'))
+            
+    def rename_structure(self, structure, new_structure):
+        if new_structure in self.drawing_data:
+            self.main_ui.raise_error("This structure already exists!")
+        elif new_structure == "" or new_structure.isspace():
+            self.main_ui.raise_error("This name is not valid")
+        else:
+            self.drawing_data[new_structure] = self.drawing_data[structure] 
+            del self.drawing_data[structure]
+            return True
+        
+        return False

@@ -1,7 +1,6 @@
 # absolute imports
-import numpy as np
 from PyQt6.QtWidgets import QVBoxLayout, QLabel, QWidget, \
-    QGroupBox, QLineEdit, QPushButton, QCheckBox
+    QGroupBox, QPushButton, QCheckBox
 from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import Qt
 

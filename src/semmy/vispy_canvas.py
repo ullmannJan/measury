@@ -194,7 +194,7 @@ class VispyCanvas(SceneCanvas):
                                     self.selection_update()
                                     
                                     
-                        case "line" | "circle" | "rectangle" | "angle":
+                        case "line" | "circle" | "rectangle" | "angle" | "edit":
                             #disable panning
                             self.view.camera._viewbox.events.mouse_move.disconnect(
                                 self.view.camera.viewbox_mouse_event)
@@ -210,7 +210,7 @@ class VispyCanvas(SceneCanvas):
                             if event.button == 1:
                                 # QApplication.setOverrideCursor(QCursor(Qt.CursorShape.SizeAllCursor))                    
 
-                                
+                                # edit object
                                 if selected is not None:
                                     self.selected_object = selected.parent
                                     # update transform to selected object
@@ -238,15 +238,20 @@ class VispyCanvas(SceneCanvas):
                                             new_object = EditRectVisual(parent=self.view.scene)
                                         case "angle":
                                             new_object = EditLineVisual(parent=self.view.scene, num_points=3)
-
+                                        case "edit":
+                                            return
+                                    # dont show object before it is added to drawing_data    
+                                    new_object.select(False)
                                     if self.check_creation_allowed(new_object):
 
                                         self.create_new_object(new_object, pos=pos, selected=True)
                                                                         
                                         # update ui where data is shown
                                         self.selection_update(object=new_object)
+                                    else:
+                                        new_object.delete()
                                     
-
+                            # delete object
                             if event.button == 2:  # right button deletes object
                                 # not self.selected_object because we want to delete it on hover too
                                 if selected is not None:
@@ -284,6 +289,9 @@ class VispyCanvas(SceneCanvas):
             self.data_handler.open_file_location(self.data_handler.file_path)
 
     def create_new_object(self, new_object, pos=None, selected=False, structure_name=None):
+        
+        logging.info("Creating new Object")
+        
         if pos is not None:
             new_object.set_center(pos[0:2])
         
@@ -314,7 +322,7 @@ class VispyCanvas(SceneCanvas):
             return True
         else:
             # raise prompt to change structure name
-            text, ok = QInputDialog.getText(None, "Warning",
+            text, ok = QInputDialog.getText(self.main_ui, "Warning",
                                     f"This structure is of a different type: {structure_type}.\n"
                                     "Please change the structure name to create this object.",
                                     text=self.data_handler.generate_output_name())
@@ -369,7 +377,7 @@ class VispyCanvas(SceneCanvas):
 
                                 match self.main_ui.tools.checkedButton().text():
                                         
-                                    case "line" | "circle" | "rectangle" | "angle":
+                                    case "line" | "circle" | "rectangle" | "angle" | "edit":
                                 
 
                                         if 'Shift' in modifiers and not isinstance(self.selected_object, (LineControlPoints, EditLineVisual)):

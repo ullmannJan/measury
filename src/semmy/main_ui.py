@@ -1,13 +1,16 @@
 # absolute imports
 from PyQt6.QtWidgets import QMessageBox, QVBoxLayout, QHBoxLayout, \
         QPushButton, QTableWidget, QWidget, QFileDialog, QComboBox, QLabel, \
-        QButtonGroup, QLineEdit, QGroupBox, QTableWidgetItem, QListWidget
-from PyQt6.QtGui import QDoubleValidator, QIntValidator
+        QButtonGroup, QLineEdit, QGroupBox, QTableWidgetItem, QListWidget, \
+        QInputDialog
+from PyQt6.QtGui import QDoubleValidator, QIntValidator, QIcon
 from pathlib import Path
 from sys import modules as sys_modules
 
 # relative imports
 from .windows import SaveWindow
+from . import semmy_path
+
 
 class MainUI(QWidget):
     
@@ -43,7 +46,7 @@ class MainUI(QWidget):
 
         # tools settings
         self.tools_edit_box = QGroupBox("Edit", self)
-        self.tools_edit_layout = QVBoxLayout()
+        self.tools_edit_layout = QHBoxLayout()
         self.tools_create_box = QGroupBox("Create", self)
         self.tools_create_layout = QHBoxLayout()
         self.tools_identify_box = QGroupBox("Identify Scaling", self)
@@ -71,7 +74,7 @@ class MainUI(QWidget):
         for i, tool in enumerate(tools.values()):
             tool.setCheckable(True)
             self.tools.addButton(tool, id=i)
-        self.tools.button(1).setChecked(True)
+        self.tools.button(0).setChecked(True)
             
         for tool in tools_edit.values():
             self.tools_edit_layout.addWidget(tool)
@@ -140,16 +143,25 @@ class MainUI(QWidget):
         self.selected_object_box = QGroupBox("Selected Object", self)
         self.selected_object_layout = QVBoxLayout()
         
+        self.selected_structure_layout = QHBoxLayout()
+        
         self.structure_dd = QComboBox(self)
         self.structure_dd.setEditable(True)
         self.structure_dd.setPlaceholderText("Enter structure name")
         self.structure_dd.currentIndexChanged.connect(self.structure_dd_changed)
-        self.selected_object_layout.addWidget(self.structure_dd)
+        self.selected_structure_layout.addWidget(self.structure_dd)
+        
+        # rename button
+        self.rename_button = QPushButton("Rename Structure")
+        self.rename_button.clicked.connect(self.rename_structure)
+        self.selected_structure_layout.addWidget(self.rename_button)
+        self.selected_object_layout.addLayout(self.selected_structure_layout)
         
         # object list
         self.object_list = QListWidget()
         self.object_list.itemClicked.connect(self.list_object_selected)
         self.selected_object_layout.addWidget(self.object_list)
+        
 
 
         self.selected_object_table = QTableWidget()
@@ -199,7 +211,7 @@ class MainUI(QWidget):
         if 'pytest' in sys_modules:
             raise Exception(error)
         else:   
-            msg = QMessageBox.critical(None, "Error", str(error))
+            QMessageBox.critical(self, "Error", str(error))
 
     def open_save_window(self):
         if not self.vispy_canvas_wrapper.start_state:
@@ -234,8 +246,9 @@ class MainUI(QWidget):
         self.vispy_canvas_wrapper.selection_update()
         
     def update_structure_dd(self):
+        self.structure_dd.clear()
         if self.data_handler.drawing_data.keys():
-            self.structure_dd.addItems(self.data_handler.drawing_data.keys())
+            self.structure_dd.addItems(sorted(self.data_handler.drawing_data.keys()))
             self.structure_dd.setCurrentIndex(0)
         
     def add_to_structure_dd(self, name):
@@ -252,7 +265,6 @@ class MainUI(QWidget):
             
     def structure_dd_changed(self):
         self.update_object_list()
-        # self.vispy_canvas_wrapper.unselect()
         
         
     def update_object_list(self):
@@ -275,3 +287,20 @@ class MainUI(QWidget):
         self.vispy_canvas_wrapper.unselect()
         object = self.data_handler.drawing_data[structure][index]
         self.vispy_canvas_wrapper.select(object)
+        
+    def rename_structure(self):
+        structure = self.structure_dd.currentText()
+        
+        if structure:
+            
+            new_structure, ok = QInputDialog.getText(self, "Rename",
+                                    f"Do you want to rename the structure: {structure}?\n",
+                                    text=structure)
+            if ok:
+                # After the user closes the QInputDialog, you can get the text from the QLineEdit
+                status = self.data_handler.rename_structure(structure, new_structure)
+                if status:
+                    self.update_structure_dd()
+                    self.structure_dd.setCurrentText(new_structure)
+                    self.structure_dd_changed()
+        
