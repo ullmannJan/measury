@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import QMessageBox, QVBoxLayout, QHBoxLayout, \
         QPushButton, QTableWidget, QWidget, QFileDialog, QComboBox, QLabel, \
         QButtonGroup, QLineEdit, QGroupBox, QTableWidgetItem, QListWidget, \
         QInputDialog
-from PyQt6.QtGui import QDoubleValidator, QIntValidator, QIcon
+from PyQt6.QtGui import QDoubleValidator
 from pathlib import Path
 from sys import modules as sys_modules
 

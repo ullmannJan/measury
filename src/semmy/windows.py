@@ -1,7 +1,7 @@
 # absolute imports
 from PyQt6.QtWidgets import QVBoxLayout, QLabel, QWidget, \
     QGroupBox, QPushButton, QCheckBox
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QIcon, QGuiApplication
 from PyQt6.QtCore import Qt
 
 
@@ -78,7 +78,17 @@ class DataWindow(SemmyWindow):
         label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)  # Make the text selectable
         self.layout.addWidget(label)
 
+        # Copy Button
+        self.copyButton = QPushButton("Copy", self)
+        self.copyButton.clicked.connect(self.copy_to_clipboard)
+        self.layout.addWidget(self.copyButton)
         # Save Button
         self.saveButton = QPushButton("Save", self)
         self.saveButton.clicked.connect(self.parent.data_handler.save_measurements_file)
         self.layout.addWidget(self.saveButton)
+        
+    def copy_to_clipboard(self):
+        cb = QGuiApplication.clipboard()
+        cb.clear()
+        cb.setText(self.parent.data_handler.calculate_results_string())
+        print(cb.text())
