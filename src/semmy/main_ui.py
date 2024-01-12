@@ -42,28 +42,54 @@ class MainUI(QWidget):
         
 
         # tools settings
-        self.tools_box = QGroupBox("Select Tool", self)
-        self.tools_layout = QVBoxLayout()
+        self.tools_edit_box = QGroupBox("Edit", self)
+        self.tools_edit_layout = QVBoxLayout()
+        self.tools_create_box = QGroupBox("Create", self)
+        self.tools_create_layout = QHBoxLayout()
+        self.tools_identify_box = QGroupBox("Identify Scaling", self)
+        self.tools_identify_layout = QVBoxLayout()
+        
+        
+        tools_edit = dict()
+        tools_edit['move'] = QPushButton("move", self)
+        tools_edit['select'] = QPushButton("select", self)
+        tools_edit['edit'] = QPushButton("edit", self)
+        tools_create = dict()
+        tools_create['line'] = QPushButton("line", self)
+        tools_create['angle'] = QPushButton("angle", self)
+        tools_create['rectangle'] = QPushButton("rectangle", self)
+        tools_create['circle'] = QPushButton("circle", self)
+        tools_identify = dict()
+        tools_identify['scale'] = QPushButton("identify scaling", self)
+        tools_identify['scale'].clicked.connect(self.automatic_scaling)
 
-        tools = dict()
-        tools['move'] = QPushButton("move", self)
-        tools['select'] = QPushButton("select", self)
-        tools['line'] = QPushButton("line", self)
-        tools['circle'] = QPushButton("circle", self)
-        tools['rectangle'] = QPushButton("rectangle", self)
-        tools['angle'] = QPushButton("angle", self)
-        tools['scale'] = QPushButton("identify scaling", self)
-        tools['scale'].clicked.connect(self.automatic_scaling)
-
+        # merge dicts
+        tools = tools_edit | tools_create | tools_identify
+        
         self.tools = QButtonGroup(self)
 
         for i, tool in enumerate(tools.values()):
             tool.setCheckable(True)
             self.tools.addButton(tool, id=i)
-            self.tools_layout.addWidget(tool)
-        
         self.tools.button(1).setChecked(True)
+            
+        for tool in tools_edit.values():
+            self.tools_edit_layout.addWidget(tool)
+        self.tools_edit_box.setLayout(self.tools_edit_layout)
+        self.layout.addWidget(self.tools_edit_box)
+        
+        for tool in tools_create.values():
+            self.tools_create_layout.addWidget(tool)
+        self.tools_create_box.setLayout(self.tools_create_layout)
+        self.layout.addWidget(self.tools_create_box)
+        
+        for tool in tools_identify.values():
+            self.tools_identify_layout.addWidget(tool)
+        self.tools_identify_box.setLayout(self.tools_identify_layout)
+        self.layout.addWidget(self.tools_identify_box)
+        
 
+        
         # select SEM/HIM
         select_sem_layout = QHBoxLayout()
         self.sem_label = QLabel("Select Microscope:", self)
@@ -72,10 +98,10 @@ class MainUI(QWidget):
         self.dd_select_sem = QComboBox(self)
         self.dd_select_sem.addItems(self.data_handler.sem_db.keys())
         select_sem_layout.addWidget(self.dd_select_sem)
-        self.tools_layout.addLayout(select_sem_layout)
+        self.tools_identify_layout.addLayout(select_sem_layout)
         
-        self.tools_box.setLayout(self.tools_layout)
-        self.layout.addWidget(self.tools_box)
+        self.tools_identify_box.setLayout(self.tools_identify_layout)
+        self.layout.addWidget(self.tools_identify_box)
 
         # scaling
 
