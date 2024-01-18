@@ -49,8 +49,8 @@ class MainUI(QWidget):
         self.tools_edit_layout = QHBoxLayout()
         self.tools_create_box = QGroupBox("Create", self)
         self.tools_create_layout = QHBoxLayout()
-        self.tools_identify_box = QGroupBox("Identify Scaling", self)
-        self.tools_identify_layout = QVBoxLayout()
+        self.tools_scaling_box = QGroupBox("Scaling", self)
+        self.tools_scaling_layout = QVBoxLayout()
         
         
         tools_edit = dict()
@@ -62,12 +62,12 @@ class MainUI(QWidget):
         tools_create['angle'] = QPushButton("angle", self)
         tools_create['rectangle'] = QPushButton("rectangle", self)
         tools_create['circle'] = QPushButton("circle", self)
-        tools_identify = dict()
-        tools_identify['scale'] = QPushButton("identify scaling", self)
-        tools_identify['scale'].clicked.connect(self.automatic_scaling)
+        tools_scaling = dict()
+        tools_scaling['scale'] = QPushButton("identify scaling", self)
+        tools_scaling['scale'].clicked.connect(self.automatic_scaling)
 
         # merge dicts
-        tools = tools_edit | tools_create | tools_identify
+        tools = tools_edit | tools_create | tools_scaling
         
         self.tools = QButtonGroup(self)
 
@@ -86,12 +86,6 @@ class MainUI(QWidget):
         self.tools_create_box.setLayout(self.tools_create_layout)
         self.layout.addWidget(self.tools_create_box)
         
-        for tool in tools_identify.values():
-            self.tools_identify_layout.addWidget(tool)
-        self.tools_identify_box.setLayout(self.tools_identify_layout)
-        self.layout.addWidget(self.tools_identify_box)
-        
-
         
         # select SEM/HIM
         select_sem_layout = QHBoxLayout()
@@ -101,17 +95,18 @@ class MainUI(QWidget):
         self.dd_select_sem = QComboBox(self)
         self.dd_select_sem.addItems(self.data_handler.sem_db.keys())
         select_sem_layout.addWidget(self.dd_select_sem)
-        self.tools_identify_layout.addLayout(select_sem_layout)
+        self.tools_scaling_layout.addLayout(select_sem_layout)
         
-        self.tools_identify_box.setLayout(self.tools_identify_layout)
-        self.layout.addWidget(self.tools_identify_box)
+        for tool in tools_scaling.values():
+            self.tools_scaling_layout.addWidget(tool)
+        self.tools_scaling_box.setLayout(self.tools_scaling_layout)
+        self.layout.addWidget(self.tools_scaling_box)
+        self.tools_scaling_box.setLayout(self.tools_scaling_layout)
 
         # scaling
 
         self.scaling = 1.
-        self.scaling_box = QGroupBox("Scaling", self)
-        self.scaling_layout = QVBoxLayout()
-
+        
         posDouble = QDoubleValidator()
         posDouble.setBottom(0)
         # posInt = QIntValidator()
@@ -134,9 +129,9 @@ class MainUI(QWidget):
         self.units_dd.currentTextChanged.connect(self.units_changed)
         scaling.addWidget(self.units_dd)
         
-        self.scaling_layout.addLayout(scaling)
-        self.scaling_box.setLayout(self.scaling_layout)
-        self.layout.addWidget(self.scaling_box)
+        self.tools_scaling_layout.addLayout(scaling)
+        self.tools_scaling_box.setLayout(self.tools_scaling_layout)
+        self.layout.addWidget(self.tools_scaling_box)
 
 
         # selected object
