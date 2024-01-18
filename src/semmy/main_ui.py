@@ -198,9 +198,9 @@ class MainUI(QWidget):
             self.data_handler.open_file(file_path, self.vispy_canvas_wrapper)
             
     def openFileNameDialog(self):
-        fileName, _ = QFileDialog.getOpenFileName(self,"Select SEM Image", "","All Files (*);;Python Files (*.py)")
-        if fileName:
-            return fileName
+        file_name, _ = QFileDialog.getOpenFileName(self,"Select SEM Image", "","All Files (*);;Python Files (*.py)")
+        if file_name:
+            return file_name
         
     def raise_error(self, error):  
         if 'pytest' in sys_modules:

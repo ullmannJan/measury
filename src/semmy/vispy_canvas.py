@@ -1,6 +1,7 @@
 # absolute imports
 import numpy as np
 import cv2
+from vispy.app.canvas import MouseEvent
 from vispy.scene import SceneCanvas, visuals, AxisWidget, Label, transforms
 from PyQt6.QtWidgets import QTableWidgetItem, QInputDialog
 import logging
@@ -140,6 +141,8 @@ class VispyCanvas(SceneCanvas):
             if self.start_state:
                 # when no image is selected open file opening sequence by clicking
                 self.main_ui.select_sem_file()
+                # TODO: pyqt call stops eventloop which does not finish button 1 press
+                
             else:
                 # main use of program
                 # QApplication.setOverrideCursor(QCursor(Qt.CursorShape.ArrowCursor)) 
