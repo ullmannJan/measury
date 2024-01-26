@@ -83,6 +83,7 @@ class DataHandler:
                object.delete()
             
         self.drawing_data = dict()
+        self.main_ui.update_structure_dd()
         logging.info("Deleted all measurements")
         
     def find_object(self, object):

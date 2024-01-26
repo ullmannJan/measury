@@ -66,6 +66,10 @@ class MainWindow(QMainWindow):
         measurementAction.setStatusTip('Show an overview of all measured data')
         measurementAction.triggered.connect(self.open_data_page)
         
+        delete_all_objects_action = QAction(QIcon('open.png'), 'Clear Objects', self)
+        delete_all_objects_action.setStatusTip('Delete all objects')
+        delete_all_objects_action.triggered.connect(self.data_handler.delete_all_objects)
+        
         # Create menu bar
         menuBar = self.menuBar()
         fileMenu = menuBar.addMenu('&File')
@@ -74,6 +78,7 @@ class MainWindow(QMainWindow):
         settingsMenu = menuBar.addMenu('&Settings')
         measurementsMenu = menuBar.addMenu('&Measurements')
         measurementsMenu.addAction(measurementAction)
+        measurementsMenu.addAction(delete_all_objects_action)
         viewMenu = menuBar.addMenu('&View')
         viewMenu.addAction(centerAction)
         miscMenu = menuBar.addMenu('&Misc')
