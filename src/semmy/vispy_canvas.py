@@ -1,10 +1,9 @@
 # absolute imports
 import numpy as np
 import cv2
-from vispy.app.canvas import MouseEvent
 from vispy.scene import SceneCanvas, visuals, AxisWidget, Label, transforms
 from PyQt6.QtWidgets import QTableWidgetItem, QInputDialog
-import logging
+
 # relative imports
 from .drawable_objects import EditEllipseVisual, EditRectVisual, ControlPoints, EditLineVisual, LineControlPoints
 
@@ -89,7 +88,7 @@ class VispyCanvas(SceneCanvas):
                 # if semmy file is loaded we have already collected data of photo
                 if self.data_handler.file_path.suffix not in self.data_handler.file_extensions:
                     # opencv reads images in BGR format, so we need to convert it to RGB
-                    logging.debug(f"update data_handler.img_data = {self.data_handler.file_path}")
+                    self.data_handler.logger.debug(f"update data_handler.img_data = {self.data_handler.file_path}")
                     BGR_img = cv2.imread(str(self.data_handler.file_path))
                     self.data_handler.img_data = cv2.cvtColor(BGR_img, cv2.COLOR_BGR2RGB)
                 self.draw_image()
@@ -115,7 +114,7 @@ class VispyCanvas(SceneCanvas):
     def draw_image(self, img_data=None):
         if img_data is None:
             img_data = self.data_handler.img_data
-        logging.debug(f"set vispy image data")
+        self.data_handler.logger.debug(f"set vispy image data")
         self.image.set_data(img_data)
 
     def center_image(self):
@@ -131,8 +130,8 @@ class VispyCanvas(SceneCanvas):
     def remove_load_text(self):
         # self.load_image_label.text = ""
         self.load_image_label.visible = False
-
-    def on_mouse_press(self, event):
+        
+    def on_mouse_release(self, event):
         # transform so that coordinates start at 0 in self.view window
         tr = self.scene.node_transform(self.view)
         # only activate when over self.view by looking if coordinates < 0 or > size of self.view
@@ -141,19 +140,22 @@ class VispyCanvas(SceneCanvas):
             if self.start_state:
                 # when no image is selected open file opening sequence by clicking
                 self.main_ui.select_sem_file()
-                # TODO: pyqt call stops eventloop which does not finish button 1 press
+
+    def on_mouse_press(self, event):
+        # transform so that coordinates start at 0 in self.view window
+        tr = self.scene.node_transform(self.view)
+        # only activate when over self.view by looking if coordinates < 0 or > size of self.view
+        if not( (tr.map(event.pos)[:2] > self.view.size).any() or (tr.map(event.pos)[:2] < (0,0)).any() ):
+            
+            if not self.start_state:
                 
-            else:
                 # main use of program
-                # QApplication.setOverrideCursor(QCursor(Qt.CursorShape.ArrowCursor)) 
                  
                 if event.button == 3: # mouse wheel button for changing fov
                     # enable panning
                     self.view.camera._viewbox.events.mouse_move.connect(
                         self.view.camera.viewbox_mouse_event)
                     
-                    # QApplication.setOverrideCursor(QCursor(Qt.CursorShape.SizeAllCursor))                    
-
                 else:
                     match self.main_ui.tools.checkedButton().text():
 
@@ -293,7 +295,7 @@ class VispyCanvas(SceneCanvas):
 
     def create_new_object(self, new_object, pos=None, selected=False, structure_name=None):
         
-        logging.info("Creating new Object")
+        self.data_handler.logger.info("Creating new Object")
         
         if pos is not None:
             new_object.set_center(pos[0:2])

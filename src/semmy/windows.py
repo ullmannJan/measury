@@ -2,7 +2,8 @@
 from PyQt6.QtWidgets import QVBoxLayout, QLabel, QWidget, \
     QGroupBox, QPushButton, QCheckBox
 from PyQt6.QtGui import QIcon, QGuiApplication
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QSettings
+
 
 
 # relative imports
@@ -15,14 +16,14 @@ class SemmyWindow(QWidget):
     will appear as a free-floating window as we want.
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent, title="Window"):
         super().__init__()
         self.parent = parent
 
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
-        self.setWindowTitle("Semmy: Output window")
+        self.setWindowTitle(f"Semmy: {title}")
         self.setWindowIcon(QIcon(str(semmy_path/"data/tape_measure_128.ico")))
         self.setMinimumSize(300,200)
 
@@ -33,9 +34,7 @@ class SaveWindow(SemmyWindow):
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.setWindowTitle("Save Dialog")
+        super().__init__(title="Save Dialog", *args, **kwargs)
                 
         #Save Options 
         self.options_box = QGroupBox("Options", self)
@@ -61,7 +60,7 @@ class AboutWindow(SemmyWindow):
     The window displaying the about.
     """
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(title="About", *args, **kwargs)
         
         self.layout.addWidget(QLabel(f"Semmy v{semmy_version}"))
 
@@ -70,9 +69,7 @@ class DataWindow(SemmyWindow):
     The window displaying the data results.
     """
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.setWindowTitle("Measurements")
+        super().__init__(title="Measurements", *args, **kwargs)
         
         label = QLabel(self.parent.data_handler.calculate_results_string())
         label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)  # Make the text selectable
@@ -92,3 +89,24 @@ class DataWindow(SemmyWindow):
         cb.clear()
         cb.setText(self.parent.data_handler.calculate_results_string())
         print(cb.text())
+        
+class SettingsWindow(SemmyWindow):
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(title="Settings", *args, **kwargs)
+        
+        self.layout.addWidget(QLabel("Settings"))
+        self.settings = QSettings("Semmy", "settings")
+
+    def load(self):
+        """Manage loading all the settings."""
+        self.settings.value("engine white")
+
+    def save(self):
+        """Manage saving all the settings."""
+
+        self.settings.beginGroup("chess engine")
+        self.settings.setValue("engine white", True)
+        self.settings.endGroup()
+
+

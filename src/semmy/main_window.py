@@ -10,7 +10,7 @@ from PyQt6.QtCore import Qt
 from . import semmy_path
 from .main_ui import MainUI
 from .vispy_canvas import VispyCanvas
-from .windows import AboutWindow, DataWindow
+from .windows import AboutWindow, DataWindow, SettingsWindow
 
 class MainWindow(QMainWindow):
     """Qt MainWindow of Application.
@@ -56,6 +56,12 @@ class MainWindow(QMainWindow):
         centerAction.setShortcut('Ctrl+P')
         centerAction.setStatusTip('Center Image')
         centerAction.triggered.connect(self.vispy_canvas.center_image)
+        
+        
+        settingsAction = QAction(QIcon('open.png'), 'Settings', self)
+        settingsAction.setShortcut('Ctrl+I')
+        settingsAction.setStatusTip('Open settings page')
+        settingsAction.triggered.connect(self.open_settings_page)
 
         aboutAction = QAction(QIcon('open.png'), 'About', self)
         aboutAction.setStatusTip('Show information about Semmy')
@@ -76,6 +82,7 @@ class MainWindow(QMainWindow):
         fileMenu.addAction(openAction)
         fileMenu.addAction(saveAction)
         settingsMenu = menuBar.addMenu('&Settings')
+        settingsMenu.addAction(settingsAction)
         measurementsMenu = menuBar.addMenu('&Measurements')
         measurementsMenu.addAction(measurementAction)
         measurementsMenu.addAction(delete_all_objects_action)
@@ -102,6 +109,10 @@ class MainWindow(QMainWindow):
 
     def open_about_page(self):
         self.about_window = AboutWindow(parent=self)
+        self.about_window.show()
+        
+    def open_settings_page(self):
+        self.about_window = SettingsWindow(parent=self)
         self.about_window.show()
 
     def open_data_page(self):

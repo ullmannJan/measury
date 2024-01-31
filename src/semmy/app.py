@@ -8,11 +8,11 @@ from .data_handler import DataHandler
 
 class App:
 
-    def __init__(self, file_path=None):
+    def __init__(self, file_path=None, logger=None):
 
         self.vispy_app = use_app("pyqt6")
         self.vispy_app.create()
-        self.data_handler = DataHandler()
+        self.data_handler = DataHandler(logger)
         self.main_window = MainWindow(self.data_handler)
         self.data_handler.main_ui = self.main_window.main_ui
         self.data_handler.open_file(file_path=file_path, 
@@ -30,10 +30,10 @@ class App:
         self.vispy_app.quit()
         self.main_window.close()
 
-def run(file_path=None):
+def run(file_path=None, logger=None):
     if len(argv) > 1:
-        app = App(file_path=argv[1])
+        app = App(file_path=argv[1], logger=logger)
     else:
-        app = App(file_path=file_path)
+        app = App(file_path=file_path, logger=logger)
     
     app.run()

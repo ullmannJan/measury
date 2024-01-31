@@ -245,6 +245,8 @@ class MainUI(QWidget):
         if self.data_handler.drawing_data.keys():
             self.structure_dd.addItems(sorted(self.data_handler.drawing_data.keys()))
             self.structure_dd.setCurrentIndex(0)
+            
+        self.structure_dd_changed()
         
     def add_to_structure_dd(self, name):
         if name not in [self.structure_dd.itemText(i) for i in range(self.structure_dd.count())]:

@@ -23,17 +23,26 @@ class DataHandler:
     drawing_data: dict
 
     units: dict
+    logger: logging.Logger | None = None
     
     file_extensions = ('.sem', '.semmy')
 
     # database (dict) of sems with points in scaling bar
-    def __init__(self):
+    def __init__(self, logger=None):
 
         with open(semmy_path / Path("data/sem_db.yml"), "r", encoding='utf8') as file:
             self.sem_db = safe_load(file)
 
         with open(semmy_path / Path("data/settings.yaml"), "r", encoding='utf8') as file:
             self.settings = safe_load(file)
+            
+        if logger is not None:
+            self.logger = logger
+        else:
+            logging.basicConfig(level=logging.CRITICAL,
+                                format='%(asctime)s  %(levelname)-10s %(name)s: %(message)s')
+            self.logger = logging.getLogger("Semmy")
+            self.logger.setLevel(logging.CRITICAL)
 
         # drawing data is a dictionary of the form:
         # {
@@ -58,7 +67,7 @@ class DataHandler:
         if structure_name not in self.drawing_data.keys():
             self.drawing_data[structure_name] = list()
         self.drawing_data[structure_name].append(object)
-        logging.info(f"object {object} saved in drawing_data")
+        self.logger.info(f"object {object} saved in drawing_data")
 
     def delete_object(self, object):
         """delete object from the storage dict
@@ -84,7 +93,7 @@ class DataHandler:
             
         self.drawing_data = dict()
         self.main_ui.update_structure_dd()
-        logging.info("Deleted all measurements")
+        self.logger.info("Deleted all measurements")
         
     def find_object(self, object):
         if self.drawing_data:
@@ -116,7 +125,7 @@ class DataHandler:
                     # For Linux
                     Popen(["xdg-open", str(path.parent)])
         except Exception as error:
-            logging.warning(f"Could not open file location: {path.parent}:\n{error}")
+            self.logger.warning(f"Could not open file location: {path.parent}:\n{error}")
             self.main_ui.raise_error(f"Could not open file location: {path.parent}")
 
     def save_file_dialog(self, file_name="semmy.semmy", extensions="Semmy Files (*.semmy *.sem)"):
@@ -151,7 +160,7 @@ class DataHandler:
 
         with open(file_path, 'rb') as file:
             
-            logging.info(f"opened file: {file_path}")
+            self.logger.info(f"opened file: {file_path}")
             img_data, structure_data = pickle.load(file)
             # data: dict = yaml.load(file, Loader=yaml.Loader)
             
@@ -189,7 +198,7 @@ class DataHandler:
                 self.file_path = file_path
                 if img_data is not None:
                     self.img_data = img_data
-                    logging.debug("set data_handler.img_data to loaded file data")
+                    self.logger.debug("set data_handler.img_data to loaded file data")
                     vispy_instance.update_image()
                 
 
@@ -240,7 +249,10 @@ class DataHandler:
                         exponent = unit[-1] if unit[-1] in ['²', '³'] else ""
                         unit = self.main_ui.units_dd.currentText() + exponent
                 
-                results[structure_name][prop] = (mean(data),std(data)/sqrt(len(object_list)), unit)
+                if len(data) == 1:
+                    results[structure_name][prop] = (mean(data), None, unit)
+                else:
+                    results[structure_name][prop] = (mean(data),std(data)/sqrt(len(object_list)), unit)
         return results
     
     def calculate_results_string(self):
@@ -251,8 +263,14 @@ class DataHandler:
         for structure_name, structure_results in results.items():
             results_string += f"{structure_name}:\n"
             for prop, prop_results in structure_results.items():
-                results_string += f"\t{prop}:\t ({prop_results[0]:.1f}"
-                results_string += f" ± {prop_results[1]:.1f}) {prop_results[2]}\n"
+                results_string += f"\t{prop}:\t "
+                # value with or without std
+                value_str = f"{prop_results[0]:.1f}"
+                if prop_results[1] is not None:
+                    value_str = f"({value_str} ± {prop_results[1]:.1f})"
+                results_string += value_str
+                # adding unit
+                results_string += f" {prop_results[2]}\n"
             results_string += "\n"
         return results_string
     
