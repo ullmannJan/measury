@@ -339,9 +339,12 @@ class VispyCanvas(SceneCanvas):
                 self.main_ui.structure_dd.setCurrentText(text)
             return False
 
-    def find_scaling_bar_width(self, seed_point_percentage, relative=True):
+    def find_scaling_bar_width(self, seed_point_percentage, relative=True, threshold=None):
         # get width of scaling bar by floodFilling an area of similar pixels.
         # The start point needs to be given
+        
+        if threshold is None:
+            threshold = 10
         
         # create copy of image which can be modified
         img_data_modified = self.data_handler.img_data.copy()
@@ -356,8 +359,8 @@ class VispyCanvas(SceneCanvas):
                         None,
                         (seed_point_x, seed_point_y),
                         newVal=(255, 0, 0),
-                        loDiff=(10,10,10),
-                        upDiff=(10,10,10)
+                        loDiff=[threshold]*3,
+                        upDiff=[threshold]*3
                     )
         
         self.draw_image(img_data=img_data_modified)

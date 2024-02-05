@@ -222,11 +222,16 @@ class MainUI(QWidget):
             # get seedPoint from sem_db
             try:
                 seed_point = self.data_handler.sem_db[self.dd_select_sem.currentText()]['SeedPoints']
-                orientation = self.data_handler.sem_db[self.dd_select_sem.currentText()]['Orientation']
-                self.scaling_direction_dd.setCurrentText(orientation)
+                if "Orientation" in self.data_handler.sem_db[self.dd_select_sem.currentText()]:
+                    orientation = self.data_handler.sem_db[self.dd_select_sem.currentText()]['Orientation']
+                    if orientation:
+                        self.scaling_direction_dd.setCurrentText(orientation)
+                threshold = None
+                if "Threshold" in self.data_handler.sem_db[self.dd_select_sem.currentText()]:
+                    threshold = self.data_handler.sem_db[self.dd_select_sem.currentText()]['Threshold']
                 # only actually try to find scaling bar, when data is given by database
                 if seed_point is not None:
-                    self.vispy_canvas_wrapper.find_scaling_bar_width(seed_point)
+                    self.vispy_canvas_wrapper.find_scaling_bar_width(seed_point, threshold=threshold)
             except Exception as e:
                 self.raise_error("Something went wrong while trying to identify scaling bar: "+ str(e))            
 
