@@ -351,6 +351,7 @@ class VispyCanvas(SceneCanvas):
         else:
             seed_point_x, seed_point_y = seed_point_percentage
         self.data_handler.logger.debug(f"seed_point_x = {seed_point_x}, seed_point_y = {seed_point_y}")
+        
         cv2.floodFill(img_data_modified, 
                         None,
                         (seed_point_x, seed_point_y),
@@ -363,8 +364,11 @@ class VispyCanvas(SceneCanvas):
 
         non_zero_indices = np.nonzero(np.sum(self.data_handler.img_data-img_data_modified, axis=2))
 
-        # plus one to account for the start pixel
-        scale_px = np.max(non_zero_indices[1])-np.min(non_zero_indices[1]) + 1
+        # plus one to account for the start pixel        
+        if self.main_ui.scaling_direction_dd.currentText() == "horizontal":
+            scale_px = np.max(non_zero_indices[1])-np.min(non_zero_indices[1]) + 1
+        else:
+            scale_px = np.max(non_zero_indices[0])-np.min(non_zero_indices[0]) + 1
 
         self.main_ui.pixel_edit.setText(str(scale_px))
         self.scene.update()

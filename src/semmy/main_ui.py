@@ -97,8 +97,13 @@ class MainUI(QWidget):
         select_sem_layout.addWidget(self.dd_select_sem)
         self.tools_scaling_layout.addLayout(select_sem_layout)
         
-        for tool in tools_scaling.values():
-            self.tools_scaling_layout.addWidget(tool)
+        scaling_vertical_layout = QHBoxLayout()
+        self.scaling_direction_dd = QComboBox(self)
+        self.scaling_direction_dd.addItems(['horizontal', 'vertical'])
+        scaling_vertical_layout.addWidget(self.scaling_direction_dd)
+        scaling_vertical_layout.addWidget(tools_scaling['scale'])
+        self.tools_scaling_layout.addLayout(scaling_vertical_layout)
+        
         self.tools_scaling_box.setLayout(self.tools_scaling_layout)
         self.layout.addWidget(self.tools_scaling_box)
         self.tools_scaling_box.setLayout(self.tools_scaling_layout)
