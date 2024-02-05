@@ -1,12 +1,16 @@
 ---
 JSM-6500F - Jeol:
   SeedPoints: [0.777344,0.951172]
+  Orientation: horizontal
 
 Zeiss Orion NanoFab:
   SeedPoints: [0.698243, 0.92768]
+  Orientation: horizontal
 
 GUZ SEM:
   SeedPoints: [0.02051, 0.94922]
+  Orientation: horizontal
 
 Generic SEM: 
   SeedPoints: null
+  Orientation: null

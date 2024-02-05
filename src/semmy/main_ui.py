@@ -222,6 +222,8 @@ class MainUI(QWidget):
             # get seedPoint from sem_db
             try:
                 seed_point = self.data_handler.sem_db[self.dd_select_sem.currentText()]['SeedPoints']
+                orientation = self.data_handler.sem_db[self.dd_select_sem.currentText()]['Orientation']
+                self.scaling_direction_dd.setCurrentText(orientation)
                 # only actually try to find scaling bar, when data is given by database
                 if seed_point is not None:
                     self.vispy_canvas_wrapper.find_scaling_bar_width(seed_point)
