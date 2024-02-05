@@ -1,6 +1,7 @@
 # absolute imports
 import numpy as np
 import cv2
+import sys
 from vispy.scene import SceneCanvas, visuals, AxisWidget, Label, transforms
 from PyQt6.QtWidgets import QTableWidgetItem, QInputDialog
 
@@ -89,7 +90,7 @@ class VispyCanvas(SceneCanvas):
                 if self.data_handler.file_path.suffix not in self.data_handler.file_extensions:
                     # opencv reads images in BGR format, so we need to convert it to RGB
                     self.data_handler.logger.debug(f"update data_handler.img_data = {self.data_handler.file_path}")
-                    BGR_img = cv2.imread(str(self.data_handler.file_path))
+                    BGR_img = cv2.imdecode(np.fromfile(self.data_handler.file_path, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
                     self.data_handler.img_data = cv2.cvtColor(BGR_img, cv2.COLOR_BGR2RGB)
                 self.draw_image()
 
@@ -101,15 +102,15 @@ class VispyCanvas(SceneCanvas):
                 self.xaxis.link_view(self.view)
                 self.yaxis.link_view(self.view)
                 
-                self.start_state = False
                 
             except Exception as error:
                 # handle the exception  
                 if self.main_ui is not None:      
-                    self.main_ui.raise_error(error)
+                    self.main_ui.raise_error(f"Image could not be loaded: {error}")
+                    return
             
+            self.start_state = False
             self.remove_load_text()
-            
     
     def draw_image(self, img_data=None):
         if img_data is None:
@@ -118,10 +119,12 @@ class VispyCanvas(SceneCanvas):
         self.image.set_data(img_data)
 
     def center_image(self):
-        if self.data_handler.img_data is not None:
-            self.view.camera.set_range(x=(0,self.data_handler.img_data.shape[1]),
-                                       y=(0,self.data_handler.img_data.shape[0]), margin=0)
-            
+        try:
+            if self.data_handler.img_data is not None:
+                self.view.camera.set_range(x=(0,self.data_handler.img_data.shape[1]),
+                                           y=(0,self.data_handler.img_data.shape[0]), margin=0)
+        except Exception as error:
+            self.main_ui.raise_error(f"Image could not be centered: {error}")
 
     def add_load_text(self):
          # load image label
@@ -282,7 +285,7 @@ class VispyCanvas(SceneCanvas):
                                 m_i_x, m_i_y = np.floor(mouse_image_coords).astype(int)
 
                                 # get width of scaling bar and show it in image
-                                self.find_scaling_bar_width((m_i_x, m_i_y))
+                                self.find_scaling_bar_width((m_i_x, m_i_y), relative=False)
                             
                             # right click to delete scaling identification
                             if event.button == 2:
@@ -336,15 +339,21 @@ class VispyCanvas(SceneCanvas):
                 self.main_ui.structure_dd.setCurrentText(text)
             return False
 
-    def find_scaling_bar_width(self, seed_point):
+    def find_scaling_bar_width(self, seed_point_percentage, relative=True):
         # get width of scaling bar by floodFilling an area of similar pixels.
         # The start point needs to be given
-
+        
         # create copy of image which can be modified
         img_data_modified = self.data_handler.img_data.copy()
+        if relative:
+            seed_point_x = round(seed_point_percentage[0] * img_data_modified.shape[1])
+            seed_point_y = round(seed_point_percentage[1] * img_data_modified.shape[0])
+        else:
+            seed_point_x, seed_point_y = seed_point_percentage
+        self.data_handler.logger.debug(f"seed_point_x = {seed_point_x}, seed_point_y = {seed_point_y}")
         cv2.floodFill(img_data_modified, 
                         None,
-                        seed_point,
+                        (seed_point_x, seed_point_y),
                         newVal=(255, 0, 0),
                         loDiff=(10,10,10),
                         upDiff=(10,10,10)
@@ -369,8 +378,6 @@ class VispyCanvas(SceneCanvas):
             
             if not self.start_state:
                 
-                # Check if the mouse wheel button is being dragged
-
                 match event.button:
                     case 1: 
                         if event.is_dragging: # Check if the left mouse button is being dragged
@@ -421,7 +428,11 @@ class VispyCanvas(SceneCanvas):
         if isinstance(object, (ControlPoints, LineControlPoints)):
             object = self.selected_object.parent
 
-        structure, index = self.data_handler.find_object(object)
+        found_object = self.data_handler.find_object(object)
+        if found_object:
+            structure, index = found_object 
+        else:
+            return
         self.main_ui.add_to_structure_dd(structure)
         self.main_ui.update_object_list()
         self.main_ui.object_list.item(index).setSelected(True)

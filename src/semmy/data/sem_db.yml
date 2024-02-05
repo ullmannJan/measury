@@ -1,12 +1,12 @@
 ---
 JSM-6500F - Jeol:
-  SeedPoints: [995,974]
+  SeedPoints: [0.777344,0.951172]
 
 Zeiss Orion NanoFab:
-  SeedPoints: [715, 1039]
+  SeedPoints: [0.698243, 0.92768]
 
 GUZ SEM:
-  SeedPoints: [21, 729]
+  SeedPoints: [0.02051, 0.94922]
 
 Generic SEM: 
   SeedPoints: null

@@ -153,6 +153,5 @@ class DropEnabledQOpenGLWidget(QOpenGLWidget):
     def dropEvent(self, event):
         if len(event.mimeData().urls()) == 1:
             img_path = event.mimeData().urls()[0].toLocalFile()
-            
             self.vispy_canvas.data_handler.open_file(img_path, self.vispy_canvas)
                   

@@ -143,7 +143,7 @@ class MainUI(QWidget):
         self.structure_dd = QComboBox(self)
         self.structure_dd.setEditable(True)
         self.structure_dd.setPlaceholderText("Enter structure name")
-        self.structure_dd.currentIndexChanged.connect(self.structure_dd_changed)
+        self.structure_dd.currentTextChanged.connect(self.structure_dd_changed)
         self.selected_structure_layout.addWidget(self.structure_dd)
         
         # rename button
@@ -156,8 +156,6 @@ class MainUI(QWidget):
         self.object_list = QListWidget()
         self.object_list.itemClicked.connect(self.list_object_selected)
         self.selected_object_layout.addWidget(self.object_list)
-        
-
 
         self.selected_object_table = QTableWidget()
         self.selected_object_table.setRowCount(0)
@@ -222,8 +220,8 @@ class MainUI(QWidget):
                 # only actually try to find scaling bar, when data is given by database
                 if seed_point is not None:
                     self.vispy_canvas_wrapper.find_scaling_bar_width(seed_point)
-            except:
-                self.raise_error("Something went wrong when reading database:")            
+            except Exception as e:
+                self.raise_error("Something went wrong while trying to identify scaling bar: "+ str(e))            
 
     def update_scaling(self):
         length = self.length_edit.text()
@@ -233,8 +231,13 @@ class MainUI(QWidget):
         else:
             self.scaling = 1
         self.units_changed()
-
-
+    
+    def reset_scaling(self):
+        self.units_dd.setCurrentIndex(3)
+        self.pixel_edit.setText("")
+        self.length_edit.setText("")
+        self.units_changed()
+        
     def units_changed(self):
         self.selected_object_table.setHorizontalHeaderItem(1, 
                             QTableWidgetItem(self.units_dd.currentText()))

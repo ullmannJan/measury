@@ -212,24 +212,30 @@ class DataHandler:
     
     def open_file(self, file_path: str|Path|None, vispy_instance):
         
-        if file_path:
-            file_path = Path(file_path)
-            
-            if file_path.suffix in self.file_extensions:
-                self.load_storage_file(file_path, vispy_instance=vispy_instance)
-            
-            else:
-                reply = QMessageBox.StandardButton.Yes
-                if self.img_data is not None:
-                    reply = QMessageBox.warning(self.main_ui, "Warning",
-                        "Do you want to load a new image?\n\nThis will replace the current image and remove the measurements.",
-                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                        QMessageBox.StandardButton.No)
+        try:
+            if file_path:
+                file_path = Path(file_path)
                 
-                if reply == QMessageBox.StandardButton.Yes:
-                    self.file_path = file_path
-                    self.delete_all_objects()
-                    vispy_instance.update_image()
+                if file_path.suffix in self.file_extensions:
+                    self.load_storage_file(file_path, vispy_instance=vispy_instance)
+                
+                else:
+                    reply = QMessageBox.StandardButton.Yes
+                    if self.img_data is not None:
+                        reply = QMessageBox.warning(self.main_ui, "Warning",
+                            "Do you want to load a new image?\n\nThis will replace the current image and remove the measurements.",
+                            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                            QMessageBox.StandardButton.No)
+                    
+                    if reply == QMessageBox.StandardButton.Yes:
+                        self.file_path = file_path
+                        self.delete_all_objects()
+                        self.main_ui.reset_scaling()
+                        vispy_instance.update_image()
+                        
+        except Exception as error:
+            self.logger.error(f"Could not open file: {file_path}:\n{error}")
+            self.main_ui.raise_error(f"Could not open file: {file_path}: {error}")
 
     def calculate_results(self):
         """calculate the average and standard deviation of 
