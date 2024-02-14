@@ -1,14 +1,16 @@
 # absolute imports
-import typing
-from PyQt6 import QtGui
 from PyQt6.QtOpenGLWidgets import QOpenGLWidget
-from PyQt6.QtGui import QAction, QIcon, QKeyEvent
-from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QSplitter, QMessageBox
+from PyQt6.QtGui import QAction, QIcon
+from PyQt6.QtWidgets import (QApplication, QMainWindow,
+                             QWidget, QHBoxLayout, QSplitter,
+                             QMessageBox, QToolButton, 
+                             QSizePolicy)
 from PyQt6.QtCore import Qt
 
 # relative imports
 from . import semmy_path
 from .main_ui import MainUI
+from .right_ui import RightUI
 from .vispy_canvas import VispyCanvas
 from .windows import AboutWindow, DataWindow, SettingsWindow
 
@@ -31,6 +33,7 @@ class MainWindow(QMainWindow):
         
         self.native_vispy_canvas = DropEnabledQOpenGLWidget(self.vispy_canvas, parent=self)
         self.main_ui = MainUI(self.vispy_canvas, self.data_handler, parent=self)
+        self.right_ui = RightUI(self)
         self.vispy_canvas.main_ui = self.main_ui
 
         self.initUI()        
@@ -95,17 +98,28 @@ class MainWindow(QMainWindow):
         main_layout = QHBoxLayout()
 
         # splitter
-        splitter = QSplitter(Qt.Orientation.Horizontal)
+        self.splitter = QSplitter(Qt.Orientation.Horizontal)
         # controls
-        splitter.addWidget(self.main_ui)
+        self.splitter.addWidget(self.main_ui)
         # vispy canvas
-        splitter.addWidget(self.native_vispy_canvas)
+        self.splitter.addWidget(self.native_vispy_canvas)
+        
+        self.splitter.addWidget(self.right_ui)
 
-        main_layout.addWidget(splitter)
+        # The slim bar (tool button)
+        self.open_right_ui_button = QToolButton()
+        self.open_right_ui_button.setText("<")
+        self.open_right_ui_button.clicked.connect(self.right_ui.show_ui)
+
+        self.open_right_ui_button.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+        # Hide the right panel by default
+        self.right_ui.hide()
+        
+        main_layout.addWidget(self.splitter)
+        main_layout.addWidget(self.open_right_ui_button)
 
         central_widget.setLayout(main_layout)
         self.setCentralWidget(central_widget)
-    
 
     def open_about_page(self):
         self.about_window = AboutWindow(parent=self)

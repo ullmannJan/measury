@@ -8,6 +8,17 @@ def test_main_program():
     app.vispy_app.process_events()
     # app.vispy_app.sleep(1)
     app.close()
+    
+def test_rigth_ui():
+    
+    app = App()
+    app.run(run_vispy=False)
+    app.vispy_app.process_events()
+    app.main_window.right_ui.show_ui()
+    app.vispy_app.process_events()
+    app.main_window.right_ui.hide_ui()
+    app.vispy_app.process_events()
+    app.close()
 
 def test_open_tif_file():
     
