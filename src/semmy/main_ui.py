@@ -14,13 +14,14 @@ from . import semmy_path
 
 class MainUI(QWidget):
     
-    def __init__(self, vispy_canvas_wrapper, data_handler, parent=None):
+    def __init__(self, vispy_canvas_wrapper, data_handler, right_ui, parent=None):
         
         self.parent = parent
         super().__init__(self.parent)
 
         self.vispy_canvas_wrapper = vispy_canvas_wrapper
         self.data_handler = data_handler
+        self.right_ui = right_ui
 
         self.layout = QVBoxLayout(self)
         self.setMinimumWidth(175)

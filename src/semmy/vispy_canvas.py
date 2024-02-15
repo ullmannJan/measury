@@ -413,6 +413,8 @@ class VispyCanvas(SceneCanvas):
 
                                         # update ui to display properties of selected object
                                         self.selection_update()
+                                        if self.main_ui.right_ui.isVisible():
+                                            self.main_ui.right_ui.update_intensity_plot()
                                         # Needs change
                                         # if hasattr(self.main_ui, 'save_window'):
                                         #     self.main_ui.save_window.update_object_data_table()
@@ -434,6 +436,9 @@ class VispyCanvas(SceneCanvas):
             return
         if isinstance(object, (ControlPoints, LineControlPoints)):
             object = self.selected_object.parent
+        
+        if self.main_ui.right_ui.isVisible():      
+            self.main_ui.right_ui.update_intensity_plot()
 
         found_object = self.data_handler.find_object(object)
         if found_object:

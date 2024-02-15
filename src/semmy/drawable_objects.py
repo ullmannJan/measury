@@ -629,8 +629,6 @@ class EditLineVisual(EditVisual):
     def set_center(self, val):
         self.control_points.set_center(val[0:2])
 
-    
-
     def output_properties(self):
         
         if self.control_points.num_points == 2:
@@ -651,3 +649,16 @@ class EditLineVisual(EditVisual):
                 coords=self.coords,
                 num_points=self.num_points
                 )
+        
+
+    def intensity_profile(self, image):
+    # Assuming self.coords is a list of two tuples, representing the start and end points of the line
+        from skimage.measure import profile_line
+        # todo
+        # implement it for all points along line
+        
+        # Get the intensity profile along the line 
+           
+        intensity_profile = profile_line(image, self.coords[0,::-1], self.coords[-1,::-1])
+
+        return intensity_profile
