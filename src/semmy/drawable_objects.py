@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.ndimage import map_coordinates
 
 from vispy.scene.visuals import Compound, Markers, Rectangle, Ellipse, Line 
 from vispy.visuals.transforms import MatrixTransform, linear
@@ -387,7 +388,36 @@ class EditRectVisual(EditVisual):
                 height=self.form.height,
                 angle=self.angle,
                 )
-    
+        
+    def intensity_profile(self, image, n_x=100, n_y=20):
+        # Get the coordinates of the rectangle
+        coords = self.control_points.coords[:,0,:]
+
+        # Compute the x and y directions
+        x_dir = np.linspace(0, coords[3][0]-coords[0][0], n_y, endpoint=True)
+        y_dir = np.linspace(0, coords[3][1]-coords[0][1], n_y, endpoint=True)
+
+        # Compute the start and end points for all lines
+        starts = coords[0][::-1] + np.column_stack((y_dir, x_dir))
+        ends = coords[1][::-1] + np.column_stack((y_dir, x_dir))
+
+        # Initialize an empty list to hold the intensity profiles
+        intensity_profile = np.zeros(n_x)
+        img = np.sum(image, axis=2)
+        # Iterate over all lines
+        for start, end in zip(starts, ends):
+            # Compute the coordinates along the line
+            x_coords = np.linspace(start[1], end[1], n_x)
+            y_coords = np.linspace(start[0], end[0], n_x)
+
+            # Stack the coordinates into a 2D array
+            eval_coords = np.vstack([y_coords, x_coords])
+
+            # Compute the intensity profile for the line
+            intensity_profile += map_coordinates(img, eval_coords, order=1, mode='nearest')
+
+
+        return intensity_profile*1e-3
 
 
 class EditEllipseVisual(EditVisual):
@@ -651,14 +681,42 @@ class EditLineVisual(EditVisual):
                 )
         
 
-    def intensity_profile(self, image):
-    # Assuming self.coords is a list of two tuples, representing the start and end points of the line
-        from skimage.measure import profile_line
-        # todo
-        # implement it for all points along line
-        
-        # Get the intensity profile along the line 
-           
-        intensity_profile = profile_line(image, self.coords[0,::-1], self.coords[-1,::-1])
+    def intensity_profile(self, image, n=100):
+        intensity_profiles = []
 
-        return intensity_profile
+        # Iterate over pairs of consecutive coordinates
+        
+        diff = np.diff(self.control_points.coords, axis=0)
+        lengths = np.abs(np.linalg.norm(diff, axis=1))
+        
+        # Compute the total length of the path
+        total_length = np.sum(lengths)
+
+        # Compute the number of points for each line segment
+        num_points = np.round(n * lengths / total_length).astype(int)
+        
+        # Convert the image to grayscale
+        img = np.sum(image, axis=2)
+        
+        for index, m in enumerate(num_points):
+            # Swap x and y in the start and end points
+            start = self.coords[index][::-1]
+            end = self.coords[index + 1][::-1]
+
+            # Compute the coordinates along the line
+            x_coords = np.linspace(start[1], end[1], m)
+            y_coords = np.linspace(start[0], end[0], m)
+
+            # Stack the coordinates into a 2D array
+            eval_coords = np.vstack([y_coords, x_coords])
+
+            # Get the intensity profile along the line segment
+            intensity_profile = map_coordinates(img, eval_coords, order=1, mode='nearest')
+
+            # Append the intensity profile to the list
+            intensity_profiles.append(intensity_profile)
+
+        # Concatenate the intensity profiles
+        intensity_profile = np.concatenate(intensity_profiles)
+
+        return intensity_profile*1e-3

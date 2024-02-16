@@ -21,7 +21,7 @@ class VispyCanvas(SceneCanvas):
         SceneCanvas.__init__(self,
                              size=self.CANVAS_SHAPE, 
                              bgcolor=(240/255, 240/255, 240/255,1),
-                             keys=dict(delete=self.delete_object)
+                             keys=dict(delete=self.delete_object),
                             )
         self.unfreeze()
                 
@@ -61,7 +61,7 @@ class VispyCanvas(SceneCanvas):
 
         # padding right
         right_padding = self.grid.add_widget(row=1, col=2, row_span=2)
-        right_padding.width_max =25
+        right_padding.width_max = 5
 
 
         self.load_image_label = Label("Click here to select\nan image", color='white', font_size=16)
