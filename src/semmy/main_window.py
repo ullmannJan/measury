@@ -41,7 +41,7 @@ class MainWindow(QMainWindow):
     def initUI(self):
         self.setWindowTitle("Semmy")
         self.setWindowIcon(QIcon(str(semmy_path/"data/tape_measure_128.ico")))
-        self.setMinimumSize(700,700)
+        self.setMinimumSize(600,600)
         # self.setStyleSheet("background-color: white") 
 
         # Create actions for menu bar
@@ -99,11 +99,12 @@ class MainWindow(QMainWindow):
 
         # splitter
         self.splitter = QSplitter(Qt.Orientation.Horizontal)
+        
         # controls
         self.splitter.addWidget(self.main_ui)
         # vispy canvas
         self.splitter.addWidget(self.native_vispy_canvas)
-        
+        # right ui
         self.splitter.addWidget(self.right_ui)
 
         # The slim bar (tool button)

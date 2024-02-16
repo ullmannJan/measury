@@ -493,6 +493,10 @@ class VispyCanvas(SceneCanvas):
             self.selected_object = None
         self.main_ui.update_object_list()
         self.main_ui.clear_object_table()
+        
+        if self.main_ui.right_ui.isVisible():
+            self.main_ui.right_ui.update_intensity_plot()
+        
 
     def select(self, obj):
         self.selected_object = obj

@@ -2,8 +2,10 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout,
                              QLabel, QPushButton, QHBoxLayout)
 import numpy as np
 from vispy import scene
-from vispy.scene import LinePlot
+from vispy.scene import LinePlot, InfiniteLine
 from vispy.scene.widgets import AxisWidget, Label
+from vispy.visuals.transforms import linear
+
 
 # relative imports
 from .drawable_objects import EditRectVisual, EditLineVisual, LineControlPoints, ControlPoints
@@ -77,7 +79,9 @@ class RightUI(QWidget):
         
     def create_intensity_plot(self):
                 
-        self.vispy_intensity_plot = scene.SceneCanvas(size = (300, 300), keys='interactive', show=False, bgcolor=(240/255, 240/255, 240/255,1))
+        self.vispy_intensity_plot = scene.SceneCanvas(size = (400, 300), 
+                                                      show=False, 
+                                                      bgcolor=(240/255, 240/255, 240/255,1))
         grid = self.vispy_intensity_plot.central_widget.add_grid(margin=0)
 
         # Create a ViewBox and add it to the Grid
@@ -112,6 +116,17 @@ class RightUI(QWidget):
         x_axis.link_view(self.diagram)
         y_axis.link_view(self.diagram)
         
+        self.v_line = InfiniteLine(pos=-1, vertical=True, color=(0.7,0.7,0.7,1))
+        self.h_line = InfiniteLine(pos=-1, vertical=False, color=(0.8,0.8,0.8,1))
+        # self.v_line.transform = linear.STTransform(translate=(0, 0, -1))
+        # self.h_line.transform = linear.STTransform(translate=(0, 0, 1))
+
+        # Add the lines to the diagram
+        self.diagram.add(self.v_line)
+        self.diagram.add(self.h_line)
+        
+        self.vispy_intensity_plot.events.mouse_move.connect(self.on_mouse_move)
+        
     def update_intensity_plot(self):
         selected_element = self.main_window.main_ui.vispy_canvas_wrapper.selected_object
         if isinstance(selected_element, (LineControlPoints, ControlPoints)):
@@ -134,9 +149,21 @@ class RightUI(QWidget):
             self.diagram.camera.set_range(x=(0, length), y=(np.min(intensity), np.max(intensity)))
             # update the line plot
             self.intensity_line.set_data((distance, intensity))
-    
+        else:
+            self.intensity_line.set_data([[0,0], [0,0]])
+            self.diagram.camera.set_range(x=(0, 1), y=(0, 1))
             
     
-    
+    def on_mouse_move(self, event):
+        # Get the position of the mouse in data coordinates
+        tr = self.vispy_intensity_plot.scene.node_transform(self.diagram.scene)
+        pos = tr.map(event.pos)
+        print(pos)
+        # Update the position of the lines
+        self.v_line.set_data(pos[0])
+        self.h_line.set_data(pos[1])
+        
+         # Update the view
+        self.vispy_intensity_plot.update()
 
     

@@ -396,10 +396,11 @@ class EditRectVisual(EditVisual):
         # Compute the x and y directions
         x_dir = np.linspace(0, coords[3][0]-coords[0][0], n_y, endpoint=True)
         y_dir = np.linspace(0, coords[3][1]-coords[0][1], n_y, endpoint=True)
-
         # Compute the start and end points for all lines
         starts = coords[0][::-1] + np.column_stack((y_dir, x_dir))
         ends = coords[1][::-1] + np.column_stack((y_dir, x_dir))
+
+
 
         # Initialize an empty list to hold the intensity profiles
         intensity_profile = np.zeros(n_x)
