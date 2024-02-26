@@ -2,9 +2,8 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout,
                              QLabel, QPushButton, QHBoxLayout)
 import numpy as np
 from vispy import scene
-from vispy.scene import LinePlot, InfiniteLine
+from vispy.scene import LinePlot, InfiniteLine, Text
 from vispy.scene.widgets import AxisWidget, Label
-from vispy.visuals.transforms import linear
 
 
 # relative imports
@@ -92,38 +91,45 @@ class RightUI(QWidget):
                                        marker_size=0)
         self.diagram.add(self.intensity_line)
         
-        title_label = Label("Intensity Profile", color='black', font_size=8)
-        title_label.height_max = 20
-        grid.add_widget(title_label, row=0, col=1)
+        self.title_label = Label("Intensity Profile", color='black', font_size=8)
+        self.title_label.height_max = 20
+        grid.add_widget(self.title_label, row=0, col=1)
 
         # Create AxisWidget objects for the x and y axes and add them to the Grid
-        x_axis = AxisWidget(orientation='bottom',
+        self.x_axis = AxisWidget(orientation='bottom',
                             axis_font_size=8,
                             axis_label_margin=0,
                             tick_label_margin=15,
                             text_color='black')
-        x_axis.height_max = 30
-        y_axis = AxisWidget(orientation='left',
+        self.x_axis.height_max = 30
+        self.y_axis = AxisWidget(orientation='left',
                             axis_font_size=8,
                             axis_label_margin=0,
                             tick_label_margin=15,
                             text_color='black')
-        y_axis.width_max = 55
-        grid.add_widget(x_axis, row=2, col=1)
-        grid.add_widget(y_axis, row=1, col=0)
+        self.y_axis.width_max = 55
+        grid.add_widget(self.x_axis, row=2, col=1)
+        grid.add_widget(self.y_axis, row=1, col=0)
 
         # Link the axes to the ViewBox
-        x_axis.link_view(self.diagram)
-        y_axis.link_view(self.diagram)
+        self.x_axis.link_view(self.diagram)
+        self.y_axis.link_view(self.diagram)
         
         self.v_line = InfiniteLine(pos=-1, vertical=True, color=(0.7,0.7,0.7,1))
         self.h_line = InfiniteLine(pos=-1, vertical=False, color=(0.8,0.8,0.8,1))
-        # self.v_line.transform = linear.STTransform(translate=(0, 0, -1))
-        # self.h_line.transform = linear.STTransform(translate=(0, 0, 1))
 
         # Add the lines to the diagram
         self.diagram.add(self.v_line)
         self.diagram.add(self.h_line)
+        
+        # add label that displays coordinates of mouse position
+        self.mouse_label = Text("",
+                                color='black',
+                                font_size=8,
+                                anchor_x='left',
+                                anchor_y='top',
+                                pos=(55,20),
+                                parent=self.vispy_intensity_plot.central_widget)
         
         self.vispy_intensity_plot.events.mouse_move.connect(self.on_mouse_move)
         
@@ -155,15 +161,37 @@ class RightUI(QWidget):
             
     
     def on_mouse_move(self, event):
-        # Get the position of the mouse in data coordinates
-        tr = self.vispy_intensity_plot.scene.node_transform(self.diagram.scene)
-        pos = tr.map(event.pos)
-        print(pos)
-        # Update the position of the lines
-        self.v_line.set_data(pos[0])
-        self.h_line.set_data(pos[1])
         
-         # Update the view
-        self.vispy_intensity_plot.update()
+        tr = self.vispy_intensity_plot.scene.node_transform(self.diagram)
+        # Get the position of the mouse in data coordinates
+        if not( (tr.map(event.pos)[:2] > self.diagram.size).any() or ((tr.map(event.pos)[:2] < (0,0)).any() )):
+            
+            # main use of program
+            if event.button == 3: # mouse wheel button for changing fov
+                # enable panning
+                self.diagram.camera._viewbox.events.mouse_move.connect(
+                    self.diagram.camera.viewbox_mouse_event)
+                if event.is_dragging:  
+                    tr = self.diagram.node_transform(self.diagram.scene)
+                    dpos = tr.map(event.last_event.pos)[:2] -tr.map(event.pos)[:2]  # Calculate the change in position of the mouse
+                    self.diagram.camera.pan(dpos)  # Pan the camera based on the mouse movement
+        
+            else:
+                tr = self.vispy_intensity_plot.scene.node_transform(self.diagram.scene)
+                pos = tr.map(event.pos)
+                #disable panning
+                self.diagram.camera._viewbox.events.mouse_move.disconnect(
+                    self.diagram.camera.viewbox_mouse_event)
+        
+                # Update the position of the lines
+                self.v_line.set_data(pos[0])
+                self.h_line.set_data(pos[1])
+                
+                # Update the view
+                self.vispy_intensity_plot.update()
 
-    
+                # update coordinates label
+                if self.mouse_label.text == "":
+                    self.mouse_label.pos = (self.y_axis.width, self.title_label.height)
+                self.mouse_label.text = f"{pos[0]:.2f}, {pos[1]:.2f}"
+                # Update the position of the label to the upper right corner of the view
