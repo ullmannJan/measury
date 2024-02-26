@@ -88,7 +88,7 @@ class ControlPoints(Compound):
                     self.selected_cp = c
                     self.opposed_cp = \
                         self.control_points[int((i + n_cp / 2)) % n_cp]
-                    
+                                            
     def start_move(self, start):
         self.parent.start_move(start)
 
@@ -393,24 +393,27 @@ class EditRectVisual(EditVisual):
         # Get the coordinates of the rectangle
         coords = self.control_points.coords[:,0,:]
 
-        # Compute the x and y directions
+        # Compute the vector along y-direction
         x_dir = np.linspace(0, coords[3][0]-coords[0][0], n_y, endpoint=True)
         y_dir = np.linspace(0, coords[3][1]-coords[0][1], n_y, endpoint=True)
         # Compute the start and end points for all lines
         starts = coords[0][::-1] + np.column_stack((y_dir, x_dir))
         ends = coords[1][::-1] + np.column_stack((y_dir, x_dir))
 
-
+        if self.control_points._width < 0:
+            starts, ends = ends, starts
 
         # Initialize an empty list to hold the intensity profiles
         intensity_profile = np.zeros(n_x)
+        evaluation_coords = np.empty((n_y, n_x, 2))
         img = np.sum(image, axis=2)
         # Iterate over all lines
-        for start, end in zip(starts, ends):
+        for i, (start, end) in enumerate(zip(starts, ends)):
             # Compute the coordinates along the line
             x_coords = np.linspace(start[1], end[1], n_x)
             y_coords = np.linspace(start[0], end[0], n_x)
 
+            evaluation_coords[i,:,:] = np.column_stack((x_coords, y_coords))
             # Stack the coordinates into a 2D array
             eval_coords = np.vstack([y_coords, x_coords])
 
@@ -418,7 +421,7 @@ class EditRectVisual(EditVisual):
             intensity_profile += map_coordinates(img, eval_coords, order=1, mode='nearest')
 
 
-        return intensity_profile*1e-3
+        return intensity_profile, evaluation_coords
 
 
 class EditEllipseVisual(EditVisual):
@@ -683,7 +686,6 @@ class EditLineVisual(EditVisual):
         
 
     def intensity_profile(self, image, n=100):
-        intensity_profiles = []
 
         # Iterate over pairs of consecutive coordinates
         
@@ -696,28 +698,33 @@ class EditLineVisual(EditVisual):
         # Compute the number of points for each line segment
         num_points = np.round(n * lengths / total_length).astype(int)
         
+        length = np.sum(num_points)
+        intensity_profiles = np.empty(length)
+        evaluation_coords = np.empty((length, 2))
+        
         # Convert the image to grayscale
         img = np.sum(image, axis=2)
         
+        count = 0
         for index, m in enumerate(num_points):
             # Swap x and y in the start and end points
             start = self.coords[index][::-1]
             end = self.coords[index + 1][::-1]
 
             # Compute the coordinates along the line
-            x_coords = np.linspace(start[1], end[1], m)
-            y_coords = np.linspace(start[0], end[0], m)
+            x_coords = np.linspace(start[1], end[1], m, endpoint=True)
+            y_coords = np.linspace(start[0], end[0], m, endpoint=True)
 
             # Stack the coordinates into a 2D array
             eval_coords = np.vstack([y_coords, x_coords])
+            evaluation_coords[count:count+m] = eval_coords.T[:,::-1]
 
             # Get the intensity profile along the line segment
             intensity_profile = map_coordinates(img, eval_coords, order=1, mode='nearest')
 
-            # Append the intensity profile to the list
-            intensity_profiles.append(intensity_profile)
+            # Append the intensity profile to full array
+            intensity_profiles[count:count+m] = intensity_profile
+            
+            count += m
 
-        # Concatenate the intensity profiles
-        intensity_profile = np.concatenate(intensity_profiles)
-
-        return intensity_profile*1e-3
+        return intensity_profiles, evaluation_coords

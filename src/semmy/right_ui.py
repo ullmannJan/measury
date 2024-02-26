@@ -1,5 +1,8 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, 
-                             QLabel, QPushButton, QHBoxLayout)
+                             QLabel, QPushButton, QHBoxLayout, 
+                             QGroupBox, QLineEdit)
+from PyQt6.QtGui import QIntValidator
+
 import numpy as np
 from vispy import scene
 from vispy.scene import LinePlot, InfiniteLine, Text
@@ -25,7 +28,7 @@ class RightUI(QWidget):
         self.top_layout = QHBoxLayout()
         self.layout.addLayout(self.top_layout)
         
-        self.top_layout.addWidget(QLabel("UI for diagrams"))
+        self.top_layout.addWidget(QLabel("Advanced Measurement Tools"))
         
         self.top_layout.addStretch()
         
@@ -42,7 +45,22 @@ class RightUI(QWidget):
         self.create_intensity_plot()
         self.layout.addWidget(self.vispy_intensity_plot.native)
         
+        # add buttons to customize interpolation
+        self.interpolation_box = QGroupBox("Interpolation Settings")
+        self.layout.addWidget(self.interpolation_box)
+        self.interpolation_layout = QHBoxLayout()
+        self.interpolation_box.setLayout(self.interpolation_layout)
+        # add qlineedit that allows only integers
+        self.interpolation_edit = QLineEdit()
+        self.interpolation_edit.setValidator(QIntValidator(1, 1000))
+        self.interpolation_edit.setPlaceholderText("1")
+        self.interpolation_layout.addWidget(QLabel("points per pixel: "))
+        self.interpolation_layout.addWidget(self.interpolation_edit)
+        self.interpolation_edit.textChanged.connect(self.update_intensity_plot)
         
+        self.save_button = QPushButton("Save Intensity Profile")
+        self.save_button.clicked.connect(self.save_intensity_plot)
+        self.layout.addWidget(self.save_button)
         # add spacer
         self.layout.addStretch()
     
@@ -139,26 +157,73 @@ class RightUI(QWidget):
             selected_element = selected_element.parent
         if isinstance(selected_element, (EditLineVisual, EditRectVisual)):
             image = self.main_window.main_ui.data_handler.img_data
+            interpolation_factor = int(self.interpolation_edit.text()) if self.interpolation_edit.text() else 1
             
             if isinstance(selected_element, EditLineVisual):
                 length = selected_element.length
-                intensity = selected_element.intensity_profile(image=image, 
-                                                               n=2*int(length))
+                if int(length) <= 0: return
+                intensity, _ = selected_element.intensity_profile(image=image, 
+                                                               n=interpolation_factor*int(length))
+                distance = np.linspace(0, length, len(intensity))
+                if selected_element.angle%90 == 0:
+                    distance += np.min(selected_element.control_points.coords[:,0])    
             elif isinstance(selected_element, EditRectVisual):
                 length = selected_element.width
-                intensity = selected_element.intensity_profile(image=image, 
-                                                               n_x=2*int(length),
-                                                               n_y=2*int(selected_element.height))
-            distance = np.linspace(0, length, len(intensity))
+                if int(length) <= 0: return
+                intensity, _ = selected_element.intensity_profile(image=image, 
+                                                               n_x=interpolation_factor*int(length),
+                                                               n_y=interpolation_factor*int(selected_element.height))
+                distance = np.linspace(0, length, len(intensity))
+                if selected_element.angle%90 == 0:
+                    distance += np.min(selected_element.control_points.coords[:,0,0])    
+            
+            intensity *= 1e-3
             
             # automatically set correct axis limits
-            self.diagram.camera.set_range(x=(0, length), y=(np.min(intensity), np.max(intensity)))
+            self.diagram.camera.set_range(x=(np.min(distance), np.max(distance)), y=(np.min(intensity), np.max(intensity)))
             # update the line plot
             self.intensity_line.set_data((distance, intensity))
         else:
             self.intensity_line.set_data([[0,0], [0,0]])
             self.diagram.camera.set_range(x=(0, 1), y=(0, 1))
+        
+    def save_intensity_plot(self):
+        
+        file_path = self.main_window.data_handler.save_file_dialog("intensity", "CSV (*.txt *.csv)") 
+        if not file_path: return
+        
+        selected_element = self.main_window.main_ui.vispy_canvas_wrapper.selected_object
+        if isinstance(selected_element, (LineControlPoints, ControlPoints)):
+            selected_element = selected_element.parent
+        if isinstance(selected_element, (EditLineVisual, EditRectVisual)):
+            image = self.main_window.main_ui.data_handler.img_data
+            interpolation_factor = int(self.interpolation_edit.text()) if self.interpolation_edit.text() else 1
             
+            if isinstance(selected_element, EditLineVisual):
+                length = int(selected_element.length)
+                if length <= 0: return
+                intensity, eval_coords = selected_element.intensity_profile(image=image, 
+                                                               n=interpolation_factor*length)
+                
+                np.savetxt(file_path, 
+                        np.column_stack((intensity, eval_coords)), 
+                        delimiter="\t", 
+                        header="intensity, pixel_x, pixel_y",
+                        fmt="%.2f")
+                
+            elif isinstance(selected_element, EditRectVisual):
+                length = int(selected_element.width)
+                if length <= 0: return
+                intensity, eval_coords = selected_element.intensity_profile(image=image, 
+                                                               n_x=interpolation_factor*length,
+                                                               n_y=interpolation_factor*int(selected_element.height))
+        
+                np.savetxt(file_path, 
+                        np.column_stack((intensity, np.reshape(eval_coords, (len(intensity), -1)))), 
+                        delimiter="\t", 
+                        header="intensity, pixel_x, pixel_y, pixel_x, pixel_y, ...",
+                        fmt="%.2f")
+                
     
     def on_mouse_move(self, event):
         
