@@ -57,3 +57,14 @@ def test_start_with_image():
     app.vispy_app.process_events()
     app.close()
     
+def test_open_right_ui():
+
+    app = App(file_path=Path(__file__).parent/Path("test_data/test_file.semmy"))
+    app.run(run_vispy=False)
+    app.vispy_app.process_events()
+    app.main_window.right_ui.show_ui()
+    app.vispy_app.process_events()
+    app.main_window.right_ui.hide_ui()
+    app.vispy_app.process_events()
+    app.close()
+    
