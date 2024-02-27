@@ -51,7 +51,7 @@ class DataHandler:
         #   ...
         # }
         self.drawing_data = dict()
-        self.units = dict(fm=1e-15, pm=1e-12, nm=1e-9, µm=1e-6, mm=1e-3, m=1, km=1e3)
+        self.units = dict(fm=1e-15, pm=1e-12, Å=1e-10, nm=1e-9, µm=1e-6, mm=1e-3, m=1, km=1e3, )
 
     def save_object(self, structure_name, object):
         """save object into storage structure
@@ -148,9 +148,10 @@ class DataHandler:
         
         #TODO: scalebar length
         if save_image:
-            output = (self.img_data, structure_data)
+            scaling = (self.main_ui.pixel_edit.text(), self.main_ui.length_edit.text(), self.main_ui.units_dd.currentText())
+            output = (self.img_data, structure_data, scaling)
         else:
-            output = (None, structure_data)
+            output = (None, structure_data, None)
         with open(filename, 'wb') as save_file:
             pickle.dump(output, save_file, pickle.HIGHEST_PROTOCOL, **kwargs)
         # with open(filename, 'w') as save_file:
@@ -161,7 +162,12 @@ class DataHandler:
         with open(file_path, 'rb') as file:
             
             self.logger.info(f"opened file: {file_path}")
-            img_data, structure_data = pickle.load(file)
+            loaded_data = pickle.load(file)
+            scaling = (None, None, None)
+            if len(loaded_data) == 2:
+                img_data, structure_data = loaded_data
+            elif len(loaded_data) == 3:
+                img_data, structure_data, scaling = loaded_data
             # data: dict = yaml.load(file, Loader=yaml.Loader)
             
             reply = QMessageBox.StandardButton.Yes
@@ -202,13 +208,21 @@ class DataHandler:
                     vispy_instance.update_image()
                 
 
-            if structure_data:
-                for key, val in structure_data.items():
-                    for obj_type, obj_data in val:
-                        new_object = obj_type(**obj_data, parent=vispy_instance.view.scene)
-                        vispy_instance.create_new_object(new_object, structure_name=key) 
-            
-            self.main_ui.update_structure_dd()           
+                if structure_data:
+                    for key, val in structure_data.items():
+                        for obj_type, obj_data in val:
+                            new_object = obj_type(**obj_data, parent=vispy_instance.view.scene)
+                            vispy_instance.create_new_object(new_object, structure_name=key) 
+                
+                if scaling[0] is not None:
+                    self.main_ui.pixel_edit.setText(str(scaling[0]))
+                    self.main_ui.length_edit.setText(str(scaling[1]))
+                    # find the index of the unit in the dropdown and set it
+                    index = self.main_ui.units_dd.findText(scaling[2])
+                    self.main_ui.units_dd.setCurrentIndex(index)
+                    self.main_ui.units_changed()
+                
+                self.main_ui.update_structure_dd()           
     
     def open_file(self, file_path: str|Path|None, vispy_instance):
         
