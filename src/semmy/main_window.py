@@ -6,6 +6,8 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow,
                              QMessageBox, QToolButton, 
                              QSizePolicy)
 from PyQt6.QtCore import Qt
+from sys import modules as sys_modules
+
 
 # relative imports
 from . import semmy_path
@@ -30,10 +32,11 @@ class MainWindow(QMainWindow):
 
         self.data_handler = data_handler
         self.vispy_canvas = VispyCanvas(self.data_handler)
-        
         self.native_vispy_canvas = DropEnabledQOpenGLWidget(self.vispy_canvas, parent=self)
+        
         self.right_ui = RightUI(self)
-        self.main_ui = MainUI(self.vispy_canvas, self.data_handler, self.right_ui, parent=self)
+        self.main_ui = MainUI(self, parent=self)
+        self.vispy_canvas.main_window = self
         self.vispy_canvas.main_ui = self.main_ui
 
         self.initUI()        
@@ -137,6 +140,12 @@ class MainWindow(QMainWindow):
         
     def closeEvent(self, event):
         QApplication.closeAllWindows()
+        
+    def raise_error(self, error):  
+        if 'pytest' in sys_modules:
+            raise Exception(error)
+        else:   
+            QMessageBox.critical(self, "Error", str(error))
     
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Delete:

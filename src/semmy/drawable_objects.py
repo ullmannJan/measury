@@ -389,7 +389,7 @@ class EditRectVisual(EditVisual):
                 angle=self.angle,
                 )
         
-    def intensity_profile(self, image, n_x=100, n_y=20):
+    def intensity_profile(self, image, n_x=100, n_y=20, **kwargs):
         # Get the coordinates of the rectangle
         coords = self.control_points.coords[:,0,:]
 
@@ -418,7 +418,7 @@ class EditRectVisual(EditVisual):
             eval_coords = np.vstack([y_coords, x_coords])
 
             # Compute the intensity profile for the line
-            intensity_profile += map_coordinates(img, eval_coords, order=1, mode='nearest')
+            intensity_profile += map_coordinates(img, eval_coords, mode='constant', **kwargs)
 
 
         return intensity_profile, evaluation_coords
@@ -685,7 +685,7 @@ class EditLineVisual(EditVisual):
                 )
         
 
-    def intensity_profile(self, image, n=100):
+    def intensity_profile(self, image, n=100, **kwargs):
 
         # Iterate over pairs of consecutive coordinates
         
@@ -720,7 +720,7 @@ class EditLineVisual(EditVisual):
             evaluation_coords[count:count+m] = eval_coords.T[:,::-1]
 
             # Get the intensity profile along the line segment
-            intensity_profile = map_coordinates(img, eval_coords, order=1, mode='nearest')
+            intensity_profile = map_coordinates(img, eval_coords, mode='constant', **kwargs)
 
             # Append the intensity profile to full array
             intensity_profiles[count:count+m] = intensity_profile

@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, 
                              QLabel, QPushButton, QHBoxLayout, 
-                             QGroupBox, QLineEdit)
+                             QGroupBox, QLineEdit, QComboBox)
 from PyQt6.QtGui import QIntValidator
 
 import numpy as np
@@ -48,15 +48,25 @@ class RightUI(QWidget):
         # add buttons to customize interpolation
         self.interpolation_box = QGroupBox("Interpolation Settings")
         self.layout.addWidget(self.interpolation_box)
-        self.interpolation_layout = QHBoxLayout()
+        self.interpolation_layout = QVBoxLayout()
         self.interpolation_box.setLayout(self.interpolation_layout)
+        self.ppx_layout = QHBoxLayout()
+        self.interpolation_layout.addLayout(self.ppx_layout)
         # add qlineedit that allows only integers
-        self.interpolation_edit = QLineEdit()
-        self.interpolation_edit.setValidator(QIntValidator(1, 1000))
-        self.interpolation_edit.setPlaceholderText("1")
-        self.interpolation_layout.addWidget(QLabel("points per pixel: "))
-        self.interpolation_layout.addWidget(self.interpolation_edit)
-        self.interpolation_edit.textChanged.connect(self.update_intensity_plot)
+        self.ppx_edit = QLineEdit()
+        self.ppx_edit.setValidator(QIntValidator(1, 1000))
+        self.ppx_edit.setPlaceholderText("1")
+        self.ppx_layout.addWidget(QLabel("points per pixel: "))
+        self.ppx_layout.addWidget(self.ppx_edit)
+        self.ppx_edit.textChanged.connect(self.update_intensity_plot)
+        
+        self.order_layout = QHBoxLayout()
+        self.interpolation_layout.addLayout(self.order_layout)
+        self.order_layout.addWidget(QLabel("Spline interpolation order: "))
+        self.order_dd = QComboBox()
+        self.order_dd.addItems([str(i) for i in range(6)])
+        self.order_layout.addWidget(self.order_dd)
+        self.order_dd.currentIndexChanged.connect(lambda: self.update_intensity_plot(resize=False))
         
         self.save_button = QPushButton("Save Intensity Profile")
         self.save_button.clicked.connect(self.save_intensity_plot)
@@ -151,28 +161,39 @@ class RightUI(QWidget):
         
         self.vispy_intensity_plot.events.mouse_move.connect(self.on_mouse_move)
         
-    def update_intensity_plot(self):
-        selected_element = self.main_window.main_ui.vispy_canvas_wrapper.selected_object
+    def update_intensity_plot(self, resize=True):
+        selected_element = self.main_window.vispy_canvas.selected_object
+        # when clicked on control points, get the parent
         if isinstance(selected_element, (LineControlPoints, ControlPoints)):
             selected_element = selected_element.parent
         if isinstance(selected_element, (EditLineVisual, EditRectVisual)):
-            image = self.main_window.main_ui.data_handler.img_data
-            interpolation_factor = int(self.interpolation_edit.text()) if self.interpolation_edit.text() else 1
+            image = self.main_window.data_handler.img_data
+            # get ui settings
+            interpolation_factor = int(self.ppx_edit.text()) if self.ppx_edit.text() else 1
+            spline_order = int(self.order_dd.currentText())
             
+            # calculate intensity profile
             if isinstance(selected_element, EditLineVisual):
                 length = selected_element.length
                 if int(length) <= 0: return
                 intensity, _ = selected_element.intensity_profile(image=image, 
-                                                               n=interpolation_factor*int(length))
+                                                               n=interpolation_factor*int(length), 
+                                                               order=spline_order)
                 distance = np.linspace(0, length, len(intensity))
                 if selected_element.angle%90 == 0:
                     distance += np.min(selected_element.control_points.coords[:,0])    
             elif isinstance(selected_element, EditRectVisual):
+                if spline_order > 1:
+                    spline_order = 1
+                    self.order_dd.setCurrentText("1")
+                    self.main_window.raise_error("Spline order for rectangles is limited to 1")
+                
                 length = selected_element.width
                 if int(length) <= 0: return
                 intensity, _ = selected_element.intensity_profile(image=image, 
                                                                n_x=interpolation_factor*int(length),
-                                                               n_y=interpolation_factor*int(selected_element.height))
+                                                               n_y=interpolation_factor*int(selected_element.height),
+                                                               order=spline_order)
                 distance = np.linspace(0, length, len(intensity))
                 if selected_element.angle%90 == 0:
                     distance += np.min(selected_element.control_points.coords[:,0,0])    
@@ -180,7 +201,8 @@ class RightUI(QWidget):
             intensity *= 1e-3
             
             # automatically set correct axis limits
-            self.diagram.camera.set_range(x=(np.min(distance), np.max(distance)), y=(np.min(intensity), np.max(intensity)))
+            if resize:
+                self.diagram.camera.set_range(x=(np.min(distance), np.max(distance)), y=(np.min(intensity), np.max(intensity)))
             # update the line plot
             self.intensity_line.set_data((distance, intensity))
         else:
@@ -192,12 +214,12 @@ class RightUI(QWidget):
         file_path = self.main_window.data_handler.save_file_dialog("intensity", "CSV (*.txt *.csv)") 
         if not file_path: return
         
-        selected_element = self.main_window.main_ui.vispy_canvas_wrapper.selected_object
+        selected_element = self.main_window.vispy_canvas.selected_object
         if isinstance(selected_element, (LineControlPoints, ControlPoints)):
             selected_element = selected_element.parent
         if isinstance(selected_element, (EditLineVisual, EditRectVisual)):
-            image = self.main_window.main_ui.data_handler.img_data
-            interpolation_factor = int(self.interpolation_edit.text()) if self.interpolation_edit.text() else 1
+            image = self.main_window.data_handler.img_data
+            interpolation_factor = int(self.ppx_edit.text()) if self.ppx_edit.text() else 1
             
             if isinstance(selected_element, EditLineVisual):
                 length = int(selected_element.length)

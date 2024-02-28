@@ -19,7 +19,7 @@ class DataHandler:
     img_data = None
     file_path: Path | None = None
 
-    main_ui: dict | None = None
+    main_window: dict | None = None
     drawing_data: dict
 
     units: dict
@@ -82,9 +82,9 @@ class DataHandler:
                 object_list.remove(object.parent)
             # If the list is empty after removal, delete the key from the dictionary
             if not object_list:
-                self.main_ui.remove_from_structure_dd(object_name)
+                self.main_window.main_ui.remove_from_structure_dd(object_name)
                 del self.drawing_data[object_name]
-                self.main_ui.structure_dd.setCurrentText("")
+                self.main_window.main_ui.structure_dd.setCurrentText("")
             
     def delete_all_objects(self):
         for structure_list in list(self.drawing_data.values()):
@@ -92,7 +92,7 @@ class DataHandler:
                object.delete()
             
         self.drawing_data = dict()
-        self.main_ui.update_structure_dd()
+        self.main_window.main_ui.update_structure_dd()
         self.logger.info("Deleted all measurements")
         
     def find_object(self, object):
@@ -126,10 +126,10 @@ class DataHandler:
                     Popen(["xdg-open", str(path.parent)])
         except Exception as error:
             self.logger.warning(f"Could not open file location: {path.parent}:\n{error}")
-            self.main_ui.raise_error(f"Could not open file location: {path.parent}")
+            self.main_window.raise_error(f"Could not open file location: {path.parent}")
 
     def save_file_dialog(self, file_name="semmy.semmy", extensions="Semmy Files (*.semmy *.sem)"):
-        filename, _ = QFileDialog.getSaveFileName(self.main_ui, 
+        filename, _ = QFileDialog.getSaveFileName(self.main_window.main_ui, 
                                                 "Save", 
                                                 file_name, 
                                                 extensions)
@@ -148,7 +148,7 @@ class DataHandler:
         
         #TODO: scalebar length
         if save_image:
-            scaling = (self.main_ui.pixel_edit.text(), self.main_ui.length_edit.text(), self.main_ui.units_dd.currentText())
+            scaling = (self.main_window.main_ui.pixel_edit.text(), self.main_window.main_ui.length_edit.text(), self.main_window.main_ui.units_dd.currentText())
             output = (self.img_data, structure_data, scaling)
         else:
             output = (None, structure_data, None)
@@ -174,7 +174,7 @@ class DataHandler:
             question = None
             
             if self.img_data is None and img_data is None:
-                self.main_ui.raise_error("You can't load measurements without loading an image first.")
+                self.main_window.raise_error("You can't load measurements without loading an image first.")
                 return
             
             if self.drawing_data or self.img_data is not None:
@@ -193,7 +193,7 @@ class DataHandler:
                         question = "Do you want to load a new image?\n\nThis will replace the current image and remove the measurements."
             
             if question is not None:
-                reply = QMessageBox.warning(self.main_ui, "Warning",
+                reply = QMessageBox.warning(self.main_window.main_ui, "Warning",
                         question,
                         QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                         QMessageBox.StandardButton.No)
@@ -215,14 +215,14 @@ class DataHandler:
                             vispy_instance.create_new_object(new_object, structure_name=key) 
                 
                 if scaling[0] is not None:
-                    self.main_ui.pixel_edit.setText(str(scaling[0]))
-                    self.main_ui.length_edit.setText(str(scaling[1]))
+                    self.main_window.main_ui.pixel_edit.setText(str(scaling[0]))
+                    self.main_window.main_ui.length_edit.setText(str(scaling[1]))
                     # find the index of the unit in the dropdown and set it
-                    index = self.main_ui.units_dd.findText(scaling[2])
-                    self.main_ui.units_dd.setCurrentIndex(index)
-                    self.main_ui.units_changed()
+                    index = self.main_window.main_ui.units_dd.findText(scaling[2])
+                    self.main_window.main_ui.units_dd.setCurrentIndex(index)
+                    self.main_window.main_ui.units_changed()
                 
-                self.main_ui.update_structure_dd()           
+                self.main_window.main_ui.update_structure_dd()           
     
     def open_file(self, file_path: str|Path|None, vispy_instance):
         
@@ -236,7 +236,7 @@ class DataHandler:
                 else:
                     reply = QMessageBox.StandardButton.Yes
                     if self.img_data is not None:
-                        reply = QMessageBox.warning(self.main_ui, "Warning",
+                        reply = QMessageBox.warning(self.main_window.main_ui, "Warning",
                             "Do you want to load a new image?\n\nThis will replace the current image and remove the measurements.",
                             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                             QMessageBox.StandardButton.No)
@@ -244,12 +244,12 @@ class DataHandler:
                     if reply == QMessageBox.StandardButton.Yes:
                         self.file_path = file_path
                         self.delete_all_objects()
-                        self.main_ui.reset_scaling()
+                        self.main_window.main_ui.reset_scaling()
                         vispy_instance.update_image()
                         
         except Exception as error:
             self.logger.error(f"Could not open file: {file_path}:\n{error}")
-            self.main_ui.raise_error(f"Could not open file: {file_path}: {error}")
+            self.main_window.raise_error(f"Could not open file: {file_path}: {error}")
 
     def calculate_results(self):
         """calculate the average and standard deviation of 
@@ -263,11 +263,11 @@ class DataHandler:
             for prop in props:
                 data = [obj.output_properties()[prop][0] for obj in object_list]
                 unit = object_list[0].output_properties()[prop][1]
-                if self.main_ui.scaling != 1 :
+                if self.main_window.main_ui.scaling != 1 :
                     if prop in ['length', 'area', 'radius', 'width', 'height', 'center']:
-                        data = [d*self.main_ui.scaling for d in data]
+                        data = [d*self.main_window.main_ui.scaling for d in data]
                         exponent = unit[-1] if unit[-1] in ['²', '³'] else ""
-                        unit = self.main_ui.units_dd.currentText() + exponent
+                        unit = self.main_window.main_ui.units_dd.currentText() + exponent
                 
                 if len(data) == 1:
                     results[structure_name][prop] = (mean(data), None, unit)
@@ -305,9 +305,9 @@ class DataHandler:
             
     def rename_structure(self, structure, new_structure):
         if new_structure in self.drawing_data:
-            self.main_ui.raise_error("This structure already exists!")
+            self.main_window.raise_error("This structure already exists!")
         elif new_structure == "" or new_structure.isspace():
-            self.main_ui.raise_error("This name is not valid")
+            self.main_window.raise_error("This name is not valid")
         else:
             self.drawing_data[new_structure] = self.drawing_data[structure] 
             del self.drawing_data[structure]

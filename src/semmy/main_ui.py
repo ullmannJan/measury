@@ -5,7 +5,6 @@ from PyQt6.QtWidgets import QMessageBox, QVBoxLayout, QHBoxLayout, \
         QInputDialog
 from PyQt6.QtGui import QDoubleValidator
 from pathlib import Path
-from sys import modules as sys_modules
 
 # relative imports
 from .windows import SaveWindow
@@ -14,14 +13,17 @@ from . import semmy_path
 
 class MainUI(QWidget):
     
-    def __init__(self, vispy_canvas_wrapper, data_handler, right_ui, parent=None):
+    main_window = None
+    
+    def __init__(self, main_window, parent=None):
         
         self.parent = parent
         super().__init__(self.parent)
 
-        self.vispy_canvas_wrapper = vispy_canvas_wrapper
-        self.data_handler = data_handler
-        self.right_ui = right_ui
+        self.main_window = main_window
+        self.vispy_canvas = main_window.vispy_canvas
+        self.data_handler = main_window.data_handler
+        self.right_ui = main_window.right_ui
 
         self.layout = QVBoxLayout(self)
         self.setMinimumWidth(175)
@@ -39,7 +41,7 @@ class MainUI(QWidget):
 
         self.center_image_button = QPushButton("Center Image", self)
         self.image_layout.addWidget(self.center_image_button)
-        self.center_image_button.clicked.connect(self.vispy_canvas_wrapper.center_image)
+        self.center_image_button.clicked.connect(self.vispy_canvas.center_image)
 
         self.image_box.setLayout(self.image_layout)
         self.layout.addWidget(self.image_box)
@@ -200,27 +202,21 @@ class MainUI(QWidget):
         if file_path:
             file_path = Path(file_path)
                     
-            self.data_handler.open_file(file_path, self.vispy_canvas_wrapper)
+            self.data_handler.open_file(file_path, self.vispy_canvas)
             
     def openFileNameDialog(self):
         file_name, _ = QFileDialog.getOpenFileName(self,"Select SEM Image", "","All Files (*);;Python Files (*.py)")
         if file_name:
             return file_name
-        
-    def raise_error(self, error):  
-        if 'pytest' in sys_modules:
-            raise Exception(error)
-        else:   
-            QMessageBox.critical(self, "Error", str(error))
 
     def open_save_window(self):
-        if not self.vispy_canvas_wrapper.start_state:
+        if not self.vispy_canvas.start_state:
             self.save_window = SaveWindow(parent=self)
             self.save_window.show()
 
     def automatic_scaling(self):
         #only when image is loaded
-        if not self.vispy_canvas_wrapper.start_state:
+        if not self.vispy_canvas.start_state:
             # get seedPoint from sem_db
             try:
                 seed_point = self.data_handler.sem_db[self.dd_select_sem.currentText()]['SeedPoints']
@@ -233,7 +229,7 @@ class MainUI(QWidget):
                     threshold = self.data_handler.sem_db[self.dd_select_sem.currentText()]['Threshold']
                 # only actually try to find scaling bar, when data is given by database
                 if seed_point is not None:
-                    self.vispy_canvas_wrapper.find_scaling_bar_width(seed_point, threshold=threshold)
+                    self.vispy_canvas.find_scaling_bar_width(seed_point, threshold=threshold)
             except Exception as e:
                 self.raise_error("Something went wrong while trying to identify scaling bar: "+ str(e))            
 
@@ -255,7 +251,7 @@ class MainUI(QWidget):
     def units_changed(self):
         self.selected_object_table.setHorizontalHeaderItem(1, 
                             QTableWidgetItem(self.units_dd.currentText()))
-        self.vispy_canvas_wrapper.selection_update()
+        self.vispy_canvas.selection_update()
         
     def update_structure_dd(self):
         self.structure_dd.clear()
@@ -298,9 +294,9 @@ class MainUI(QWidget):
         structure = self.structure_dd.currentText()
         index = self.object_list.currentRow()
         
-        self.vispy_canvas_wrapper.unselect()
+        self.vispy_canvas.unselect()
         object = self.data_handler.drawing_data[structure][index]
-        self.vispy_canvas_wrapper.select(object)
+        self.vispy_canvas.select(object)
         
     def rename_structure(self):
         structure = self.structure_dd.currentText()

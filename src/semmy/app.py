@@ -14,7 +14,7 @@ class App:
         self.vispy_app.create()
         self.data_handler = DataHandler(logger)
         self.main_window = MainWindow(self.data_handler)
-        self.data_handler.main_ui = self.main_window.main_ui
+        self.data_handler.main_window = self.main_window
         self.data_handler.open_file(file_path=file_path, 
                                     vispy_instance=self.main_window.vispy_canvas)
 
@@ -46,7 +46,7 @@ class App:
         print(f"Unhandled exception: {exception_value}")
 
         # Display an error message box
-        self.main_window.main_ui.raise_error(f"{exception_value, traceback}")
+        self.main_window.raise_error(f"{exception_value, traceback}")
         sys.__excepthook__(exception_type, exception_value, traceback)
     
     def close(self):

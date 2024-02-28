@@ -13,6 +13,7 @@ class VispyCanvas(SceneCanvas):
 
     CANVAS_SHAPE = (800, 600)
     main_ui = None
+    main_window = None
 
     def __init__(self, data_handler):
         
@@ -105,8 +106,8 @@ class VispyCanvas(SceneCanvas):
                 
             except Exception as error:
                 # handle the exception  
-                if self.main_ui is not None:      
-                    self.main_ui.raise_error(f"Image could not be loaded: {error}")
+                if self.main_window is not None:      
+                    self.main_window.raise_error(f"Image could not be loaded: {error}")
                     return
             
             self.start_state = False
@@ -124,7 +125,7 @@ class VispyCanvas(SceneCanvas):
                 self.view.camera.set_range(x=(0,self.data_handler.img_data.shape[1]),
                                            y=(0,self.data_handler.img_data.shape[0]), margin=0)
         except Exception as error:
-            self.main_ui.raise_error(f"Image could not be centered: {error}")
+            self.main_window.raise_error(f"Image could not be centered: {error}")
 
     def add_load_text(self):
          # load image label
