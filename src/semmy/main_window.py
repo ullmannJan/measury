@@ -53,6 +53,11 @@ class MainWindow(QMainWindow):
         openAction.setStatusTip('Open document')
         openAction.triggered.connect(lambda : self.main_ui.select_sem_file(file_path=None))
         
+        imageFromClipboardAction = QAction(QIcon('open.png'), 'Image from Clipboard', self)
+        imageFromClipboardAction.setShortcut('Ctrl+V')
+        imageFromClipboardAction.setStatusTip('Open image from clipboard')
+        imageFromClipboardAction.triggered.connect(lambda : self.data_handler.open_image_from_clipboard(self.vispy_canvas))
+        
         saveAction = QAction(QIcon('save.png'), 'Save File', self)
         saveAction.setShortcut('Ctrl+S')
         saveAction.setStatusTip('Save')
@@ -86,6 +91,7 @@ class MainWindow(QMainWindow):
         menuBar = self.menuBar()
         fileMenu = menuBar.addMenu('&File')
         fileMenu.addAction(openAction)
+        fileMenu.addAction(imageFromClipboardAction)
         fileMenu.addAction(saveAction)
         settingsMenu = menuBar.addMenu('&Settings')
         settingsMenu.addAction(settingsAction)

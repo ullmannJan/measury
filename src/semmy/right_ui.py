@@ -162,6 +162,9 @@ class RightUI(QWidget):
         self.vispy_intensity_plot.events.mouse_move.connect(self.on_mouse_move)
         
     def update_intensity_plot(self, resize=True):
+        if self.isHidden():
+            return
+        
         selected_element = self.main_window.vispy_canvas.selected_object
         # when clicked on control points, get the parent
         if isinstance(selected_element, (LineControlPoints, ControlPoints)):

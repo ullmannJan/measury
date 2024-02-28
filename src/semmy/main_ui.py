@@ -231,7 +231,7 @@ class MainUI(QWidget):
                 if seed_point is not None:
                     self.vispy_canvas.find_scaling_bar_width(seed_point, threshold=threshold)
             except Exception as e:
-                self.raise_error("Something went wrong while trying to identify scaling bar: "+ str(e))            
+                self.main_window.raise_error("Something went wrong while trying to identify scaling bar: "+ str(e))            
 
     def update_scaling(self):
         length = self.length_edit.text()

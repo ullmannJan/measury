@@ -1,7 +1,6 @@
 # absolute imports
 import numpy as np
 import cv2
-import sys
 from vispy.scene import SceneCanvas, visuals, AxisWidget, Label, transforms
 from PyQt6.QtWidgets import QTableWidgetItem, QInputDialog
 
@@ -82,17 +81,20 @@ class VispyCanvas(SceneCanvas):
 
         self.freeze()
 
-    def update_image(self):
+    def update_image(self, data=None):
 
         if self.data_handler.file_path is not None:
             try:
-                self.title_label.text = self.data_handler.file_path.name
-                # if semmy file is loaded we have already collected data of photo
-                if self.data_handler.file_path.suffix not in self.data_handler.file_extensions:
-                    # opencv reads images in BGR format, so we need to convert it to RGB
-                    self.data_handler.logger.debug(f"update data_handler.img_data = {self.data_handler.file_path}")
-                    BGR_img = cv2.imdecode(np.fromfile(self.data_handler.file_path, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
-                    self.data_handler.img_data = cv2.cvtColor(BGR_img, cv2.COLOR_BGR2RGB)
+                if data is not None:
+                    self.data_handler.img_data = data
+                else:    
+                    # if semmy file is loaded we have already collected data of photo                    
+                    if  self.data_handler.file_path.suffix not in self.data_handler.file_extensions:
+                        # opencv reads images in BGR format, so we need to convert it to RGB
+                        self.data_handler.logger.debug(f"update data_handler.img_data = {self.data_handler.file_path}")
+                        BGR_img = cv2.imdecode(np.fromfile(self.data_handler.file_path, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
+                        self.data_handler.img_data = cv2.cvtColor(BGR_img, cv2.COLOR_BGR2RGB)
+
                 self.draw_image()
 
                 self.view.camera = "panzoom"
@@ -103,6 +105,7 @@ class VispyCanvas(SceneCanvas):
                 self.xaxis.link_view(self.view)
                 self.yaxis.link_view(self.view)
                 
+                self.title_label.text = self.data_handler.file_path.name
                 
             except Exception as error:
                 # handle the exception  
@@ -295,7 +298,8 @@ class VispyCanvas(SceneCanvas):
         
         # if click is above box
         elif tr.map(event.pos)[1] < 0 and tr.map(event.pos)[0] > 0 and tr.map(event.pos)[0] < self.view.size[0] :
-            self.data_handler.open_file_location(self.data_handler.file_path)
+            if self.data_handler.file_path.name != "clipboard":
+                self.data_handler.open_file_location(self.data_handler.file_path)
 
     def create_new_object(self, new_object, pos=None, selected=False, structure_name=None):
         
@@ -414,8 +418,7 @@ class VispyCanvas(SceneCanvas):
 
                                         # update ui to display properties of selected object
                                         self.selection_update()
-                                        if self.main_ui.right_ui.isVisible():
-                                            self.main_ui.right_ui.update_intensity_plot()
+                                        self.main_window.right_ui.update_intensity_plot()
                                         # Needs change
                                         # if hasattr(self.main_ui, 'save_window'):
                                         #     self.main_ui.save_window.update_object_data_table()
@@ -438,8 +441,7 @@ class VispyCanvas(SceneCanvas):
         if isinstance(object, (ControlPoints, LineControlPoints)):
             object = self.selected_object.parent
         
-        if self.main_ui.right_ui.isVisible():      
-            self.main_ui.right_ui.update_intensity_plot()
+        self.main_window.right_ui.update_intensity_plot()
 
         found_object = self.data_handler.find_object(object)
         if found_object:
@@ -495,8 +497,8 @@ class VispyCanvas(SceneCanvas):
         self.main_ui.update_object_list()
         self.main_ui.clear_object_table()
         
-        if self.main_ui.right_ui.isVisible():
-            self.main_ui.right_ui.update_intensity_plot()
+        
+        self.main_window.right_ui.update_intensity_plot()
         
 
     def select(self, obj):

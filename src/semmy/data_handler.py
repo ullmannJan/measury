@@ -2,13 +2,15 @@
 from yaml import safe_load
 from pathlib import Path
 from PyQt6.QtWidgets import QFileDialog, QMessageBox
+from PyQt6.QtGui import QGuiApplication
 import pickle
 from os import startfile
 from subprocess import Popen
 from sys import platform
 from copy import deepcopy
 import logging
-from numpy import mean, std, sqrt
+import numpy as np  
+import cv2
 
 from . import semmy_path
 # you need this as they are implicitly used
@@ -251,6 +253,38 @@ class DataHandler:
             self.logger.error(f"Could not open file: {file_path}:\n{error}")
             self.main_window.raise_error(f"Could not open file: {file_path}: {error}")
 
+    def open_image_from_clipboard(self, vispy_instance):
+
+        reply = QMessageBox.StandardButton.Yes
+        try:
+            if self.img_data is not None:
+                reply = QMessageBox.warning(self.main_window.main_ui, "Warning",
+                    "Do you want to load a new image?\n\nThis will replace the current image and remove the measurements.",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No)
+
+            if reply == QMessageBox.StandardButton.Yes:
+                self.file_path = Path("clipboard")
+                self.delete_all_objects()
+                self.main_window.main_ui.reset_scaling()
+                clipboard = QGuiApplication.clipboard()
+                
+                clipboard_data = clipboard.image()
+                width = clipboard_data.width()
+                height = clipboard_data.height()
+                # Get the pointer to the pixel data
+                ptr = clipboard_data.constBits()
+                ptr.setsize(height * width * 4)
+
+                # Convert the pixel data to a numpy array and reshape it
+                img_array = np.frombuffer(ptr, dtype=np.uint8).reshape((height, width, 4))[:,:,[2,1,0]]               
+                # img_data = cv2.cvtColor(img_array.copy(), cv2.COLOR_BGRA2RGBA)
+                vispy_instance.update_image(data=img_array)
+                
+        except Exception as error:
+            self.logger.error(f"Could not open from clipboard:\n{error}")
+            self.main_window.raise_error(f"Could not open from clipboard: {error}")
+            
     def calculate_results(self):
         """calculate the average and standard deviation of 
         the measurements for each structure in drawing_data
@@ -270,9 +304,9 @@ class DataHandler:
                         unit = self.main_window.main_ui.units_dd.currentText() + exponent
                 
                 if len(data) == 1:
-                    results[structure_name][prop] = (mean(data), None, unit)
+                    results[structure_name][prop] = (np.mean(data), None, unit)
                 else:
-                    results[structure_name][prop] = (mean(data),std(data)/sqrt(len(object_list)), unit)
+                    results[structure_name][prop] = (np.mean(data),np.std(data)/np.sqrt(len(object_list)), unit)
         return results
     
     def calculate_results_string(self):
