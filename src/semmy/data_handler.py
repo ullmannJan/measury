@@ -10,7 +10,6 @@ from sys import platform
 from copy import deepcopy
 import logging
 import numpy as np  
-import cv2
 
 from . import semmy_path
 # you need this as they are implicitly used
@@ -278,7 +277,6 @@ class DataHandler:
 
                 # Convert the pixel data to a numpy array and reshape it
                 img_array = np.frombuffer(ptr, dtype=np.uint8).reshape((height, width, 4))[:,:,[2,1,0]]               
-                # img_data = cv2.cvtColor(img_array.copy(), cv2.COLOR_BGRA2RGBA)
                 vispy_instance.update_image(data=img_array)
                 
         except Exception as error:
