@@ -2,7 +2,8 @@ from PyQt6.QtGui import QColor
 from PyQt6.QtCore import QSettings
 
 DEFAULT_SETTINGS = {
-    "graphics/object_color": QColor(255, 0, 0, 26)
+    "graphics/object_color": QColor(255, 0, 0, 26),
+    "graphics/object_border_color": QColor(255, 0, 0, 127)
 }
 
 class Settings(QSettings):

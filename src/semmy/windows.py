@@ -103,7 +103,7 @@ class SettingsWindow(SemmyWindow):
     def create_ui(self):
         """Create the UI for the settings window."""
         
-        # Color Selector
+        # Color Selector inside
         self.color_layout = QHBoxLayout()
         self.color_label = QLabel("Object Color", self)
         
@@ -113,6 +113,17 @@ class SettingsWindow(SemmyWindow):
         self.color_layout.addWidget(self.color_label)
         self.color_layout.addWidget(self.color_picker)
         self.layout.addLayout(self.color_layout)
+        
+        # Color Selector border
+        self.border_color_layout = QHBoxLayout()
+        self.border_color_label = QLabel("Object Border Color", self)
+        
+        self.border_color_picker = ColorPicker(self.settings.value('graphics/object_border_color'), "Pick Color", self)
+        self.border_color_picker.color_updated.connect(self.update_window)
+        
+        self.border_color_layout.addWidget(self.border_color_label)
+        self.border_color_layout.addWidget(self.border_color_picker)
+        self.layout.addLayout(self.border_color_layout)
         
         # Buttons Layout
         self.button_layout = QHBoxLayout()
@@ -134,6 +145,7 @@ class SettingsWindow(SemmyWindow):
         """Reset the settings to the default values."""
         
         self.color_picker.selectedColor = DEFAULT_SETTINGS.get("graphics/object_color")
+        self.border_color_picker.selectedColor = DEFAULT_SETTINGS.get("graphics/object_border_color")
         
         self.update_window()
     
@@ -146,12 +158,15 @@ class SettingsWindow(SemmyWindow):
         
     def save(self):
         self.settings.save("graphics/object_color", self.color_picker.selectedColor)
+        self.settings.save("graphics/object_border_color", self.border_color_picker.selectedColor)
         self.update_window()
+        self.parent.vispy_canvas.update_object_colors()
     
     @property
     def changed(self):
         """Check if there is a change in the settings gui."""
-        return self.color_picker.selectedColor.getRgb() != self.settings.value("graphics/object_color").getRgb() 
+        return self.color_picker.selectedColor.getRgb() != self.settings.value("graphics/object_color").getRgb() or \
+                self.border_color_picker.selectedColor.getRgb() != self.settings.value("graphics/object_border_color").getRgb() 
 
 class ColorPicker(QPushButton):
     
