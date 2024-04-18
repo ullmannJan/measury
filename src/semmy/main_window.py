@@ -1,6 +1,6 @@
 # absolute imports
 from PyQt6.QtOpenGLWidgets import QOpenGLWidget
-from PyQt6.QtGui import QAction, QIcon
+from PyQt6.QtGui import QAction, QIcon, QColor
 from PyQt6.QtWidgets import (QApplication, QMainWindow,
                              QWidget, QHBoxLayout, QSplitter,
                              QMessageBox, QToolButton, 
@@ -15,6 +15,7 @@ from .main_ui import MainUI
 from .right_ui import RightUI
 from .vispy_canvas import VispyCanvas
 from .windows import AboutWindow, DataWindow, SettingsWindow
+from .settings import Settings
 
 class MainWindow(QMainWindow):
     """Qt MainWindow of Application.
@@ -38,6 +39,10 @@ class MainWindow(QMainWindow):
         self.main_ui = MainUI(self, parent=self)
         self.vispy_canvas.main_window = self
         self.vispy_canvas.main_ui = self.main_ui
+        
+        # settings
+        self.settings = Settings(self, "Semmy", "Semmy")
+        self.settings.load_settings()
 
         self.initUI()        
 
@@ -68,12 +73,17 @@ class MainWindow(QMainWindow):
         centerAction.setStatusTip('Center Image')
         centerAction.triggered.connect(self.vispy_canvas.center_image)
         
-        
+        # Settings
         settingsAction = QAction(QIcon('open.png'), 'Settings', self)
         settingsAction.setShortcut('Ctrl+I')
         settingsAction.setStatusTip('Open settings page')
         settingsAction.triggered.connect(self.open_settings_page)
+        
+        resetSettingsAction = QAction(QIcon('open.png'), 'Reset Settings', self)
+        resetSettingsAction.setStatusTip('Clear Settings')
+        resetSettingsAction.triggered.connect(self.settings.clear)
 
+        # About
         aboutAction = QAction(QIcon('open.png'), 'About', self)
         aboutAction.setStatusTip('Show information about Semmy')
         aboutAction.triggered.connect(self.open_about_page)
@@ -95,6 +105,7 @@ class MainWindow(QMainWindow):
         fileMenu.addAction(saveAction)
         settingsMenu = menuBar.addMenu('&Settings')
         settingsMenu.addAction(settingsAction)
+        settingsMenu.addAction(resetSettingsAction)
         measurementsMenu = menuBar.addMenu('&Measurements')
         measurementsMenu.addAction(measurementAction)
         measurementsMenu.addAction(delete_all_objects_action)
@@ -164,7 +175,8 @@ class MainWindow(QMainWindow):
 
                     if reply == QMessageBox.StandardButton.Yes:
                         self.vispy_canvas.delete_object()
-
+                        
+        
 class DropEnabledQOpenGLWidget(QOpenGLWidget):
     def __init__(self, vispy_canvas, parent=None):
         super().__init__(parent)

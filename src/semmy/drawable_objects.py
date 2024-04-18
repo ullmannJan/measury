@@ -327,7 +327,7 @@ class EditRectVisual(EditVisual):
         self.form = Rectangle(center=center, 
                                 width=width,
                                 height=height,
-                                color= (1,0,0,0.1),
+                                color=(1,0,0,0.1),
                                 border_color=(1,0,0,0.5),
                                 border_width=2,
                                 radius=0, 
