@@ -285,6 +285,13 @@ class EditVisual(Compound):
     def selectable(self, val):
         self._selectable = val
 
+    def set_visibility(self, v):
+        self.visible = v
+        # only make controlpoint not visible but never visible
+        # that part is already done by the clicking architecture
+        if not v:
+            self.control_points.visible(v)
+
     @property
     def angle(self):
         return self.control_points.angle

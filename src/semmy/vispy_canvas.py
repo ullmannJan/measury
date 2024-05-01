@@ -302,7 +302,8 @@ class VispyCanvas(SceneCanvas):
         
         # if click is above box
         elif tr.map(event.pos)[1] < 0 and tr.map(event.pos)[0] > 0 and tr.map(event.pos)[0] < self.view.size[0] :
-            if self.data_handler.file_path.name != "clipboard":
+            if self.data_handler.file_path and \
+               self.data_handler.file_path.name != "clipboard":
                 self.data_handler.open_file_location(self.data_handler.file_path)
 
     def create_new_object(self, new_object, pos=None, selected=False, structure_name=None):
@@ -457,6 +458,8 @@ class VispyCanvas(SceneCanvas):
         if self.selected_object is None:
             self.main_ui.clear_object_table()
             return
+        
+        # in case the selected objects is a control point we want the parent object
         if isinstance(object, (ControlPoints, LineControlPoints)):
             object = self.selected_object.parent
         
@@ -523,6 +526,7 @@ class VispyCanvas(SceneCanvas):
     def select(self, obj):
         self.selected_object = obj
         self.selected_object.select(True, obj=obj)
+        self.selected_object.set_visibility(True)
         self.selection_update()
     
     def unselect(self):
@@ -530,13 +534,19 @@ class VispyCanvas(SceneCanvas):
             self.selected_object.select(False)
             self.selected_object = None
         
-    
-    # later improvements
-    # def on_key_press(self, event):
-    #     print(event.key)
-    #     if event.key in ['K']:
-    #         former_tool_id = self.main_ui.tools.checkedId()
-    #         self.main_ui.tools.button(0).setChecked(True)
+    def show_all_objects(self):
+        self.data_handler.logger.info("show all objects")
+        for structure in self.data_handler.drawing_data.keys():
+            for obj in self.data_handler.drawing_data[structure]:
+                # show object
+                obj.set_visibility(True)
+        self.scene.update()
 
-
+    def hide_all_objects(self):
+        self.data_handler.logger.info("hide all objects")
+        for structure in self.data_handler.drawing_data.keys():
+            for obj in self.data_handler.drawing_data[structure]:
+                # hide object
+                obj.set_visibility(False)
+        self.scene.update()
                         

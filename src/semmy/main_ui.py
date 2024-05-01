@@ -142,6 +142,19 @@ class MainUI(QWidget):
         self.tools_scaling_box.setLayout(self.tools_scaling_layout)
         self.layout.addWidget(self.tools_scaling_box)
 
+        # visibility settings
+        self.visibility_box = QGroupBox("Visibility", self)
+        self.visibility_layout = QHBoxLayout()
+        self.visibility_box.setLayout(self.visibility_layout)
+        self.layout.addWidget(self.visibility_box)
+
+        self.visibility_button = QPushButton("Show all", self)
+        self.visibility_button.clicked.connect(self.vispy_canvas.show_all_objects)
+        self.visibility_layout.addWidget(self.visibility_button)
+
+        self.visibility_button = QPushButton("Hide all", self)
+        self.visibility_button.clicked.connect(self.vispy_canvas.hide_all_objects)
+        self.visibility_layout.addWidget(self.visibility_button)
 
         # selected object
         self.selected_object_box = QGroupBox("Selected Object", self)
