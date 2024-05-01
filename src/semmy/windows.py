@@ -1,7 +1,7 @@
 # absolute imports
 from PyQt6.QtWidgets import QVBoxLayout, QLabel, QWidget, \
     QGroupBox, QPushButton, QCheckBox, QLineEdit, QHBoxLayout, \
-    QColorDialog, QComboBox
+    QColorDialog, QComboBox, QTabWidget
 from PyQt6.QtGui import QIcon, QGuiApplication, QColor
 from PyQt6.QtCore import Qt, pyqtSignal
 
@@ -104,53 +104,31 @@ class SettingsWindow(SemmyWindow):
     
     def __init__(self, *args, **kwargs):
         super().__init__(title="Settings", *args, **kwargs)
+        # self.setMinimumHeight(500)
 
         self.settings: Settings = self.parent.settings
         self.settings.load_settings()
 
-        self.create_ui()
-        
-    def create_ui(self):
-        """Create the UI for the settings window."""
+        self.main_layout = QVBoxLayout()
+        self.tab_widget = QTabWidget()
+        self.main_layout.addWidget(self.tab_widget)
 
-        # rendering version
-        self.rendering_layout = QHBoxLayout()
-        self.rendering_label = QLabel("Image Rendering", self)
+        self.graphics = QWidget()
+        self.misc = QWidget()
 
-        self.rendering_combobox = QComboBox(self)
-        self.rendering_combobox.addItems(["bessel", "blackman", "catrom", "cubic", "custom", "gaussian", "hamming", "hanning", "hermite", "kaiser", "lanczos", "linear", "mitchell", "nearest", "quadric", "sinc", "spline16", "spline36", "bilinear", "bicubic"])
-        self.rendering_combobox.setCurrentText(self.settings.value('graphics/image_rendering'))
-        self.rendering_combobox.currentTextChanged.connect(self.update_window)
-        
-        self.rendering_layout.addWidget(self.rendering_label)
-        self.rendering_layout.addWidget(self.rendering_combobox)
-        self.layout.addLayout(self.rendering_layout)
-        
-        # Color Selector inside
-        self.color_layout = QHBoxLayout()
-        self.color_label = QLabel("Object Color", self)
-        
-        self.color_picker = ColorPicker(self.settings.value('graphics/object_color'), "Pick Color", self)
-        self.color_picker.color_updated.connect(self.update_window)
-        
-        self.color_layout.addWidget(self.color_label)
-        self.color_layout.addWidget(self.color_picker)
-        self.layout.addLayout(self.color_layout)
-        
-        # Color Selector border
-        self.border_color_layout = QHBoxLayout()
-        self.border_color_label = QLabel("Object Border Color", self)
-        
-        self.border_color_picker = ColorPicker(self.settings.value('graphics/object_border_color'), "Pick Color", self)
-        self.border_color_picker.color_updated.connect(self.update_window)
-        
-        self.border_color_layout.addWidget(self.border_color_label)
-        self.border_color_layout.addWidget(self.border_color_picker)
-        self.layout.addLayout(self.border_color_layout)
-        
+        self.tab_widget.addTab(self.graphics, "Graphics")
+        self.tab_widget.addTab(self.misc, "Misc")
+        self.tab_widget.resize(300, 400)
+
+        self.create_graphics_ui()
+        self.create_misc_ui()
+
+        # Resize the window to fit the contents of the tabs
+        self.resize(self.tab_widget.sizeHint())
+
         # Buttons Layout
         self.button_layout = QHBoxLayout()
-        self.layout.addLayout(self.button_layout)
+        self.main_layout.addLayout(self.button_layout)
         
         # Save Button
         self.save_button = QPushButton("Save", self)
@@ -163,7 +141,58 @@ class SettingsWindow(SemmyWindow):
         self.reset_button.clicked.connect(self.reset_to_defaults)
         self.reset_button.setEnabled(not self.settings.is_default)
         self.button_layout.addWidget(self.reset_button)
+        
+        self.layout.addLayout(self.main_layout)
+
+    def create_misc_ui(self):
+        
+        self.misc_layout = QVBoxLayout()
+        self.misc.setLayout(self.misc_layout)
+        
+        
+    def create_graphics_ui(self):
+        """Create the UI for the settings window."""
+
+        # rendering version
+        self.graphics_layout = QVBoxLayout()
+
+        self.rendering_layout = QHBoxLayout()
+        self.rendering_label = QLabel("Image Rendering", self)
+
+        self.rendering_combobox = QComboBox(self)
+        self.rendering_combobox.addItems(["bessel", "blackman", "catrom", "cubic", "custom", "gaussian", "hamming", "hanning", "hermite", "kaiser", "lanczos", "linear", "mitchell", "nearest", "quadric", "sinc", "spline16", "spline36", "bilinear", "bicubic"])
+        self.rendering_combobox.setCurrentText(self.settings.value('graphics/image_rendering'))
+        self.rendering_combobox.currentTextChanged.connect(self.update_window)
+        
+        self.rendering_layout.addWidget(self.rendering_label)
+        self.rendering_layout.addWidget(self.rendering_combobox)
+        self.graphics_layout.addLayout(self.rendering_layout)
+        
+        # Color Selector inside
+        self.color_layout = QHBoxLayout()
+        self.color_label = QLabel("Object Color", self)
+        
+        self.color_picker = ColorPicker(self.settings.value('graphics/object_color'), "Pick Color", self)
+        self.color_picker.color_updated.connect(self.update_window)
+        
+        self.color_layout.addWidget(self.color_label)
+        self.color_layout.addWidget(self.color_picker)
+        self.graphics_layout.addLayout(self.color_layout)
+        
+        # Color Selector border
+        self.border_color_layout = QHBoxLayout()
+        self.border_color_label = QLabel("Object Border Color", self)
+        
+        self.border_color_picker = ColorPicker(self.settings.value('graphics/object_border_color'), "Pick Color", self)
+        self.border_color_picker.color_updated.connect(self.update_window)
+        
+        self.border_color_layout.addWidget(self.border_color_label)
+        self.border_color_layout.addWidget(self.border_color_picker)
+        self.graphics_layout.addLayout(self.border_color_layout)
+        
             
+        self.graphics.setLayout(self.graphics_layout)
+
     def reset_to_defaults(self):
         """Reset the settings to the default values."""
         
