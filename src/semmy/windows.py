@@ -1,14 +1,14 @@
 # absolute imports
 from PyQt6.QtWidgets import QVBoxLayout, QLabel, QWidget, \
-    QGroupBox, QPushButton, QCheckBox
-from PyQt6.QtGui import QIcon, QGuiApplication
-from PyQt6.QtCore import Qt, QSettings
-
-
+    QGroupBox, QPushButton, QCheckBox, QLineEdit, QHBoxLayout, \
+    QColorDialog
+from PyQt6.QtGui import QIcon, QGuiApplication, QColor
+from PyQt6.QtCore import Qt, QSettings, pyqtSignal
 
 # relative imports
 from . import __version__ as semmy_version
 from . import semmy_path
+from .settings import Settings, DEFAULT_SETTINGS
 
 class SemmyWindow(QWidget):
     """
@@ -95,18 +95,105 @@ class SettingsWindow(SemmyWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(title="Settings", *args, **kwargs)
         
-        self.layout.addWidget(QLabel("Settings"))
-        self.settings = QSettings("Semmy", "settings")
+        self.settings: Settings = self.parent.settings
+        self.settings.load_settings()
 
-    def load(self):
-        """Manage loading all the settings."""
-        self.settings.value("engine white")
-
+        self.create_ui()
+        
+    def create_ui(self):
+        """Create the UI for the settings window."""
+        
+        # Color Selector inside
+        self.color_layout = QHBoxLayout()
+        self.color_label = QLabel("Object Color", self)
+        
+        self.color_picker = ColorPicker(self.settings.value('graphics/object_color'), "Pick Color", self)
+        self.color_picker.color_updated.connect(self.update_window)
+        
+        self.color_layout.addWidget(self.color_label)
+        self.color_layout.addWidget(self.color_picker)
+        self.layout.addLayout(self.color_layout)
+        
+        # Color Selector border
+        self.border_color_layout = QHBoxLayout()
+        self.border_color_label = QLabel("Object Border Color", self)
+        
+        self.border_color_picker = ColorPicker(self.settings.value('graphics/object_border_color'), "Pick Color", self)
+        self.border_color_picker.color_updated.connect(self.update_window)
+        
+        self.border_color_layout.addWidget(self.border_color_label)
+        self.border_color_layout.addWidget(self.border_color_picker)
+        self.layout.addLayout(self.border_color_layout)
+        
+        # Buttons Layout
+        self.button_layout = QHBoxLayout()
+        self.layout.addLayout(self.button_layout)
+        
+        # Save Button
+        self.save_button = QPushButton("Save", self)
+        self.save_button.clicked.connect(self.save)
+        self.save_button.setEnabled(self.changed)
+        self.button_layout.addWidget(self.save_button)
+        
+        # reset button
+        self.reset_button = QPushButton("Reset to defaults", self)
+        self.reset_button.clicked.connect(self.reset_to_defaults)
+        self.reset_button.setEnabled(not self.settings.is_default)
+        self.button_layout.addWidget(self.reset_button)
+            
+    def reset_to_defaults(self):
+        """Reset the settings to the default values."""
+        
+        self.color_picker.selectedColor = DEFAULT_SETTINGS.get("graphics/object_color")
+        self.border_color_picker.selectedColor = DEFAULT_SETTINGS.get("graphics/object_border_color")
+        
+        self.update_window()
+    
+    def update_window(self):
+        """Update the windows with the new settings."""
+        self.parent.data_handler.logger.info("Updating settings window")
+        # set button states
+        self.reset_button.setEnabled(not self.settings.is_default)
+        self.save_button.setEnabled(self.changed)
+        
     def save(self):
-        """Manage saving all the settings."""
+        self.settings.save("graphics/object_color", self.color_picker.selectedColor)
+        self.settings.save("graphics/object_border_color", self.border_color_picker.selectedColor)
+        self.update_window()
+        self.parent.vispy_canvas.update_object_colors()
+    
+    @property
+    def changed(self):
+        """Check if there is a change in the settings gui."""
+        return self.color_picker.selectedColor.getRgb() != self.settings.value("graphics/object_color").getRgb() or \
+                self.border_color_picker.selectedColor.getRgb() != self.settings.value("graphics/object_border_color").getRgb() 
 
-        self.settings.beginGroup("chess engine")
-        self.settings.setValue("engine white", True)
-        self.settings.endGroup()
+class ColorPicker(QPushButton):
+    
+    color_updated = pyqtSignal(QColor)  # Define a custom signal
+    
+    def __init__(self, color:QColor, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.color_picker = QColorDialog()
+        self.color_picker.setOption(QColorDialog.ColorDialogOption.ShowAlphaChannel)
+        self.color_picker.colorSelected.connect(self.update_color)
+        self.clicked.connect(self.color_picker.open)
+        self.selectedColor = color  # Initialize with a default color
+        
+    def update_color(self, color):
+        self._selectedColor = color
+        
+        rgba = color.getRgb()
+        self.setStyleSheet(f"background-color: rgba{rgba};")
+        self.color_updated.emit(color)
 
-
+    @property
+    def selectedColor(self) -> QColor:
+        return self._selectedColor
+    
+    @selectedColor.setter
+    def selectedColor(self, color: QColor):
+        self.color_picker.setCurrentColor(color)
+        self.update_color(color)
+    
+    

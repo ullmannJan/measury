@@ -195,6 +195,7 @@ class ControlPoints(Compound):
 class EditVisual(Compound):
         
     def __init__(self, 
+                 settings,
                  control_points=None,
                  editable=True, 
                  selectable=True, 
@@ -211,7 +212,8 @@ class EditVisual(Compound):
         self.form = None
         self._on_select_callback = on_select_callback
         self._callback_argument = callback_argument
-
+        self.settings = settings
+        
         match control_points:
             case ('LineControlPoints', int()):
                 _, num_points = control_points
@@ -313,6 +315,9 @@ class EditVisual(Compound):
     def delete(self):
         self.parent = None
         del self
+        
+    def update_colors(self, color, border_color):
+        ...
 
 
 class EditRectVisual(EditVisual):
@@ -324,16 +329,20 @@ class EditRectVisual(EditVisual):
         
         EditVisual.__init__(self, *args, **kwargs)
         self.unfreeze()
+        
         self.form = Rectangle(center=center, 
                                 width=width,
                                 height=height,
-                                color= (1,0,0,0.1),
-                                border_color=(1,0,0,0.5),
                                 border_width=2,
                                 radius=0, 
                                 parent=self)
         self.form.interactive = True
 
+        color = self.settings.value("graphics/object_color").getRgb()
+        self.form.color = tuple([value / 255 for value in color])
+        border_color = self.settings.value("graphics/object_border_color").getRgb()
+        self.form.border_color = tuple([value / 255 for value in border_color])
+        
         self.freeze()
         self.add_subvisual(self.form)
         self.control_points.update_bounds()
@@ -423,6 +432,10 @@ class EditRectVisual(EditVisual):
 
         return intensity_profile, evaluation_coords
 
+    def update_colors(self, color, border_color):
+        self.form.color=color
+        self.form.border_color=border_color
+
 
 class EditEllipseVisual(EditVisual):
     def __init__(self, 
@@ -432,12 +445,17 @@ class EditEllipseVisual(EditVisual):
         
         EditVisual.__init__(self, *args, **kwargs)
         self.unfreeze()
+        
+        
         self.form = Ellipse(center=center, 
                             radius=radius,
-                            color= (1,0,0,0.1),
-                            border_color=(1,0,0,0.5),
                             border_width=2,
                             parent=self)
+        
+        color = self.settings.value("graphics/object_color").getRgb()
+        self.form.color = tuple([value / 255 for value in color])
+        border_color = self.settings.value("graphics/object_border_color").getRgb()
+        self.form.border_color = tuple([value / 255 for value in border_color])
         
         self.form.interactive = True
 
@@ -480,6 +498,10 @@ class EditEllipseVisual(EditVisual):
                 radius=np.array(self.form.radius),
                 angle=self.angle,
                 )
+        
+    def update_colors(self, color, border_color):
+        self.form.color=color
+        self.form.border_color=border_color
 
 class LineControlPoints(Compound):
 
@@ -585,12 +607,15 @@ class EditLineVisual(EditVisual):
 
         EditVisual.__init__(self, 
                             control_points=("LineControlPoints", num_points), 
-                            *args, **kwargs)
+                            *args,
+                            **kwargs)
         self.unfreeze()
 
         self.num_points = num_points
-        self.line_color = (1,0,0,0.5)
+        border_color = self.settings.value("graphics/object_border_color").getRgb()
+        self.line_color = tuple([value / 255 for value in border_color])
         self.line_width = 3
+        
         if coords is not None:
             self.set_coords(coords)    
 
@@ -600,6 +625,9 @@ class EditLineVisual(EditVisual):
                         method='gl',
                         antialias=True,
                         parent=self)
+        
+                
+        
         self.form.interactive = True
         
         self.freeze()

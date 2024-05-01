@@ -212,7 +212,7 @@ class DataHandler:
                 if structure_data:
                     for key, val in structure_data.items():
                         for obj_type, obj_data in val:
-                            new_object = obj_type(**obj_data, parent=vispy_instance.view.scene)
+                            new_object = obj_type(settings=self.main_window.settings, **obj_data, parent=vispy_instance.view.scene)
                             vispy_instance.create_new_object(new_object, structure_name=key) 
                 
                 if scaling[0] is not None:

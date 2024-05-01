@@ -243,13 +243,17 @@ class VispyCanvas(SceneCanvas):
                                     
                                     match self.main_ui.tools.checkedButton().text():
                                         case "line":
-                                            new_object = EditLineVisual(parent=self.view.scene)
+                                            new_object = EditLineVisual(parent=self.view.scene, 
+                                                                        settings=self.main_window.settings)
                                         case "circle":
-                                            new_object = EditEllipseVisual(parent=self.view.scene)
+                                            new_object = EditEllipseVisual(parent=self.view.scene, 
+                                                                           settings=self.main_window.settings)
                                         case "rectangle":
-                                            new_object = EditRectVisual(parent=self.view.scene)
+                                            new_object = EditRectVisual(parent=self.view.scene, 
+                                                                        settings=self.main_window.settings)
                                         case "angle":
-                                            new_object = EditLineVisual(parent=self.view.scene, num_points=3)
+                                            new_object = EditLineVisual(settings=self.main_window.settings,
+                                                                        parent=self.view.scene, num_points=3)
                                         case "edit":
                                             return
                                     # dont show object before it is added to drawing_data    
@@ -320,6 +324,21 @@ class VispyCanvas(SceneCanvas):
         
         # update canvas
         self.main_ui.update_object_list()
+        
+    def update_object_colors(self):
+        for name in self.data_handler.drawing_data.keys():
+            for obj in self.data_handler.drawing_data[name]:
+                color = self.main_window.settings.value("graphics/object_color").getRgb()
+                color = tuple([value / 255 for value in color])
+                border_color = self.main_window.settings.value("graphics/object_border_color").getRgb()
+                border_color = tuple([value / 255 for value in border_color])
+                
+                if isinstance(obj, (EditLineVisual)):
+                    obj.line_color = border_color
+                    obj.update_from_controlpoints()
+                else:
+                    obj.update_colors(color=color, border_color=border_color)
+        self.scene.update()
 
     def check_creation_allowed(self, new_object, structure_name=None):
         # check if object is allowed to be created
