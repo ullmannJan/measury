@@ -29,10 +29,15 @@ class MainWindow(QMainWindow):
 
     def __init__(self, data_handler, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # settings
+        self.data_handler = data_handler
+
+        self.settings = Settings(self, "Semmy", "Semmy")
+        self.settings.load_settings()
+        
         self.setAcceptDrops(True)
 
-        self.data_handler = data_handler
-        self.vispy_canvas = VispyCanvas(self.data_handler)
+        self.vispy_canvas = VispyCanvas(self)
         self.native_vispy_canvas = DropEnabledQOpenGLWidget(self.vispy_canvas, parent=self)
         
         self.right_ui = RightUI(self)
@@ -40,9 +45,6 @@ class MainWindow(QMainWindow):
         self.vispy_canvas.main_window = self
         self.vispy_canvas.main_ui = self.main_ui
         
-        # settings
-        self.settings = Settings(self, "Semmy", "Semmy")
-        self.settings.load_settings()
 
         self.initUI()        
 

@@ -1,9 +1,9 @@
 # absolute imports
 from PyQt6.QtWidgets import QVBoxLayout, QLabel, QWidget, \
     QGroupBox, QPushButton, QCheckBox, QLineEdit, QHBoxLayout, \
-    QColorDialog
+    QColorDialog, QComboBox
 from PyQt6.QtGui import QIcon, QGuiApplication, QColor
-from PyQt6.QtCore import Qt, QSettings, pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal
 
 # relative imports
 from . import __version__ as semmy_version
@@ -18,6 +18,9 @@ class SemmyWindow(QWidget):
 
     def __init__(self, parent, title="Window"):
         super().__init__()
+        # this makes the main application unresponsive while using this window
+        # self.setWindowModality(Qt.WindowModality.ApplicationModal)
+
         self.parent = parent
 
         self.layout = QVBoxLayout()
@@ -62,7 +65,14 @@ class AboutWindow(SemmyWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(title="About", *args, **kwargs)
         
-        self.layout.addWidget(QLabel(f"Semmy v{semmy_version}"))
+        self.info_layout = QVBoxLayout()
+
+        self.info_layout.addWidget(QLabel(f"<b>Semmy {semmy_version}</b>"))
+        self.info_layout.addWidget(QLabel("A simple tool for measuring distances in images."))
+        self.info_layout.addWidget(QLabel("Developed by:"))
+        self.info_layout.addWidget(QLabel("Jan Ullmann"))
+
+        self.layout.addLayout(self.info_layout)
 
 class DataWindow(SemmyWindow):
     """
@@ -94,7 +104,7 @@ class SettingsWindow(SemmyWindow):
     
     def __init__(self, *args, **kwargs):
         super().__init__(title="Settings", *args, **kwargs)
-        
+
         self.settings: Settings = self.parent.settings
         self.settings.load_settings()
 
@@ -102,6 +112,19 @@ class SettingsWindow(SemmyWindow):
         
     def create_ui(self):
         """Create the UI for the settings window."""
+
+        # rendering version
+        self.rendering_layout = QHBoxLayout()
+        self.rendering_label = QLabel("Image Rendering", self)
+
+        self.rendering_combobox = QComboBox(self)
+        self.rendering_combobox.addItems(["bessel", "blackman", "catrom", "cubic", "custom", "gaussian", "hamming", "hanning", "hermite", "kaiser", "lanczos", "linear", "mitchell", "nearest", "quadric", "sinc", "spline16", "spline36", "bilinear", "bicubic"])
+        self.rendering_combobox.setCurrentText(self.settings.value('graphics/image_rendering'))
+        self.rendering_combobox.currentTextChanged.connect(self.update_window)
+        
+        self.rendering_layout.addWidget(self.rendering_label)
+        self.rendering_layout.addWidget(self.rendering_combobox)
+        self.layout.addLayout(self.rendering_layout)
         
         # Color Selector inside
         self.color_layout = QHBoxLayout()
@@ -144,9 +167,9 @@ class SettingsWindow(SemmyWindow):
     def reset_to_defaults(self):
         """Reset the settings to the default values."""
         
+        self.rendering_combobox.setCurrentText(DEFAULT_SETTINGS.get("graphics/image_rendering"))
         self.color_picker.selectedColor = DEFAULT_SETTINGS.get("graphics/object_color")
         self.border_color_picker.selectedColor = DEFAULT_SETTINGS.get("graphics/object_border_color")
-        
         self.update_window()
     
     def update_window(self):
@@ -159,14 +182,17 @@ class SettingsWindow(SemmyWindow):
     def save(self):
         self.settings.save("graphics/object_color", self.color_picker.selectedColor)
         self.settings.save("graphics/object_border_color", self.border_color_picker.selectedColor)
+        self.settings.save("graphics/image_rendering", self.rendering_combobox.currentText())
         self.update_window()
         self.parent.vispy_canvas.update_object_colors()
+        self.parent.vispy_canvas.draw_image()
     
     @property
     def changed(self):
         """Check if there is a change in the settings gui."""
         return self.color_picker.selectedColor.getRgb() != self.settings.value("graphics/object_color").getRgb() or \
-                self.border_color_picker.selectedColor.getRgb() != self.settings.value("graphics/object_border_color").getRgb() 
+                self.border_color_picker.selectedColor.getRgb() != self.settings.value("graphics/object_border_color").getRgb() or \
+                self.rendering_combobox.currentText() != self.settings.value("graphics/image_rendering")
 
 class ColorPicker(QPushButton):
     

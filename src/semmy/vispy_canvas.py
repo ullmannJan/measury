@@ -14,9 +14,10 @@ class VispyCanvas(SceneCanvas):
     main_ui = None
     main_window = None
 
-    def __init__(self, data_handler):
+    def __init__(self, main_window):
         
-        self.data_handler = data_handler
+        self.data_handler = main_window.data_handler
+        self.main_window = main_window
 
         SceneCanvas.__init__(self,
                              size=self.CANVAS_SHAPE, 
@@ -28,10 +29,10 @@ class VispyCanvas(SceneCanvas):
         self.grid = self.central_widget.add_grid(margin=0)
 
         self.view = self.grid.add_view(row=1, col=1, bgcolor='black')
-
+        print(self.main_window.settings.value("graphics/image_rendering"))
         self.image = visuals.Image(data = None,
                             texture_format="auto",
-                            interpolation='nearest',
+                            interpolation=self.main_window.settings.value("graphics/image_rendering"),
                             cmap="viridis",
                             parent=self.view.scene)
         
@@ -121,6 +122,7 @@ class VispyCanvas(SceneCanvas):
             img_data = self.data_handler.img_data
         self.data_handler.logger.debug(f"set vispy image data")
         self.image.set_data(img_data)
+        self.image.interpolation = self.main_window.settings.value("graphics/image_rendering")
 
     def center_image(self):
         try:
