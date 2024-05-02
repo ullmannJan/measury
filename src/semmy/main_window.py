@@ -70,10 +70,21 @@ class MainWindow(QMainWindow):
         saveAction.setStatusTip('Save')
         saveAction.triggered.connect(self.main_ui.open_save_window)
         
+        # view
         centerAction = QAction(QIcon('open.png'), 'Center Image', self)
         centerAction.setShortcut('Ctrl+P')
         centerAction.setStatusTip('Center Image')
         centerAction.triggered.connect(self.vispy_canvas.center_image)
+        
+        hideAction = QAction(QIcon('open.png'), 'Hide Image', self)
+        hideAction.setShortcut('Ctrl+H')
+        hideAction.setStatusTip('Hide Image')
+        hideAction.triggered.connect(self.vispy_canvas.hide_all_objects)
+        
+        showAction = QAction(QIcon('open.png'), 'Show Image', self)
+        showAction.setShortcut('Ctrl+Shift+H')
+        showAction.setStatusTip('Show Image')
+        showAction.triggered.connect(self.vispy_canvas.show_all_objects)
         
         # Settings
         settingsAction = QAction(QIcon('open.png'), 'Settings', self)
@@ -113,6 +124,8 @@ class MainWindow(QMainWindow):
         measurementsMenu.addAction(delete_all_objects_action)
         viewMenu = menuBar.addMenu('&View')
         viewMenu.addAction(centerAction)
+        viewMenu.addAction(hideAction)
+        viewMenu.addAction(showAction)
         miscMenu = menuBar.addMenu('&Misc')
         miscMenu.addAction(aboutAction)
 
