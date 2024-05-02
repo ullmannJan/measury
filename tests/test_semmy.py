@@ -67,4 +67,13 @@ def test_open_right_ui():
     app.main_window.right_ui.hide_ui()
     app.vispy_app.process_events()
     app.close()
+
+def test_settings_page():
+
+    app = App()
+    app.run(run_vispy=False)
+    app.vispy_app.process_events()
+    app.main_window.open_settings_page()
+    app.vispy_app.process_events()
+    app.close()
     
