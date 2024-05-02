@@ -13,7 +13,7 @@ if __name__ == '__main__':
 
     # run pyinstaller
     PyInstaller.__main__.run([
-        script_path/'run_clean.py',
+        str(script_path/'run_clean.py'),
         f'--{method}',
         '--windowed',
         '--name', program_name,
