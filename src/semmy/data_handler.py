@@ -52,7 +52,9 @@ class DataHandler:
         #   ...
         # }
         self.drawing_data = dict()
-        self.units = dict(fm=1e-15, pm=1e-12, Å=1e-10, nm=1e-9, µm=1e-6, mm=1e-3, m=1, km=1e3, )
+        self.units = dict(fm=1e-15, pm=1e-12, Å=1e-10, 
+                          nm=1e-9, µm=1e-6, mm=1e-3, 
+                          cm=1e-2, m=1, km=1e3, )
 
     def save_object(self, structure_name, object):
         """save object into storage structure
