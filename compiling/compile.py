@@ -2,6 +2,7 @@ import PyInstaller.__main__
 import shutil
 from pathlib import Path
 from semmy import __version__ as semmy_version
+script_path = Path(__file__).parent.resolve()
 
 
 if __name__ == '__main__':
@@ -12,7 +13,7 @@ if __name__ == '__main__':
 
     # run pyinstaller
     PyInstaller.__main__.run([
-        'run.py',
+        script_path/'run_clean.py',
         f'--{method}',
         '--windowed',
         '--name', program_name,
@@ -24,6 +25,6 @@ if __name__ == '__main__':
     ])
 
     # zip output for easy distribution
-    output_path = Path(f"../dist/{program_name}")
+    output_path = (script_path/f"/../dist/{program_name}").resolve()
     if zipped:
         shutil.make_archive(output_path, 'zip', output_path)
