@@ -29,7 +29,7 @@ class VispyCanvas(SceneCanvas):
         self.grid = self.central_widget.add_grid(margin=0)
 
         self.view = self.grid.add_view(row=1, col=1, bgcolor='black')
-        print(self.main_window.settings.value("graphics/image_rendering"))
+
         self.image = visuals.Image(data = None,
                             texture_format="auto",
                             interpolation=self.main_window.settings.value("graphics/image_rendering"),

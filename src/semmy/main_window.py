@@ -1,6 +1,6 @@
 # absolute imports
 from PyQt6.QtOpenGLWidgets import QOpenGLWidget
-from PyQt6.QtGui import QAction, QIcon, QColor
+from PyQt6.QtGui import QAction, QIcon, QColor, QUndoCommand, QUndoStack
 from PyQt6.QtWidgets import (QApplication, QMainWindow,
                              QWidget, QHBoxLayout, QSplitter,
                              QMessageBox, QToolButton, 
@@ -45,6 +45,9 @@ class MainWindow(QMainWindow):
         self.vispy_canvas.main_window = self
         self.vispy_canvas.main_ui = self.main_ui
         
+        # create undo stack
+        self.undo_stack = QUndoStack(self)
+        
 
         self.initUI()        
 
@@ -70,20 +73,31 @@ class MainWindow(QMainWindow):
         saveAction.setStatusTip('Save')
         saveAction.triggered.connect(self.main_ui.open_save_window)
         
+        # edit actions
+        undoAction = QAction(QIcon('open.png'), 'Undo', self)
+        undoAction.setShortcut('Ctrl+Z')
+        undoAction.setStatusTip('Undo last action')
+        undoAction.triggered.connect(lambda: self.raise_error("not implemented"))#self.undo_stack.undo)
+        
+        redoAction = QAction(QIcon('open.png'), 'Redo', self)
+        redoAction.setShortcut('Ctrl+Y')
+        redoAction.setStatusTip('Redo last action')
+        redoAction.triggered.connect(lambda: self.raise_error("not implemented"))#self.undo_stack.redo)
+        
         # view
         centerAction = QAction(QIcon('open.png'), 'Center Image', self)
         centerAction.setShortcut('Ctrl+P')
         centerAction.setStatusTip('Center Image')
         centerAction.triggered.connect(self.vispy_canvas.center_image)
         
-        hideAction = QAction(QIcon('open.png'), 'Hide Image', self)
+        hideAction = QAction(QIcon('open.png'), 'Hide Objects', self)
         hideAction.setShortcut('Ctrl+H')
-        hideAction.setStatusTip('Hide Image')
+        hideAction.setStatusTip('Hide Objects')
         hideAction.triggered.connect(self.vispy_canvas.hide_all_objects)
         
-        showAction = QAction(QIcon('open.png'), 'Show Image', self)
+        showAction = QAction(QIcon('open.png'), 'Show Objects', self)
         showAction.setShortcut('Ctrl+Shift+H')
-        showAction.setStatusTip('Show Image')
+        showAction.setStatusTip('Show Objects')
         showAction.triggered.connect(self.vispy_canvas.show_all_objects)
         
         # Settings
@@ -106,7 +120,7 @@ class MainWindow(QMainWindow):
         measurementAction.setStatusTip('Show an overview of all measured data')
         measurementAction.triggered.connect(self.open_data_page)
         
-        delete_all_objects_action = QAction(QIcon('open.png'), 'Clear Objects', self)
+        delete_all_objects_action = QAction(QIcon('open.png'), 'Delete all Objects', self)
         delete_all_objects_action.setStatusTip('Delete all objects')
         delete_all_objects_action.triggered.connect(self.data_handler.delete_all_objects)
         
@@ -116,12 +130,15 @@ class MainWindow(QMainWindow):
         fileMenu.addAction(openAction)
         fileMenu.addAction(imageFromClipboardAction)
         fileMenu.addAction(saveAction)
+        editMenu = menuBar.addMenu('&Edit')
+        editMenu.addAction(delete_all_objects_action)
+        editMenu.addAction(undoAction)
+        editMenu.addAction(redoAction)
         settingsMenu = menuBar.addMenu('&Settings')
         settingsMenu.addAction(settingsAction)
         settingsMenu.addAction(resetSettingsAction)
         measurementsMenu = menuBar.addMenu('&Measurements')
         measurementsMenu.addAction(measurementAction)
-        measurementsMenu.addAction(delete_all_objects_action)
         viewMenu = menuBar.addMenu('&View')
         viewMenu.addAction(centerAction)
         viewMenu.addAction(hideAction)
