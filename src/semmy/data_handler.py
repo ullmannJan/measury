@@ -176,13 +176,14 @@ class DataHandler:
         Returns:
             None
         """
-        self.drawing_data = dict()
+        self.delete_all_objects()
+        self.drawing_data = drawing_data
         self.logger.info("loading drawing data into view and into drawing_data")
         if drawing_data:
             for key, val in drawing_data.items():
                 for object in val:
                     object.parent = vispy_instance.view.scene
-                    vispy_instance.create_new_object(object, structure_name=key)
+                    # vispy_instance.create_new_object(object, structure_name=key)
                 
         
     def load_storage_file(self, file_path, vispy_instance):
@@ -384,11 +385,13 @@ class DeleteAllObjectsCommand(QUndoCommand):
     def undo(self):
         # Restore the old state
         self.data_handler.logger.info("Undoing delete all objects")
+        self.data_handler.drawing_data = self.old_drawing_data
         self.main_window.main_ui.update_structure_dd()
-        self.data_handler.load_into_view(self.old_drawing_data, 
+        self.data_handler.load_into_view(self.data_handler.drawing_data, 
                                          self.main_window.vispy_canvas)
         self.data_handler.logger.info("Restored all measurements")
 
     def redo(self):
         # Delete all objects
         self.data_handler.delete_all_objects()
+    

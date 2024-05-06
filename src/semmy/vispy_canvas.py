@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 from vispy.scene import SceneCanvas, visuals, AxisWidget, Label, transforms
 from PyQt6.QtWidgets import QTableWidgetItem, QInputDialog
+from PyQt6.QtGui import QUndoCommand
 
 # relative imports
 from .drawable_objects import EditEllipseVisual, EditRectVisual, ControlPoints, EditLineVisual, LineControlPoints
@@ -22,7 +23,7 @@ class VispyCanvas(SceneCanvas):
         SceneCanvas.__init__(self,
                              size=self.CANVAS_SHAPE, 
                              bgcolor=(240/255, 240/255, 240/255,1),
-                             keys=dict(delete=self.delete_object),
+                             keys=dict(delete=self.delete_object_w_undo),
                             )
         self.unfreeze()
                 
@@ -273,7 +274,7 @@ class VispyCanvas(SceneCanvas):
                             if event.button == 2:  # right button deletes object
                                 # not self.selected_object because we want to delete it on hover too
                                 if selected is not None:
-                                    self.delete_object(object=selected.parent)
+                                    self.delete_object_w_undo(object=selected.parent)
                                 
                                     # Needs change
                                     # self.main_ui.update_save_window()
@@ -516,14 +517,17 @@ class VispyCanvas(SceneCanvas):
         # delete object
         if object is not None:
             self.data_handler.delete_object(object)
+            object.select(False)
             object.delete()
             self.selected_object = None
         self.main_ui.update_object_list()
         self.main_ui.clear_object_table()
         
-        
         self.main_window.right_ui.update_intensity_plot()
         
+    def delete_object_w_undo(self, object=None):
+        command = DeleteObjectCommand(self.data_handler, object)
+        self.main_window.undo_stack.push(command)
 
     def select(self, obj):
         self.selected_object = obj
@@ -552,3 +556,30 @@ class VispyCanvas(SceneCanvas):
                 obj.set_visibility(False)
         self.scene.update()
                         
+class DeleteObjectCommand(QUndoCommand):
+    def __init__(self, data_handler, object=None):
+        super().__init__()
+        self.data_handler = data_handler
+        self.main_window = self.data_handler.main_window
+        self.vispy_canvas = self.main_window.vispy_canvas
+        if object is None:
+            object = self.vispy_canvas.selected_object
+        self.object = object
+        self.structure, self.index = data_handler.find_object(self.object)
+        
+    def undo(self):
+        # Restore the old state
+        self.data_handler.logger.info("Undoing delete object")
+        if self.structure in self.data_handler.drawing_data.keys():
+            self.data_handler.drawing_data[self.structure].insert(self.index, self.object)
+        else:
+            self.data_handler.drawing_data[self.structure] = [self.object]
+        self.main_window.main_ui.update_structure_dd()
+        self.object.parent = self.vispy_canvas.view.scene
+        
+        self.data_handler.logger.info("Restored object")
+        
+    def redo(self):
+        # Delete object
+        self.vispy_canvas.delete_object(self.object)
+        self.data_handler.logger.info("Deleted object")

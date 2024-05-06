@@ -200,13 +200,13 @@ class MainWindow(QMainWindow):
         if event.key() == Qt.Key.Key_Delete:
             if not self.vispy_canvas.start_state:
                 if self.vispy_canvas.selected_object is not None:
-                    reply = QMessageBox.warning(self, "Warning",
-                        "Do you want to delete the selected object?",
-                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                        QMessageBox.StandardButton.Yes)
+                    # reply = QMessageBox.warning(self, "Warning",
+                    #     "Do you want to delete the selected object?",
+                    #     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    #     QMessageBox.StandardButton.Yes)
 
-                    if reply == QMessageBox.StandardButton.Yes:
-                        self.vispy_canvas.delete_object()
+                    # if reply == QMessageBox.StandardButton.Yes:
+                        self.vispy_canvas.delete_object_w_undo()
                         
         
 class DropEnabledQOpenGLWidget(QOpenGLWidget):
