@@ -77,12 +77,12 @@ class MainWindow(QMainWindow):
         undoAction = QAction(QIcon('open.png'), 'Undo', self)
         undoAction.setShortcut('Ctrl+Z')
         undoAction.setStatusTip('Undo last action')
-        undoAction.triggered.connect(lambda: self.raise_error("not implemented"))#self.undo_stack.undo)
+        undoAction.triggered.connect(self.undo_stack.undo)
         
         redoAction = QAction(QIcon('open.png'), 'Redo', self)
         redoAction.setShortcut('Ctrl+Y')
         redoAction.setStatusTip('Redo last action')
-        redoAction.triggered.connect(lambda: self.raise_error("not implemented"))#self.undo_stack.redo)
+        redoAction.triggered.connect(self.undo_stack.redo)
         
         # view
         centerAction = QAction(QIcon('open.png'), 'Center Image', self)
@@ -122,7 +122,7 @@ class MainWindow(QMainWindow):
         
         delete_all_objects_action = QAction(QIcon('open.png'), 'Delete all Objects', self)
         delete_all_objects_action.setStatusTip('Delete all objects')
-        delete_all_objects_action.triggered.connect(self.data_handler.delete_all_objects)
+        delete_all_objects_action.triggered.connect(self.data_handler.delete_all_objects_w_undo)
         
         # Create menu bar
         menuBar = self.menuBar()

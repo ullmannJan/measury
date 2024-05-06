@@ -2,7 +2,7 @@
 from yaml import safe_load
 from pathlib import Path
 from PyQt6.QtWidgets import QFileDialog, QMessageBox
-from PyQt6.QtGui import QGuiApplication
+from PyQt6.QtGui import QGuiApplication, QUndoCommand
 import pickle
 from os import startfile
 from subprocess import Popen
@@ -10,6 +10,7 @@ from sys import platform
 from copy import deepcopy
 import logging
 import numpy as np  
+from time import sleep
 
 from . import semmy_path
 # you need this as they are implicitly used
@@ -98,6 +99,10 @@ class DataHandler:
         self.main_window.main_ui.update_structure_dd()
         self.logger.info("Deleted all measurements")
         
+    def delete_all_objects_w_undo(self):
+        command = DeleteAllObjectsCommand(self)
+        self.main_window.undo_stack.push(command)
+        
     def find_object(self, object):
         if self.drawing_data:
             for k, val in self.drawing_data.items():
@@ -159,7 +164,27 @@ class DataHandler:
             pickle.dump(output, save_file, pickle.HIGHEST_PROTOCOL, **kwargs)
         # with open(filename, 'w') as save_file:
         #     yaml.dump(data, save_file, allow_unicode=True)
-    
+        
+    def load_into_view(self, drawing_data, vispy_instance):
+        """
+        Loads the drawing data into the view and the drawing_data dictionary.
+
+        Args:
+            drawing_data (dict): A dictionary containing the drawing data.
+            vispy_instance: An instance of the Vispy class.
+
+        Returns:
+            None
+        """
+        self.drawing_data = dict()
+        self.logger.info("loading drawing data into view and into drawing_data")
+        if drawing_data:
+            for key, val in drawing_data.items():
+                for object in val:
+                    object.parent = vispy_instance.view.scene
+                    vispy_instance.create_new_object(object, structure_name=key)
+                
+        
     def load_storage_file(self, file_path, vispy_instance):
 
         with open(file_path, 'rb') as file:
@@ -210,12 +235,11 @@ class DataHandler:
                     self.logger.debug("set data_handler.img_data to loaded file data")
                     vispy_instance.update_image()
                 
-
                 if structure_data:
                     for key, val in structure_data.items():
                         for obj_type, obj_data in val:
                             new_object = obj_type(settings=self.main_window.settings, **obj_data, parent=vispy_instance.view.scene)
-                            vispy_instance.create_new_object(new_object, structure_name=key) 
+                            vispy_instance.create_new_object(new_object, structure_name=key)                    
                 
                 if scaling[0] is not None:
                     self.main_window.main_ui.pixel_edit.setText(str(scaling[0]))
@@ -348,3 +372,23 @@ class DataHandler:
             return True
         
         return False
+    
+    
+class DeleteAllObjectsCommand(QUndoCommand):
+    def __init__(self, data_handler: DataHandler):
+        super().__init__()
+        self.data_handler = data_handler
+        self.main_window = self.data_handler.main_window
+        self.old_drawing_data = dict(data_handler.drawing_data)  # Save the old state
+
+    def undo(self):
+        # Restore the old state
+        self.data_handler.logger.info("Undoing delete all objects")
+        self.main_window.main_ui.update_structure_dd()
+        self.data_handler.load_into_view(self.old_drawing_data, 
+                                         self.main_window.vispy_canvas)
+        self.data_handler.logger.info("Restored all measurements")
+
+    def redo(self):
+        # Delete all objects
+        self.data_handler.delete_all_objects()
