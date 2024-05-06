@@ -149,11 +149,11 @@ class MainUI(QWidget):
         self.layout.addWidget(self.visibility_box)
 
         self.visibility_button = QPushButton("Show all", self)
-        self.visibility_button.clicked.connect(self.vispy_canvas.show_all_objects)
+        self.visibility_button.clicked.connect(self.vispy_canvas.show_all_objects_w_undo)
         self.visibility_layout.addWidget(self.visibility_button)
 
         self.visibility_button = QPushButton("Hide all", self)
-        self.visibility_button.clicked.connect(self.vispy_canvas.hide_all_objects)
+        self.visibility_button.clicked.connect(self.vispy_canvas.hide_all_objects_w_undo)
         self.visibility_layout.addWidget(self.visibility_button)
 
         # selected object

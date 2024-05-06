@@ -539,7 +539,7 @@ class VispyCanvas(SceneCanvas):
         if self.selected_object is not None:
             self.selected_object.select(False)
             self.selected_object = None
-        
+            
     def show_all_objects(self):
         self.data_handler.logger.info("show all objects")
         for structure in self.data_handler.drawing_data.keys():
@@ -548,6 +548,10 @@ class VispyCanvas(SceneCanvas):
                 obj.set_visibility(True)
         self.scene.update()
 
+    def show_all_objects_w_undo(self):
+        command = ShowObjectCommand(self)
+        self.main_window.undo_stack.push(command)
+
     def hide_all_objects(self):
         self.data_handler.logger.info("hide all objects")
         for structure in self.data_handler.drawing_data.keys():
@@ -555,6 +559,10 @@ class VispyCanvas(SceneCanvas):
                 # hide object
                 obj.set_visibility(False)
         self.scene.update()
+        
+    def hide_all_objects_w_undo(self):
+        command = HideObjectCommand(self)
+        self.main_window.undo_stack.push(command)
                         
 class DeleteObjectCommand(QUndoCommand):
     def __init__(self, data_handler, object=None):
@@ -583,3 +591,44 @@ class DeleteObjectCommand(QUndoCommand):
         # Delete object
         self.vispy_canvas.delete_object(self.object)
         self.data_handler.logger.info("Deleted object")
+        
+# class MoveObjectCommand(QUndoCommand):
+#     def __init__(self, object, new_pos):
+#         super().__init__()
+#         self.object = object
+#         self.new_pos = new_pos
+#         self.old_pos = object.center
+        
+#     def undo(self):
+#         # Restore the old state
+#         self.object.set_center(self.old_pos)
+        
+#     def redo(self):
+#         # Move the object
+#         self.object.set_center(self.new_pos)
+
+class HideObjectCommand(QUndoCommand):
+    def __init__(self, vispy_canvas):
+        super().__init__()
+        self.vispy_canvas = vispy_canvas
+
+    def undo(self):
+        # Show the object
+        self.vispy_canvas.show_all_objects()
+
+    def redo(self):
+        # Hide the object
+        self.vispy_canvas.hide_all_objects()
+        
+class ShowObjectCommand(QUndoCommand):
+    def __init__(self, vispy_canvas):
+        super().__init__()
+        self.vispy_canvas = vispy_canvas
+
+    def undo(self):
+        # Show the object
+        self.vispy_canvas.hide_all_objects()
+
+    def redo(self):
+        # Hide the object
+        self.vispy_canvas.show_all_objects()

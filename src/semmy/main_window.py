@@ -93,12 +93,12 @@ class MainWindow(QMainWindow):
         hideAction = QAction(QIcon('open.png'), 'Hide Objects', self)
         hideAction.setShortcut('Ctrl+H')
         hideAction.setStatusTip('Hide Objects')
-        hideAction.triggered.connect(self.vispy_canvas.hide_all_objects)
+        hideAction.triggered.connect(self.vispy_canvas.hide_all_objects_w_undo)
         
         showAction = QAction(QIcon('open.png'), 'Show Objects', self)
         showAction.setShortcut('Ctrl+Shift+H')
         showAction.setStatusTip('Show Objects')
-        showAction.triggered.connect(self.vispy_canvas.show_all_objects)
+        showAction.triggered.connect(self.vispy_canvas.show_all_objects_w_undo)
         
         # Settings
         settingsAction = QAction(QIcon('open.png'), 'Settings', self)
