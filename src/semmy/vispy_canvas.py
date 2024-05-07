@@ -297,7 +297,7 @@ class VispyCanvas(SceneCanvas):
                                 m_i_x, m_i_y = np.floor(mouse_image_coords).astype(int)
 
                                 # get width of scaling bar and show it in image
-                                self.find_scaling_bar_width_w_undo((m_i_x, m_i_y), relative=False)
+                                self.find_scale_bar_width_w_undo((m_i_x, m_i_y), relative=False)
                             
                             # right click to delete scaling identification
                             if event.button == 2:
@@ -368,7 +368,7 @@ class VispyCanvas(SceneCanvas):
                 self.main_ui.structure_dd.setCurrentText(text)
             return False
         
-    def find_scaling_bar_width(self, seed_points, relative=True, threshold=10):
+    def find_scale_bar_width(self, seed_points, relative=True, threshold=10):
         # get width of scaling bar by floodFilling an area of similar pixels.
         # The start point needs to be given
         
@@ -408,7 +408,7 @@ class VispyCanvas(SceneCanvas):
         self.main_ui.pixel_edit.setText(str(scale_px))
         self.scene.update()
         
-    def find_scaling_bar_width_w_undo(self, seed_point_percentage, relative=True, threshold=10):
+    def find_scale_bar_width_w_undo(self, seed_point_percentage, relative=True, threshold=10):
         command = FindScalingBarWidthCommand(self, seed_point_percentage, relative, threshold)
         self.main_window.undo_stack.push(command)
       
@@ -654,10 +654,10 @@ class FindScalingBarWidthCommand(QUndoCommand):
 
     def undo(self):
         # Restore the old state
-        self.vispy_canvas.find_scaling_bar_width(*self.old_scale_bar_params)
+        self.vispy_canvas.find_scale_bar_width(*self.old_scale_bar_params)
         
     def redo(self):
         # Find the scaling bar width
-        self.vispy_canvas.find_scaling_bar_width(self.seed_points, 
+        self.vispy_canvas.find_scale_bar_width(self.seed_points, 
                                                  self.relative, 
                                                  self.threshold)

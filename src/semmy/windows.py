@@ -230,7 +230,8 @@ class SettingsWindow(SemmyWindow):
         self.settings.save("graphics/scale_bar_color", self.scale_bar_color_picker.selectedColor)
         self.update_window()
         self.parent.vispy_canvas.update_object_colors()
-        self.parent.vispy_canvas.draw_image()
+        # update color of the scalebar
+        self.parent.vispy_canvas.find_scale_bar_width(*self.parent.vispy_canvas.scale_bar_params)
     
     @property
     def changed(self):
