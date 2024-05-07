@@ -244,7 +244,11 @@ class DataHandler:
                     self.main_window.main_ui.length_edit.setText(str(scaling[1]))
                     # find the index of the unit in the dropdown and set it
                     index = self.main_window.main_ui.units_dd.findText(scaling[2])
-                    self.main_window.main_ui.units_dd.setCurrentIndex(index)
+                    if index == -1:
+                        self.main_window.main_ui.units_dd.addItem(scaling[2])
+                        self.main_window.main_ui.units_dd.setCurrentIndex(self.main_window.main_ui.units_dd.count()-1)
+                    else:
+                        self.main_window.main_ui.units_dd.setCurrentIndex(index)
                     self.main_window.main_ui.units_changed()
                 
                 self.main_window.main_ui.update_structure_dd()           

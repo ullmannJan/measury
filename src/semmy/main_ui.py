@@ -132,6 +132,7 @@ class MainUI(QWidget):
         scaling.addWidget(self.length_edit)
         
         self.units_dd = QComboBox()
+        self.units_dd.setEditable(True)
         self.units_dd.addItems(self.data_handler.units.keys())
         # setting for default unit
         self.units_dd.setCurrentIndex(3)
