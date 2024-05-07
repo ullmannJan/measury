@@ -190,6 +190,20 @@ class SettingsWindow(SemmyWindow):
         self.border_color_layout.addWidget(self.border_color_picker)
         self.graphics_layout.addLayout(self.border_color_layout)
         
+        # Color Selector scale bar
+        self.scale_bar_color_layout = QHBoxLayout()
+        self.scale_bar_color_label = QLabel("Scale Bar Color", self)
+        
+        self.scale_bar_color_picker = ColorPicker(self.settings.value('graphics/scale_bar_color'), 
+                                                  "Pick Color", 
+                                                  self, 
+                                                  alpha_channel=False)
+        self.scale_bar_color_picker.color_updated.connect(self.update_window)
+        
+        self.scale_bar_color_layout.addWidget(self.scale_bar_color_label)
+        self.scale_bar_color_layout.addWidget(self.scale_bar_color_picker)
+        self.graphics_layout.addLayout(self.scale_bar_color_layout)
+        
             
         self.graphics.setLayout(self.graphics_layout)
 
@@ -199,6 +213,7 @@ class SettingsWindow(SemmyWindow):
         self.rendering_combobox.setCurrentText(DEFAULT_SETTINGS.get("graphics/image_rendering"))
         self.color_picker.selectedColor = DEFAULT_SETTINGS.get("graphics/object_color")
         self.border_color_picker.selectedColor = DEFAULT_SETTINGS.get("graphics/object_border_color")
+        self.scale_bar_color_picker.selectedColor = DEFAULT_SETTINGS.get("graphics/scale_bar_color")
         self.update_window()
     
     def update_window(self):
@@ -212,6 +227,7 @@ class SettingsWindow(SemmyWindow):
         self.settings.save("graphics/object_color", self.color_picker.selectedColor)
         self.settings.save("graphics/object_border_color", self.border_color_picker.selectedColor)
         self.settings.save("graphics/image_rendering", self.rendering_combobox.currentText())
+        self.settings.save("graphics/scale_bar_color", self.scale_bar_color_picker.selectedColor)
         self.update_window()
         self.parent.vispy_canvas.update_object_colors()
         self.parent.vispy_canvas.draw_image()
@@ -221,16 +237,18 @@ class SettingsWindow(SemmyWindow):
         """Check if there is a change in the settings gui."""
         return self.color_picker.selectedColor.getRgb() != self.settings.value("graphics/object_color").getRgb() or \
                 self.border_color_picker.selectedColor.getRgb() != self.settings.value("graphics/object_border_color").getRgb() or \
-                self.rendering_combobox.currentText() != self.settings.value("graphics/image_rendering")
+                self.rendering_combobox.currentText() != self.settings.value("graphics/image_rendering") or \
+                self.scale_bar_color_picker.selectedColor.getRgb() != self.settings.value("graphics/scale_bar_color").getRgb()
 
 class ColorPicker(QPushButton):
     
     color_updated = pyqtSignal(QColor)  # Define a custom signal
     
-    def __init__(self, color:QColor, *args, **kwargs):
+    def __init__(self, color:QColor, *args, alpha_channel=True, **kwargs):
         super().__init__(*args, **kwargs)
         self.color_picker = QColorDialog()
-        self.color_picker.setOption(QColorDialog.ColorDialogOption.ShowAlphaChannel)
+        if alpha_channel:
+            self.color_picker.setOption(QColorDialog.ColorDialogOption.ShowAlphaChannel)
         self.color_picker.colorSelected.connect(self.update_color)
         self.clicked.connect(self.color_picker.open)
         self.selectedColor = color  # Initialize with a default color

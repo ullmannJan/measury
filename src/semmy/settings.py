@@ -4,7 +4,8 @@ from PyQt6.QtCore import QSettings
 DEFAULT_SETTINGS = {
     "graphics/object_color": QColor(255, 0, 0, 26),
     "graphics/object_border_color": QColor(255, 0, 0, 127),
-    "graphics/image_rendering": "nearest"
+    "graphics/image_rendering": "nearest",
+    "graphics/scale_bar_color": QColor(255, 0, 0, 255),
 }
 
 class Settings(QSettings):

@@ -390,7 +390,7 @@ class VispyCanvas(SceneCanvas):
             cv2.floodFill(img_data_modified, 
                             None,
                             (seed_point_x, seed_point_y),
-                            newVal=(255, 0, 0),
+                            newVal=self.main_window.settings.value("graphics/scale_bar_color").getRgb(),
                             loDiff=[threshold]*3,
                             upDiff=[threshold]*3
                         )

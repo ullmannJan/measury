@@ -34,9 +34,6 @@ class DataHandler:
 
         with open(semmy_path / Path("data/sem_db.yml"), "r", encoding='utf8') as file:
             self.sem_db = safe_load(file)
-
-        with open(semmy_path / Path("data/settings.yaml"), "r", encoding='utf8') as file:
-            self.settings = safe_load(file)
             
         if logger is not None:
             self.logger = logger
