@@ -14,6 +14,7 @@ class VispyCanvas(SceneCanvas):
     CANVAS_SHAPE = (800, 600)
     main_ui = None
     main_window = None
+    scale_bar_params = (None, True, 10)
 
     def __init__(self, main_window):
         
@@ -367,44 +368,47 @@ class VispyCanvas(SceneCanvas):
                 self.main_ui.structure_dd.setCurrentText(text)
             return False
         
-    def find_scaling_bar_width(self, seed_point_percentage, relative=True, threshold=None):
+    def find_scaling_bar_width(self, seed_points, relative=True, threshold=10):
         # get width of scaling bar by floodFilling an area of similar pixels.
         # The start point needs to be given
         
-        if threshold is None:
-            threshold = 10
+        self.scale_bar_params = (seed_points, relative, threshold)
         
-        # create copy of image which can be modified
-        img_data_modified = self.data_handler.img_data.copy()
-        if relative:
-            seed_point_x = round(seed_point_percentage[0] * img_data_modified.shape[1])
-            seed_point_y = round(seed_point_percentage[1] * img_data_modified.shape[0])
+        if seed_points is None:
+            self.draw_image()
+            scale_px = ""
         else:
-            seed_point_x, seed_point_y = seed_point_percentage
-        self.data_handler.logger.debug(f"seed_point_x = {seed_point_x}, seed_point_y = {seed_point_y}")
-        
-        cv2.floodFill(img_data_modified, 
-                        None,
-                        (seed_point_x, seed_point_y),
-                        newVal=(255, 0, 0),
-                        loDiff=[threshold]*3,
-                        upDiff=[threshold]*3
-                    )
-        
-        self.draw_image(img_data=img_data_modified)
+            # create copy of image which can be modified
+            img_data_modified = self.data_handler.img_data.copy()
+            if relative:
+                seed_point_x = round(seed_points[0] * img_data_modified.shape[1])
+                seed_point_y = round(seed_points[1] * img_data_modified.shape[0])
+            else:
+                seed_point_x, seed_point_y = seed_points
+            self.data_handler.logger.debug(f"seed_point_x = {seed_point_x}, seed_point_y = {seed_point_y}")
+            
+            cv2.floodFill(img_data_modified, 
+                            None,
+                            (seed_point_x, seed_point_y),
+                            newVal=(255, 0, 0),
+                            loDiff=[threshold]*3,
+                            upDiff=[threshold]*3
+                        )
+            
+            self.draw_image(img_data=img_data_modified)
 
-        non_zero_indices = np.nonzero(np.sum(self.data_handler.img_data-img_data_modified, axis=2))
+            non_zero_indices = np.nonzero(np.sum(self.data_handler.img_data-img_data_modified, axis=2))
 
-        # plus one to account for the start pixel        
-        if self.main_ui.scaling_direction_dd.currentText() == "horizontal":
-            scale_px = np.max(non_zero_indices[1])-np.min(non_zero_indices[1]) + 1
-        else:
-            scale_px = np.max(non_zero_indices[0])-np.min(non_zero_indices[0]) + 1
-
+            # plus one to account for the start pixel        
+            if self.main_ui.scaling_direction_dd.currentText() == "horizontal":
+                scale_px = np.max(non_zero_indices[1])-np.min(non_zero_indices[1]) + 1
+            else:
+                scale_px = np.max(non_zero_indices[0])-np.min(non_zero_indices[0]) + 1
+            
         self.main_ui.pixel_edit.setText(str(scale_px))
         self.scene.update()
         
-    def find_scaling_bar_width_w_undo(self, seed_point_percentage, relative=True, threshold=None):
+    def find_scaling_bar_width_w_undo(self, seed_point_percentage, relative=True, threshold=10):
         command = FindScalingBarWidthCommand(self, seed_point_percentage, relative, threshold)
         self.main_window.undo_stack.push(command)
       
@@ -638,18 +642,22 @@ class ShowObjectCommand(QUndoCommand):
         self.vispy_canvas.show_all_objects()
         
 class FindScalingBarWidthCommand(QUndoCommand):
-    def __init__(self, vispy_canvas, seed_point_percentage, relative, threshold):
+    def __init__(self, vispy_canvas, seed_points, relative, threshold):
         super().__init__()
         self.vispy_canvas = vispy_canvas
-        self.seed_point_percentage = seed_point_percentage
+        
+        self.seed_points = seed_points
         self.relative = relative
         self.threshold = threshold
-        self.former_pixel_width = self.vispy_canvas.main_ui.pixel_edit.text()
-       
+        
+        self.old_scale_bar_params = self.vispy_canvas.scale_bar_params
+
     def undo(self):
         # Restore the old state
-        raise NotImplementedError("Undo for FindScalingBarWidthCommand is not implemented")
-    
+        self.vispy_canvas.find_scaling_bar_width(*self.old_scale_bar_params)
+        
     def redo(self):
         # Find the scaling bar width
-        self.vispy_canvas.find_scaling_bar_width(self.seed_point_percentage, self.relative, self.threshold)
+        self.vispy_canvas.find_scaling_bar_width(self.seed_points, 
+                                                 self.relative, 
+                                                 self.threshold)
