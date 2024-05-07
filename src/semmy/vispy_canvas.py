@@ -296,7 +296,7 @@ class VispyCanvas(SceneCanvas):
                                 m_i_x, m_i_y = np.floor(mouse_image_coords).astype(int)
 
                                 # get width of scaling bar and show it in image
-                                self.find_scaling_bar_width((m_i_x, m_i_y), relative=False)
+                                self.find_scaling_bar_width_w_undo((m_i_x, m_i_y), relative=False)
                             
                             # right click to delete scaling identification
                             if event.button == 2:
@@ -366,7 +366,7 @@ class VispyCanvas(SceneCanvas):
                 # After the user closes the QInputDialog, you can get the text from the QLineEdit
                 self.main_ui.structure_dd.setCurrentText(text)
             return False
-
+        
     def find_scaling_bar_width(self, seed_point_percentage, relative=True, threshold=None):
         # get width of scaling bar by floodFilling an area of similar pixels.
         # The start point needs to be given
@@ -403,7 +403,11 @@ class VispyCanvas(SceneCanvas):
 
         self.main_ui.pixel_edit.setText(str(scale_px))
         self.scene.update()
-
+        
+    def find_scaling_bar_width_w_undo(self, seed_point_percentage, relative=True, threshold=None):
+        command = FindScalingBarWidthCommand(self, seed_point_percentage, relative, threshold)
+        self.main_window.undo_stack.push(command)
+      
     def on_mouse_move(self, event):
 
         # transform so that coordinates start at 0 in self.view window
@@ -632,3 +636,20 @@ class ShowObjectCommand(QUndoCommand):
     def redo(self):
         # Hide the object
         self.vispy_canvas.show_all_objects()
+        
+class FindScalingBarWidthCommand(QUndoCommand):
+    def __init__(self, vispy_canvas, seed_point_percentage, relative, threshold):
+        super().__init__()
+        self.vispy_canvas = vispy_canvas
+        self.seed_point_percentage = seed_point_percentage
+        self.relative = relative
+        self.threshold = threshold
+        self.former_pixel_width = self.vispy_canvas.main_ui.pixel_edit.text()
+       
+    def undo(self):
+        # Restore the old state
+        raise NotImplementedError("Undo for FindScalingBarWidthCommand is not implemented")
+    
+    def redo(self):
+        # Find the scaling bar width
+        self.vispy_canvas.find_scaling_bar_width(self.seed_point_percentage, self.relative, self.threshold)

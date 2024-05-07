@@ -242,7 +242,7 @@ class MainUI(QWidget):
                     threshold = self.data_handler.sem_db[self.dd_select_sem.currentText()]['Threshold']
                 # only actually try to find scaling bar, when data is given by database
                 if seed_point is not None:
-                    self.vispy_canvas.find_scaling_bar_width(seed_point, threshold=threshold)
+                    self.vispy_canvas.find_scaling_bar_width_w_undo(seed_point, threshold=threshold)
             except Exception as e:
                 self.main_window.raise_error("Something went wrong while trying to identify scaling bar: "+ str(e))            
 
