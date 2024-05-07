@@ -308,7 +308,6 @@ class MainUI(QWidget):
         structure = self.structure_dd.currentText()
         index = self.object_list.currentRow()
         
-        self.vispy_canvas.unselect()
         object = self.data_handler.drawing_data[structure][index]
         self.vispy_canvas.select(object)
         

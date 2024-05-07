@@ -264,7 +264,7 @@ class VispyCanvas(SceneCanvas):
                                     new_object.select(False)
                                     if self.check_creation_allowed(new_object):
 
-                                        self.create_new_object(new_object, pos=pos, selected=True)
+                                        self.create_new_object_w_undo(new_object, pos=pos, selected=True)
                                                                         
                                         # update ui where data is shown
                                         self.selection_update(object=new_object)
@@ -321,14 +321,24 @@ class VispyCanvas(SceneCanvas):
         if selected:                             
             new_object.select_creation_controlpoint()
             self.selected_object = new_object.control_points
+        
             
         # save object in data_handler.drawing_data
         if structure_name is None:
             structure_name = self.main_ui.structure_dd.currentText()
-        self.data_handler.save_object(structure_name, new_object)
         
-        # update canvas
+        structure_name = self.data_handler.save_object(structure_name, new_object)
+        
+        if self.main_ui.structure_dd.currentText() == "":
+            self.main_ui.structure_dd.setCurrentText(structure_name)                
+
         self.main_ui.update_object_list()
+
+        return structure_name
+    
+    def create_new_object_w_undo(self, new_object, pos=None, selected=False, structure_name=None):
+        command = CreateObjectCommand(self, new_object, pos, selected, structure_name)
+        self.main_window.undo_stack.push(command)
         
     def update_object_colors(self):
         for name in self.data_handler.drawing_data.keys():
@@ -525,11 +535,13 @@ class VispyCanvas(SceneCanvas):
         # delete object
         if object is not None:
             self.data_handler.delete_object(object)
-            object.select(False)
+            
+            print(object, object.selected)
+            if object.selected:
+                self.unselect()   
+                
+            self.main_ui.update_object_list()
             object.delete()
-            self.selected_object = None
-        self.main_ui.update_object_list()
-        self.main_ui.clear_object_table()
         
         self.main_window.right_ui.update_intensity_plot()
         
@@ -538,6 +550,7 @@ class VispyCanvas(SceneCanvas):
         self.main_window.undo_stack.push(command)
 
     def select(self, obj):
+        self.unselect()
         self.selected_object = obj
         self.selected_object.select(True, obj=obj)
         self.selected_object.set_visibility(True)
@@ -547,6 +560,7 @@ class VispyCanvas(SceneCanvas):
         if self.selected_object is not None:
             self.selected_object.select(False)
             self.selected_object = None
+            self.main_ui.clear_object_table()
             
     def show_all_objects(self):
         self.data_handler.logger.info("show all objects")
@@ -580,6 +594,10 @@ class DeleteObjectCommand(QUndoCommand):
         self.vispy_canvas = self.main_window.vispy_canvas
         if object is None:
             object = self.vispy_canvas.selected_object
+        
+        if isinstance(object, (ControlPoints, LineControlPoints)):
+            object = object.parent
+            
         self.object = object
         self.structure, self.index = data_handler.find_object(self.object)
         
@@ -661,3 +679,36 @@ class FindScalingBarWidthCommand(QUndoCommand):
         self.vispy_canvas.find_scale_bar_width(self.seed_points, 
                                                  self.relative, 
                                                  self.threshold)
+        
+class CreateObjectCommand(QUndoCommand):
+    def __init__(self, vispy_canvas, new_object, pos, selected, structure_name):
+        super().__init__()
+        self.vispy_canvas = vispy_canvas
+        if isinstance(new_object, (ControlPoints, LineControlPoints)):
+            new_object = new_object.parent
+        self.new_object = new_object
+        self.pos = pos
+        self.selected = selected
+        self.structure_name = structure_name
+        self.parent = new_object.parent
+        
+    def undo(self):
+        # Delete object
+        self.vispy_canvas.data_handler.logger.info("Undoing create object")
+        self.vispy_canvas.delete_object(self.new_object)
+        
+    def redo(self):
+        
+        # when it is an undo->redo operation some parameters are set
+        if self.new_object and self.new_object.parent is None:
+            self.selected = False
+            self.new_object.parent = self.parent
+            self.pos = None
+            
+        # Create object
+        self.structure_name = self.vispy_canvas.create_new_object(self.new_object, 
+                                                                    self.pos, 
+                                                                    self.selected, 
+                                                                    self.structure_name)
+        
+        

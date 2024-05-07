@@ -68,7 +68,9 @@ class DataHandler:
         if structure_name not in self.drawing_data.keys():
             self.drawing_data[structure_name] = list()
         self.drawing_data[structure_name].append(object)
-        self.logger.info(f"object {object} saved in drawing_data")
+        self.logger.info(f"object {object} saved in {structure_name} in drawing_data")
+        
+        return structure_name
 
     def delete_object(self, object):
         """delete object from the storage dict
@@ -79,13 +81,16 @@ class DataHandler:
         for object_name, object_list in list(self.drawing_data.items()):
             if object in object_list:
                 object_list.remove(object)
+            # in case it is the controlpoints
             if object.parent in object_list:
                 object_list.remove(object.parent)
+                object = object.parent
             # If the list is empty after removal, delete the key from the dictionary
             if not object_list:
                 self.main_window.main_ui.remove_from_structure_dd(object_name)
                 del self.drawing_data[object_name]
-                self.main_window.main_ui.structure_dd.setCurrentText("")
+                if self.main_window.main_ui.structure_dd.currentText() == object_name:
+                    self.main_window.main_ui.structure_dd.setCurrentText("")
             
     def delete_all_objects(self):
         for structure_list in list(self.drawing_data.values()):
@@ -177,10 +182,9 @@ class DataHandler:
         self.drawing_data = drawing_data
         self.logger.info("loading drawing data into view and into drawing_data")
         if drawing_data:
-            for key, val in drawing_data.items():
+            for val in drawing_data.values():
                 for object in val:
                     object.parent = vispy_instance.view.scene
-                    # vispy_instance.create_new_object(object, structure_name=key)
                 
         
     def load_storage_file(self, file_path, vispy_instance):

@@ -238,6 +238,10 @@ class EditVisual(Compound):
             if self._on_select_callback is not None:
                 self._on_select_callback(self._callback_argument)
 
+    @property
+    def selected(self):
+        return self.control_points.control_points[0].visible
+    
     def start_move(self, start):
         self.drag_reference = start[0:2] - self.control_points.get_center()
 
