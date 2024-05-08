@@ -149,6 +149,11 @@ class SettingsWindow(SemmyWindow):
         self.misc_layout = QVBoxLayout()
         self.misc.setLayout(self.misc_layout)
         
+        self.resetHistoryButton = QPushButton("Reset History", self)
+        self.resetHistoryButton.clicked.connect(self.parent.reset_undo_stack)
+        self.misc_layout.addWidget(self.resetHistoryButton)     
+        
+        self.misc_layout.addStretch()   
         
     def create_graphics_ui(self):
         """Create the UI for the settings window."""
@@ -204,6 +209,7 @@ class SettingsWindow(SemmyWindow):
         self.scale_bar_color_layout.addWidget(self.scale_bar_color_picker)
         self.graphics_layout.addLayout(self.scale_bar_color_layout)
         
+        self.graphics_layout.addStretch()
             
         self.graphics.setLayout(self.graphics_layout)
 

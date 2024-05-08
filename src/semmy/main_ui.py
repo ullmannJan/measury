@@ -196,7 +196,7 @@ class MainUI(QWidget):
         self.layout.addWidget(self.selected_object_box)
 
         # add empty space
-        self.layout.addStretch(1)
+        self.layout.addStretch()
 
         # Overview
         self.openSaveWindow = QPushButton("Show Measurements", self)

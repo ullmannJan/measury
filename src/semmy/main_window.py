@@ -4,7 +4,7 @@ from PyQt6.QtGui import QAction, QIcon, QColor, QUndoCommand, QUndoStack
 from PyQt6.QtWidgets import (QApplication, QMainWindow,
                              QWidget, QHBoxLayout, QSplitter,
                              QMessageBox, QToolButton, 
-                             QSizePolicy)
+                             QSizePolicy, QStyle)
 from PyQt6.QtCore import Qt
 from sys import modules as sys_modules
 
@@ -58,69 +58,81 @@ class MainWindow(QMainWindow):
         # self.setStyleSheet("background-color: white") 
 
         # Create actions for menu bar
-        openAction = QAction(QIcon('open.png'), 'Open File', self)
+        openAction = QAction(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogOpenButton),
+                             'Open File', self)
         openAction.setShortcut('Ctrl+O')
         openAction.setStatusTip('Open document')
         openAction.triggered.connect(lambda : self.main_ui.select_sem_file(file_path=None))
         
-        imageFromClipboardAction = QAction(QIcon('open.png'), 'Image from Clipboard', self)
+        imageFromClipboardAction = QAction(self.style().standardIcon(QStyle.StandardPixmap.SP_FileIcon), 
+                                           'Image from Clipboard', self)
         imageFromClipboardAction.setShortcut('Ctrl+V')
         imageFromClipboardAction.setStatusTip('Open image from clipboard')
         imageFromClipboardAction.triggered.connect(lambda : self.data_handler.open_image_from_clipboard(self.vispy_canvas))
         
-        saveAction = QAction(QIcon('save.png'), 'Save File', self)
+        saveAction = QAction(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogSaveButton), 
+                            'Save File', self)
         saveAction.setShortcut('Ctrl+S')
         saveAction.setStatusTip('Save')
         saveAction.triggered.connect(self.main_ui.open_save_window)
         
         # edit actions
-        undoAction = QAction(QIcon('open.png'), 'Undo', self)
+        undoAction = QAction(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowBack), 
+                             'Undo', self)
         undoAction.setShortcut('Ctrl+Z')
         undoAction.setStatusTip('Undo last action')
         undoAction.triggered.connect(self.undo_stack.undo)
         
-        redoAction = QAction(QIcon('open.png'), 'Redo', self)
+        redoAction = QAction(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowForward), 
+                             'Redo', self)
         redoAction.setShortcut('Ctrl+Y')
         redoAction.setStatusTip('Redo last action')
         redoAction.triggered.connect(self.undo_stack.redo)
         
         # view
-        centerAction = QAction(QIcon('open.png'), 'Center Image', self)
+        centerAction = QAction(self.style().standardIcon(QStyle.StandardPixmap.SP_DesktopIcon), 
+                               'Center Image', self)
         centerAction.setShortcut('Ctrl+P')
         centerAction.setStatusTip('Center Image')
         centerAction.triggered.connect(self.vispy_canvas.center_image)
         
-        hideAction = QAction(QIcon('open.png'), 'Hide Objects', self)
+        hideAction = QAction(QIcon(str(semmy_path/"data/ghost_icon.png")), 
+                             'Hide Objects', self)
         hideAction.setShortcut('Ctrl+H')
         hideAction.setStatusTip('Hide Objects')
         hideAction.triggered.connect(self.vispy_canvas.hide_all_objects_w_undo)
         
-        showAction = QAction(QIcon('open.png'), 'Show Objects', self)
+        showAction = QAction(QIcon(str(semmy_path/"data/show_icon.png"))
+                             , 'Show Objects', self)
         showAction.setShortcut('Ctrl+Shift+H')
         showAction.setStatusTip('Show Objects')
         showAction.triggered.connect(self.vispy_canvas.show_all_objects_w_undo)
         
         # Settings
-        settingsAction = QAction(QIcon('open.png'), 'Settings', self)
+        settingsAction = QAction(QIcon(str(semmy_path/"data/gear_icon.png")), 'Settings', self)
         settingsAction.setShortcut('Ctrl+I')
         settingsAction.setStatusTip('Open settings page')
         settingsAction.triggered.connect(self.open_settings_page)
         
-        resetSettingsAction = QAction(QIcon('open.png'), 'Reset Settings', self)
+        resetSettingsAction = QAction(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogResetButton), 
+                                      'Reset Settings', self)
         resetSettingsAction.setStatusTip('Clear Settings')
         resetSettingsAction.triggered.connect(self.settings.clear)
 
         # About
-        aboutAction = QAction(QIcon('open.png'), 'About', self)
+        aboutAction = QAction(self.style().standardIcon(QStyle.StandardPixmap.SP_MessageBoxInformation), 
+                              'About', self)
         aboutAction.setStatusTip('Show information about Semmy')
         aboutAction.triggered.connect(self.open_about_page)
         
-        measurementAction = QAction(QIcon('open.png'), 'Data Overview', self)
+        measurementAction = QAction(self.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogDetailedView), 
+                                    'Data Overview', self)
         measurementAction.setShortcut('Ctrl+D')
         measurementAction.setStatusTip('Show an overview of all measured data')
         measurementAction.triggered.connect(self.open_data_page)
         
-        delete_all_objects_action = QAction(QIcon('open.png'), 'Delete all Objects', self)
+        delete_all_objects_action = QAction(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogDiscardButton), 
+                                            'Delete all Objects', self)
         delete_all_objects_action.setStatusTip('Delete all objects')
         delete_all_objects_action.triggered.connect(self.data_handler.delete_all_objects_w_undo)
         
@@ -195,6 +207,9 @@ class MainWindow(QMainWindow):
             raise Exception(error)
         else:   
             QMessageBox.critical(self, "Error", str(error))
+            
+    def reset_undo_stack(self):
+        self.undo_stack.clear()
     
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Delete:
