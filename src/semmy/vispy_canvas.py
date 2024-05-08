@@ -205,7 +205,9 @@ class VispyCanvas(SceneCanvas):
 
                                     self.selected_object.select(True, obj=selected)
                                     self.selected_object.start_move(pos)
-
+                                    # no undoing because it is a creation which can be undone 
+                                    # by deleting the object
+                                    
                                     # update ui to display properties of selected object
                                     self.selection_update()
                                     
@@ -235,7 +237,8 @@ class VispyCanvas(SceneCanvas):
 
                                     self.selected_object.select(True, obj=selected)
                                     self.selected_object.start_move(pos)
-
+                                    self.move_object_w_undo(self.selected_object)
+                                    
                                     # update ui to display properties of selected object
                                     self.selection_update()
                                     # Needs change
@@ -421,6 +424,19 @@ class VispyCanvas(SceneCanvas):
     def find_scale_bar_width_w_undo(self, seed_point_percentage, relative=True, threshold=10):
         command = FindScalingBarWidthCommand(self, seed_point_percentage, relative, threshold)
         self.main_window.undo_stack.push(command)
+        
+    def on_mouse_release(self, event):
+        # transform so that coordinates start at 0 in self.view window
+        tr = self.scene.node_transform(self.view)
+        # only activate when over self.view by looking if coordinates < 0 or > size of self.view
+        if not( (tr.map(event.pos)[:2] > self.view.size).any() or (tr.map(event.pos)[:2] < (0,0)).any() ):
+            if not self.start_state:
+                match event.button:
+                    case 1: 
+                        if event.is_dragging:
+                            if self.selected_object is not None:
+                                # save in undo history
+                                print(f"move ended for object {self.selected_object}")
       
     def on_mouse_move(self, event):
 
@@ -454,7 +470,6 @@ class VispyCanvas(SceneCanvas):
                                             self.selected_object.rotate(angle)
                                             
                                         else:
-                                            
                                             self.selected_object.move(pos[0:2], modifiers=modifiers)
 
                                         # update ui to display properties of selected object
@@ -470,7 +485,9 @@ class VispyCanvas(SceneCanvas):
                             dpos = tr.map(event.last_event.pos)[:2] -tr.map(event.pos)[:2]  # Calculate the change in position of the mouse
                             self.view.camera.pan(dpos)  # Pan the camera based on the mouse movement
 
-
+    def move_object_w_undo(self, object):
+        command = MoveObjectCommand(self, object)
+        self.main_window.undo_stack.push(command)
 
     def selection_update(self, object=None):
 
@@ -618,20 +635,50 @@ class DeleteObjectCommand(QUndoCommand):
         self.vispy_canvas.delete_object(self.object)
         self.data_handler.logger.info("Deleted object")
         
-# class MoveObjectCommand(QUndoCommand):
-#     def __init__(self, object, new_pos):
-#         super().__init__()
-#         self.object = object
-#         self.new_pos = new_pos
-#         self.old_pos = object.center
+class MoveObjectCommand(QUndoCommand):
+    def __init__(self, vispy_instance, object):
+        super().__init__()
+        # make a copy of the object to be able to restore the old state
+        self.vispy_instance = vispy_instance
+        self.object = object
         
-#     def undo(self):
-#         # Restore the old state
-#         self.object.set_center(self.old_pos)
+        # for redoing
+        self.center = None
+        self.angle = None
         
-#     def redo(self):
-#         # Move the object
-#         self.object.set_center(self.new_pos)
+        # for undoing
+        self.old_center = object.center
+        self.old_angle = object.angle
+        
+    def undo(self):
+        self.vispy_instance.data_handler.logger.info("Undoing move object")
+        
+        # save former state  
+        self.center = self.object.center
+        self.angle = self.object.angle
+        
+        # restore old state
+        self.object.set_center(self.old_center)
+        # self.object.angle = self.old_angle
+        self.object.update_from_controlpoints()
+        self.vispy_instance.selection_update()
+
+        
+    def redo(self):
+        # Move the object
+        self.vispy_instance.data_handler.logger.info("Redoing move object")
+        
+        if self.center is not None:
+            self.object.set_center(self.center)
+        # if self.angle is not None:
+        #     self.object.angle = self.angle
+
+        self.object.update_from_controlpoints()
+        self.vispy_instance.selection_update()
+
+
+        
+        
 
 class HideObjectCommand(QUndoCommand):
     def __init__(self, vispy_canvas):
