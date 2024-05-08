@@ -361,16 +361,20 @@ class EditRectVisual(EditVisual):
     
     @property
     def height(self):
-        return self.form.height
+        return self.control_points._height
     @height.setter
     def height(self, val):
+        self.control_points._height = val
+        self.control_points.update_points()
         self.form.height = val
         
     @property
     def width(self):
-        return self.form.width
+        return self.control_points._width
     @width.setter
     def width(self, val):
+        self.control_points._width = val
+        self.control_points.update_points()
         self.form.width = val
     
     def set_center(self, val):
@@ -388,6 +392,11 @@ class EditRectVisual(EditVisual):
             None
         try:
             self.form.center = self.control_points.center
+        except ValueError:
+            None
+        try:
+            self.angle = self.control_points.angle
+            self.update_transform()
         except ValueError:
             None
     
@@ -478,6 +487,23 @@ class EditEllipseVisual(EditVisual):
     def set_center(self, val):
         self.control_points.set_center(val)
         self.form.center = val
+        
+    @property
+    def height(self):
+        return self.control_points._height
+    @height.setter
+    def height(self, val):
+        self.control_points._height = val
+        self.control_points.update_points()
+
+        
+    @property
+    def width(self):
+        return self.control_points._width
+    @width.setter
+    def width(self, val):
+        self.control_points._width = val
+        self.control_points.update_points()
 
     def update_from_controlpoints(self):
         try:
@@ -487,6 +513,11 @@ class EditEllipseVisual(EditVisual):
             None
         try:
             self.form.center = self.control_points.center
+        except ValueError:
+            None
+        try:
+            self.angle = self.control_points.angle
+            self.update_transform()
         except ValueError:
             None
     
@@ -592,7 +623,7 @@ class LineControlPoints(Compound):
     def visible(self, v):
         for c in self.control_points:
             c.visible = v
-
+    
     def set_coords(self, coords):
         self.coords = coords
         self.update_points()
@@ -628,7 +659,7 @@ class EditLineVisual(EditVisual):
         self.line_width = 3
         
         if coords is not None:
-            self.set_coords(coords)    
+            self.coords = coords    
 
         self.form = Line(pos=self.coords,
                         width=self.line_width, 
@@ -665,7 +696,9 @@ class EditLineVisual(EditVisual):
     @property
     def coords(self):
         return self.control_points.coords
-    def set_coords(self, coords):
+    @coords.setter
+    def coords(self, coords):
+        print(coords)
         self.control_points.set_coords(coords)
 
     def move(self, end, *args, **kwargs):

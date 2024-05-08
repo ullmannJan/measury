@@ -98,7 +98,7 @@ class DataWindow(SemmyWindow):
         cb = QGuiApplication.clipboard()
         cb.clear()
         cb.setText(self.parent.data_handler.calculate_results_string())
-        print(cb.text())
+
         
 class SettingsWindow(SemmyWindow):
     

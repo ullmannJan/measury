@@ -424,20 +424,21 @@ class VispyCanvas(SceneCanvas):
     def find_scale_bar_width_w_undo(self, seed_point_percentage, relative=True, threshold=10):
         command = FindScalingBarWidthCommand(self, seed_point_percentage, relative, threshold)
         self.main_window.undo_stack.push(command)
-        
-    def on_mouse_release(self, event):
-        # transform so that coordinates start at 0 in self.view window
-        tr = self.scene.node_transform(self.view)
-        # only activate when over self.view by looking if coordinates < 0 or > size of self.view
-        if not( (tr.map(event.pos)[:2] > self.view.size).any() or (tr.map(event.pos)[:2] < (0,0)).any() ):
-            if not self.start_state:
-                match event.button:
-                    case 1: 
-                        if event.is_dragging:
-                            if self.selected_object is not None:
-                                # save in undo history
-                                print(f"move ended for object {self.selected_object}")
       
+    # can be deleted  
+    # def on_mouse_release(self, event):
+    #     # transform so that coordinates start at 0 in self.view window
+    #     tr = self.scene.node_transform(self.view)
+    #     # only activate when over self.view by looking if coordinates < 0 or > size of self.view
+    #     if not( (tr.map(event.pos)[:2] > self.view.size).any() or (tr.map(event.pos)[:2] < (0,0)).any() ):
+    #         if not self.start_state:
+    #             match event.button:
+    #                 case 1: 
+    #                     if event.is_dragging:
+    #                         if self.selected_object is not None:
+    #                             # save in undo history
+    #                             print(f"move ended for object {self.selected_object}")
+
     def on_mouse_move(self, event):
 
         # transform so that coordinates start at 0 in self.view window
@@ -553,7 +554,6 @@ class VispyCanvas(SceneCanvas):
         if object is not None:
             self.data_handler.delete_object(object)
             
-            print(object, object.selected)
             if object.selected:
                 self.unselect()   
                 
@@ -640,26 +640,53 @@ class MoveObjectCommand(QUndoCommand):
         super().__init__()
         # make a copy of the object to be able to restore the old state
         self.vispy_instance = vispy_instance
+        
+        # if object is a control point, get the whole object
+        if isinstance(object, (ControlPoints, LineControlPoints)):
+            object = object.parent
         self.object = object
         
-        # for redoing
-        self.center = None
-        self.angle = None
         
+        # for redoing
+        self.redoing = False
+        if isinstance(self.object, EditLineVisual):
+            self.coords = None
+            self.old_coords = object.coords.copy()
+        elif isinstance(self.object, (EditEllipseVisual,EditRectVisual)):
+            
+            self.height = None
+            self.old_height = object.height
+            self.width = None
+            self.old_width = object.width
+            self.center = None
+            self.old_center = object.center
+            self.angle = None
+            self.old_angle = object.angle
         # for undoing
-        self.old_center = object.center
-        self.old_angle = object.angle
+
         
     def undo(self):
         self.vispy_instance.data_handler.logger.info("Undoing move object")
         
         # save former state  
-        self.center = self.object.center
-        self.angle = self.object.angle
-        
+        if isinstance(self.object, EditLineVisual):
+            self.coords = self.object.coords
+            self.object.coords = self.old_coords
+        elif isinstance(self.object, (EditEllipseVisual, EditRectVisual)):
+            
+            self.center = self.object.center
+            self.height = self.object.height
+            self.width = self.object.width
+            self.angle = self.object.angle
+            
+            self.object.set_center(self.old_center)
+            self.object.width = self.old_width
+            self.object.height = self.old_height
+            self.object.angle = self.old_angle
+            print(self.old_angle)
+            
         # restore old state
-        self.object.set_center(self.old_center)
-        # self.object.angle = self.old_angle
+        
         self.object.update_from_controlpoints()
         self.vispy_instance.selection_update()
 
@@ -668,13 +695,19 @@ class MoveObjectCommand(QUndoCommand):
         # Move the object
         self.vispy_instance.data_handler.logger.info("Redoing move object")
         
-        if self.center is not None:
-            self.object.set_center(self.center)
-        # if self.angle is not None:
-        #     self.object.angle = self.angle
-
-        self.object.update_from_controlpoints()
-        self.vispy_instance.selection_update()
+        if not self.redoing:
+            self.redoing = True
+        else:
+            if isinstance(self.object, EditLineVisual):
+                self.object.coords = self.coords
+            elif isinstance(self.object, (EditEllipseVisual, EditRectVisual)):
+                self.object.set_center(self.center)
+                self.object.width = self.width
+                self.object.height = self.height
+                self.object.angle = self.angle
+            
+            self.object.update_from_controlpoints()
+            self.vispy_instance.selection_update()
 
 
         

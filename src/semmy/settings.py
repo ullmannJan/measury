@@ -19,7 +19,6 @@ class Settings(QSettings):
         """Manage loading all the settings."""
         self.parent.data_handler.logger.info("Loading default settings")
         for key, value in DEFAULT_SETTINGS.items():
-            print(key, ": ", value)
             self.setValue(key, value)
         self.sync()
         
