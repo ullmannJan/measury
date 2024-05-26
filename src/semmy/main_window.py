@@ -14,7 +14,7 @@ from . import semmy_path
 from .main_ui import MainUI
 from .right_ui import RightUI
 from .vispy_canvas import VispyCanvas
-from .windows import AboutWindow, DataWindow, SettingsWindow
+from .windows import AboutWindow, DataWindow, SettingsWindow, XMLWindow
 from .settings import Settings
 
 class MainWindow(QMainWindow):
@@ -75,6 +75,12 @@ class MainWindow(QMainWindow):
         saveAction.setShortcut('Ctrl+S')
         saveAction.setStatusTip('Save')
         saveAction.triggered.connect(self.main_ui.open_save_window)
+
+        seeXMLAction = QAction(self.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogInfoView),
+                                 'See XML', self)
+        seeXMLAction.setShortcut('Ctrl+U')
+        seeXMLAction.setStatusTip('See XML of opened file')
+        seeXMLAction.triggered.connect(self.open_xml_window)
         
         # edit actions
         undoAction = QAction(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowBack), 
@@ -142,6 +148,8 @@ class MainWindow(QMainWindow):
         fileMenu.addAction(openAction)
         fileMenu.addAction(imageFromClipboardAction)
         fileMenu.addAction(saveAction)
+        fileMenu.addAction(seeXMLAction)
+
         editMenu = menuBar.addMenu('&Edit')
         editMenu.addAction(delete_all_objects_action)
         editMenu.addAction(undoAction)
@@ -222,6 +230,10 @@ class MainWindow(QMainWindow):
 
                     # if reply == QMessageBox.StandardButton.Yes:
                         self.vispy_canvas.delete_object_w_undo()
+
+    def open_xml_window(self):
+        self.data_window = XMLWindow(parent=self)
+        self.data_window.show()
                         
         
 class DropEnabledQOpenGLWidget(QOpenGLWidget):

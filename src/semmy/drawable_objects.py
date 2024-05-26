@@ -698,7 +698,6 @@ class EditLineVisual(EditVisual):
         return self.control_points.coords
     @coords.setter
     def coords(self, coords):
-        print(coords)
         self.control_points.set_coords(coords)
 
     def move(self, end, *args, **kwargs):

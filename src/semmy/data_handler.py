@@ -11,6 +11,9 @@ from copy import deepcopy
 import logging
 import numpy as np  
 from time import sleep
+import xml.etree.ElementTree as ET
+import os
+import json
 
 from . import semmy_path
 # you need this as they are implicitly used
@@ -156,7 +159,6 @@ class DataHandler:
         for key, val in self.drawing_data.items():
             structure_data[key] = [[obj.__class__, deepcopy(obj.save())] for obj in val]
         
-        #TODO: scalebar length
         if save_image:
             scaling = (self.main_window.main_ui.pixel_edit.text(), self.main_window.main_ui.length_edit.text(), self.main_window.main_ui.units_dd.currentText())
             output = (self.img_data, structure_data, scaling)
@@ -379,6 +381,76 @@ class DataHandler:
         
         return False
     
+    def get_xml(self, file_path=None):
+        # This only works for Zeiss Orion files yet
+        # TODO: implement for other file types
+
+        # first check if image was loaded
+        if file_path is None:
+            file_path = self.file_path
+            if file_path is None:
+                self.main_window.raise_error("No file loaded")
+                return None
+        
+        # get last line of file
+        with open(file_path, 'rb') as f:
+            try:  # catch OSError in case of a one line file 
+                f.seek(-2, os.SEEK_END)
+                while f.read(1) != b'\n':
+                    f.seek(-2, os.SEEK_CUR)
+            except OSError:
+                f.seek(0)
+            # remove last character as it is null
+            last_line = f.readline().decode()[:-1]
+
+        
+        try:
+            root = ET.fromstring(last_line)
+        except ET.ParseError as e:
+            self.logger.error(f"XML parsing error: {str(e)}")
+            self.main_window.raise_error("There was a problem parsing the XML string.\n"\
+                                         f"Problematic part of the XML string: {last_line[max(0, e.position[1]-10):e.position[1]+10]}")
+            return None
+
+        # Create a dictionary to store the values
+        values = parse_element(root)
+        
+        return values
+    
+    def get_xml_string(self, file_path=None):
+        values = self.get_xml(file_path)
+        if values is None:
+            return None
+        else:
+            return json.dumps(values, indent=4, ensure_ascii=False)
+        
+        
+def parse_element(element):
+    """Recursively parse an XML element and its children into a dictionary."""
+
+    # Create a dictionary to store the element's attributes
+    node = {}
+
+    # Iterate over all child elements
+    for child in list(element):
+        # Recursively parse the child element
+        child_data = parse_element(child)
+
+        # If the child's tag is already in the node dictionary, add the child's data to that tag
+        if child.tag in node:
+            # If there's only one child with this tag so far, put it in a list
+            if type(node[child.tag]) is list:
+                node[child.tag].append(child_data)
+            else:
+                node[child.tag] = [node[child.tag], child_data]
+        else:
+            node[child.tag] = child_data
+
+    # If the element has no child elements, store its text
+    if not node:
+        node = element.text
+
+    return node
     
 class DeleteAllObjectsCommand(QUndoCommand):
     def __init__(self, data_handler: DataHandler):
@@ -399,4 +471,5 @@ class DeleteAllObjectsCommand(QUndoCommand):
     def redo(self):
         # Delete all objects
         self.data_handler.delete_all_objects()
+
     

@@ -1,9 +1,10 @@
 # absolute imports
 from PyQt6.QtWidgets import QVBoxLayout, QLabel, QWidget, \
     QGroupBox, QPushButton, QCheckBox, QLineEdit, QHBoxLayout, \
-    QColorDialog, QComboBox, QTabWidget
-from PyQt6.QtGui import QIcon, QGuiApplication, QColor
+    QColorDialog, QComboBox, QTabWidget, QTextEdit
+from PyQt6.QtGui import QIcon, QGuiApplication, QColor, QTextCursor
 from PyQt6.QtCore import Qt, pyqtSignal
+
 
 # relative imports
 from . import __version__ as semmy_version
@@ -275,5 +276,50 @@ class ColorPicker(QPushButton):
     def selectedColor(self, color: QColor):
         self.color_picker.setCurrentColor(color)
         self.update_color(color)
-    
-    
+
+class XMLWindow(SemmyWindow):
+    """
+    The window displaying the xml values of a file.
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(title="XML file data", *args, **kwargs)
+
+        self.setMinimumHeight(500)
+        
+        values = self.parent.data_handler.get_xml_string()
+        # create scrollable text area
+        self.text_area = QTextEdit(self)
+        self.text_area.setText(values)
+        self.text_area.setReadOnly(True)
+
+        # create search line edit
+        self.search_line_edit = QLineEdit(self)
+        self.search_line_edit.setPlaceholderText("Search")
+        self.search_line_edit.returnPressed.connect(self.search_text)
+
+        # create search button
+        self.search_button = QPushButton("Search", self)
+        self.search_button.clicked.connect(self.search_text)
+
+        # add widgets to layout
+        self.search_layout = QHBoxLayout()
+        self.search_layout.addWidget(self.search_line_edit)
+        self.search_layout.addWidget(self.search_button)
+        
+        self.layout.addLayout(self.search_layout)
+        self.layout.addWidget(self.text_area)
+
+
+
+    def search_text(self):
+        # get search query from line edit
+        query = self.search_line_edit.text()
+
+        # search text area for query
+        found = self.text_area.find(query)
+
+        if not found:
+        # if query was not found, move cursor to start and search again
+            self.text_area.moveCursor(QTextCursor.MoveOperation.Start)
+            self.text_area.find(query)
+

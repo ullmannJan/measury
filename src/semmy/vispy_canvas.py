@@ -683,7 +683,6 @@ class MoveObjectCommand(QUndoCommand):
             self.object.width = self.old_width
             self.object.height = self.old_height
             self.object.angle = self.old_angle
-            print(self.old_angle)
             
         # restore old state
         
