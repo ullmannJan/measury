@@ -1,7 +1,7 @@
 # absolute imports
 from PyQt6.QtWidgets import QVBoxLayout, QLabel, QWidget, \
     QGroupBox, QPushButton, QCheckBox, QLineEdit, QHBoxLayout, \
-    QColorDialog, QComboBox, QTabWidget, QTextEdit
+    QColorDialog, QComboBox, QTabWidget, QPlainTextEdit
 from PyQt6.QtGui import QIcon, QGuiApplication, QColor, QTextCursor
 from PyQt6.QtCore import Qt, pyqtSignal
 
@@ -286,10 +286,10 @@ class XMLWindow(SemmyWindow):
 
         self.setMinimumHeight(500)
         
-        values = self.parent.data_handler.get_xml_string()
+        values = self.parent.data_handler.get_file_metadata_string()
         # create scrollable text area
-        self.text_area = QTextEdit(self)
-        self.text_area.setText(values)
+        self.text_area = QPlainTextEdit(self)
+        self.text_area.setPlainText(values)
         self.text_area.setReadOnly(True)
 
         # create search line edit

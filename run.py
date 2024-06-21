@@ -10,5 +10,5 @@ if __name__ == '__main__':
     logger.setLevel(logging.INFO)
     # semmy.run(logger=logger)
     # semmy.run(file_path=script_dir/r"tests/test_data/test_file.semmy", logger=logger)
-    semmy.run(file_path=script_dir/r"img/ZeissNIM_001.tif", logger=logger)
+    semmy.run(file_path=script_dir/r"img/GUZ_001.tif", logger=logger)
     

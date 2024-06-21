@@ -9,6 +9,7 @@ from pathlib import Path
 # relative imports
 from .windows import SaveWindow
 from . import semmy_path
+from .data.microscopes import Microscope
 
 
 class MainUI(QWidget):
@@ -228,22 +229,23 @@ class MainUI(QWidget):
             self.save_window = SaveWindow(parent=self)
             self.save_window.show()
 
+    def get_microscope(self) -> Microscope:
+        return self.data_handler.sem_db[self.dd_select_sem.currentText()]()
+
     def automatic_scaling(self):
         #only when image is loaded
         if not self.vispy_canvas.start_state:
             # get seedPoint from sem_db
             try:
-                seed_point = self.data_handler.sem_db[self.dd_select_sem.currentText()]['SeedPoints']
-                if "Orientation" in self.data_handler.sem_db[self.dd_select_sem.currentText()]:
-                    orientation = self.data_handler.sem_db[self.dd_select_sem.currentText()]['Orientation']
-                    if orientation:
-                        self.scaling_direction_dd.setCurrentText(orientation)
-                threshold = None
-                if "Threshold" in self.data_handler.sem_db[self.dd_select_sem.currentText()]:
-                    threshold = self.data_handler.sem_db[self.dd_select_sem.currentText()]['Threshold']
+                seed_points = self.get_microscope().seed_points
+                orientation = self.get_microscope().orientation
+                if orientation is not None:
+                    self.scaling_direction_dd.setCurrentText(orientation)
                 # only actually try to find scaling bar, when data is given by database
-                if seed_point is not None:
-                    self.vispy_canvas.find_scale_bar_width_w_undo(seed_point, threshold=threshold)
+                if seed_points is not None:
+                    threshold = self.get_microscope().threshold
+                    self.vispy_canvas.find_scale_bar_width_w_undo(seed_point_percentage=seed_points, 
+                                                                  threshold=threshold)
             except Exception as e:
                 self.main_window.raise_error("Something went wrong while trying to identify scaling bar: "+ str(e))            
 

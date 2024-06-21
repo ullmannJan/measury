@@ -18,6 +18,7 @@ import json
 from . import semmy_path
 # you need this as they are implicitly used
 from .drawable_objects import EditRectVisual, EditLineVisual, EditEllipseVisual
+from .data.microscopes import load_microscopes
 
 
 class DataHandler:
@@ -35,8 +36,9 @@ class DataHandler:
     # database (dict) of sems with points in scaling bar
     def __init__(self, logger=None):
 
-        with open(semmy_path / Path("data/sem_db.yml"), "r", encoding='utf8') as file:
-            self.sem_db = safe_load(file)
+        # with open(semmy_path / Path("data/sem_db.yml"), "r", encoding='utf8') as file:
+        #     self.sem_db = safe_load(file)
+        self.sem_db = load_microscopes()
             
         if logger is not None:
             self.logger = logger
@@ -190,6 +192,10 @@ class DataHandler:
                 
         
     def load_storage_file(self, file_path, vispy_instance):
+        """load .semmy data from a file and update the view
+
+        """
+
 
         with open(file_path, 'rb') as file:
             
@@ -395,14 +401,19 @@ class DataHandler:
         # get last line of file
         with open(file_path, 'rb') as f:
             try:  # catch OSError in case of a one line file 
+                # move to the second last character
                 f.seek(-2, os.SEEK_END)
+                # move to the beginning of the line
                 while f.read(1) != b'\n':
                     f.seek(-2, os.SEEK_CUR)
             except OSError:
                 f.seek(0)
-            # remove last character as it is null
-            last_line = f.readline().decode()[:-1]
-
+            try:
+                # remove last character as it is null
+                last_line = f.readline().decode()[:-1]
+            except UnicodeDecodeError:
+                self.logger.error("Could not decode the last line of the file.")
+                return None
         
         try:
             root = ET.fromstring(last_line)
@@ -411,19 +422,31 @@ class DataHandler:
             self.main_window.raise_error("There was a problem parsing the XML string.\n"\
                                          f"Problematic part of the XML string: {last_line[max(0, e.position[1]-10):e.position[1]+10]}")
             return None
+        except Exception as e:
+            self.logger.error(f"XML parsing error: {str(e)}")
+            self.main_window.raise_error("There was a problem parsing the XML string.")
+            return None
 
         # Create a dictionary to store the values
         values = parse_element(root)
         
         return values
     
-    def get_xml_string(self, file_path=None):
-        values = self.get_xml(file_path)
-        if values is None:
-            return None
-        else:
-            return json.dumps(values, indent=4, ensure_ascii=False)
-        
+    def get_file_metadata_string(self, file_path=None):
+        if file_path is None:
+            file_path = self.file_path
+            if file_path is None:
+                return ""
+            else:
+                match self.main_window.main_ui.dd_select_sem.currentText():
+                    case 'Zeiss Orion NanoFab':
+                        values = self.get_xml(file_path)
+                        # check if values is a non-empty dictionary
+                        if values is not None:
+                            return json.dumps(values, indent=4, ensure_ascii=False)
+                    case _:
+                        with open(file_path, 'r', encoding='latin-1') as f:
+                            return f.read()
         
 def parse_element(element):
     """Recursively parse an XML element and its children into a dictionary."""

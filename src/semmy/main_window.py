@@ -54,7 +54,7 @@ class MainWindow(QMainWindow):
     def initUI(self):
         self.setWindowTitle("Semmy")
         self.setWindowIcon(QIcon(str(semmy_path/"data/tape_measure_128.ico")))
-        self.setMinimumSize(600,600)
+        self.setMinimumSize(700,700)
         # self.setStyleSheet("background-color: white") 
 
         # Create actions for menu bar
@@ -211,6 +211,7 @@ class MainWindow(QMainWindow):
         QApplication.closeAllWindows()
         
     def raise_error(self, error):  
+        self.data_handler.logger.error(error)
         if 'pytest' in sys_modules:
             raise Exception(error)
         else:   
