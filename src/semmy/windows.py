@@ -152,7 +152,13 @@ class SettingsWindow(SemmyWindow):
         
         self.resetHistoryButton = QPushButton("Reset History", self)
         self.resetHistoryButton.clicked.connect(self.parent.reset_undo_stack)
-        self.misc_layout.addWidget(self.resetHistoryButton)     
+        self.misc_layout.addWidget(self.resetHistoryButton)
+
+        self.default_microscope_dd = QComboBox(self)
+        self.default_microscope_dd.addItems(self.parent.data_handler.sem_db.keys())   
+        self.default_microscope_dd.setCurrentText(self.settings.value("ui/microscope")) 
+        self.default_microscope_dd.currentTextChanged.connect(self.update_window)
+        self.misc_layout.addWidget(self.default_microscope_dd) 
         
         self.misc_layout.addStretch()   
         
@@ -221,6 +227,7 @@ class SettingsWindow(SemmyWindow):
         self.color_picker.selectedColor = DEFAULT_SETTINGS.get("graphics/object_color")
         self.border_color_picker.selectedColor = DEFAULT_SETTINGS.get("graphics/object_border_color")
         self.scale_bar_color_picker.selectedColor = DEFAULT_SETTINGS.get("graphics/scale_bar_color")
+        self.default_microscope_dd.setCurrentText(DEFAULT_SETTINGS.get("ui/microscope"))
         self.update_window()
     
     def update_window(self):
@@ -235,6 +242,7 @@ class SettingsWindow(SemmyWindow):
         self.settings.save("graphics/object_border_color", self.border_color_picker.selectedColor)
         self.settings.save("graphics/image_rendering", self.rendering_combobox.currentText())
         self.settings.save("graphics/scale_bar_color", self.scale_bar_color_picker.selectedColor)
+        self.settings.save("ui/microscope", self.default_microscope_dd.currentText())
         self.update_window()
         self.parent.vispy_canvas.update_object_colors()
         # update color of the scalebar
@@ -246,7 +254,8 @@ class SettingsWindow(SemmyWindow):
         return self.color_picker.selectedColor.getRgb() != self.settings.value("graphics/object_color").getRgb() or \
                 self.border_color_picker.selectedColor.getRgb() != self.settings.value("graphics/object_border_color").getRgb() or \
                 self.rendering_combobox.currentText() != self.settings.value("graphics/image_rendering") or \
-                self.scale_bar_color_picker.selectedColor.getRgb() != self.settings.value("graphics/scale_bar_color").getRgb()
+                self.scale_bar_color_picker.selectedColor.getRgb() != self.settings.value("graphics/scale_bar_color").getRgb() or \
+                self.default_microscope_dd.currentText() != self.settings.value("ui/microscope")
 
 class ColorPicker(QPushButton):
     
@@ -286,7 +295,9 @@ class XMLWindow(SemmyWindow):
 
         self.setMinimumHeight(500)
         
-        values = self.parent.data_handler.get_file_metadata_string()
+        file_path = self.parent.data_handler.file_path
+
+        values = self.parent.main_ui.get_microscope().get_metadata(file_path)
         # create scrollable text area
         self.text_area = QPlainTextEdit(self)
         self.text_area.setPlainText(values)

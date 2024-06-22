@@ -1,7 +1,10 @@
 import inspect
 import sys
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Optional, Tuple
+import json
+import xml.etree.ElementTree as ET
+import os
 
 def load_microscopes():
     microscopes = dict()
@@ -28,7 +31,6 @@ class Microscope(ABC):
         self.orientation = orientation
         self.threshold = threshold
     
-    @abstractmethod
     def get_metadata(self, file_path: Optional[str] = None) -> str:
         """
         Abstract method to get the metadata of a microscope image.
@@ -36,14 +38,18 @@ class Microscope(ABC):
         :param file_path: The path to the file from which to extract metadata.
         :return: A string representing the metadata.
         """
-        pass
+        if file_path is None:
+            return ""
+        
+        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            return f.read()
+    
 
 
 class Generic_Microscope (Microscope):
 
-    def get_metadata(self, file_path=None) -> str:
-        return "Generic Microscope"
-
+    def __init__(self):
+        super().__init__()
 
 class Zeiss_Orion_Nanofab (Microscope):
 
@@ -53,8 +59,77 @@ class Zeiss_Orion_Nanofab (Microscope):
                          threshold=10)
 
     def get_metadata(self, file_path=None) -> str:
-        return "Zeiss Orion NanoFab"
+
+        values = self.get_xml(file_path)
+        # check if values is a non-empty dictionary
+        if values is not None:
+            return json.dumps(values, indent=4, ensure_ascii=False)
+        else:
+            return Microscope().get_metadata(file_path)
+        
+    def get_xml(self, file_path=None):
+        # This only works for Zeiss Orion files yet
+
+        # first check if image was loaded
+        if file_path is None:
+            return None
+        
+        # get last line of file
+        with open(file_path, 'rb') as f:
+            try:  # catch OSError in case of a one line file 
+                # move to the second last character
+                f.seek(-2, os.SEEK_END)
+                # move to the beginning of the line
+                while f.read(1) != b'\n':
+                    f.seek(-2, os.SEEK_CUR)
+            except OSError:
+                f.seek(0)
+            try:
+                # remove last character as it is null
+                last_line = f.readline().decode()[:-1]
+            except UnicodeDecodeError as e:
+                raise "Could not decode the last line of the file: {e}"
+        
+        try:
+            root = ET.fromstring(last_line)
+        except ET.ParseError as e:
+            raise "There was a problem parsing the XML string.\n"\
+                f"Problematic part of the XML string: {last_line[max(0, e.position[1]-10):e.position[1]+10]}"
+        except Exception as e:
+            raise "There was a problem parsing the XML string: {e}"
+
+        # Create a dictionary to store the values
+        values = parse_element(root)
+        
+        return values
     
+def parse_element(element):
+    """Recursively parse an XML element and its children into a dictionary."""
+
+    # Create a dictionary to store the element's attributes
+    node = {}
+
+    # Iterate over all child elements
+    for child in list(element):
+        # Recursively parse the child element
+        child_data = parse_element(child)
+
+        # If the child's tag is already in the node dictionary, add the child's data to that tag
+        if child.tag in node:
+            # If there's only one child with this tag so far, put it in a list
+            if type(node[child.tag]) is list:
+                node[child.tag].append(child_data)
+            else:
+                node[child.tag] = [node[child.tag], child_data]
+        else:
+            node[child.tag] = child_data
+
+    # If the element has no child elements, store its text
+    if not node:
+        node = element.text
+
+    return node
+
 class GUZ (Microscope):
 
     def __init__(self):
@@ -62,21 +137,14 @@ class GUZ (Microscope):
                          orientation="horizontal", 
                          threshold=10)
 
-    def get_metadata(self, file_path=None) -> str:
-        return "GUZ"
-
 class Jeol_JSM_6500F (Microscope):
 
     def __init__(self):
         super().__init__(seed_points=(0.777344, 0.951172),
-                     orientation="horizontal",
-                     threshold=10)
-
-
-    def get_metadata(self, file_path=None) -> str:
-        return "Jeol JSM-6500F"
+                        orientation="horizontal",
+                        threshold=10)
 
 if __name__ == "__main__":
     microscopes = load_microscopes()
-    for microscope in microscopes.values():
-        print(microscope.get_metadata("file_path"))
+    for microscope in microscopes:
+        print(microscope)

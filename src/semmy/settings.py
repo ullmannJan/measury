@@ -6,6 +6,7 @@ DEFAULT_SETTINGS = {
     "graphics/object_border_color": QColor(255, 0, 0, 127),
     "graphics/image_rendering": "nearest",
     "graphics/scale_bar_color": QColor(255, 0, 0, 255),
+    "ui/microscope": "Generic_Microscope",
 }
 
 class Settings(QSettings):

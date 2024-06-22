@@ -8,7 +8,6 @@ from pathlib import Path
 
 # relative imports
 from .windows import SaveWindow
-from . import semmy_path
 from .data.microscopes import Microscope
 
 
@@ -98,6 +97,7 @@ class MainUI(QWidget):
 
         self.dd_select_sem = QComboBox(self)
         self.dd_select_sem.addItems(self.data_handler.sem_db.keys())
+        self.dd_select_sem.setCurrentText(self.main_window.settings.value("ui/microscope"))
         select_sem_layout.addWidget(self.dd_select_sem)
         self.tools_scaling_layout.addLayout(select_sem_layout)
         
