@@ -85,7 +85,8 @@ class VispyCanvas(SceneCanvas):
         self.freeze()
 
     def update_image(self):
-
+        
+        # if there is no image loaded, do nothing
         if self.data_handler.file_path is not None:
             try:
                    

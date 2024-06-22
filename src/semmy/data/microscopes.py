@@ -4,7 +4,7 @@ from abc import ABC
 from typing import Optional, Tuple
 import json
 import xml.etree.ElementTree as ET
-import os
+import io    
 
 def load_microscopes():
     microscopes = dict()
@@ -31,18 +31,17 @@ class Microscope(ABC):
         self.orientation = orientation
         self.threshold = threshold
     
-    def get_metadata(self, file_path: Optional[str] = None) -> str:
+    def get_metadata(self, byte_stream: Optional[bytes] = None) -> str:
         """
         Abstract method to get the metadata of a microscope image.
 
         :param file_path: The path to the file from which to extract metadata.
         :return: A string representing the metadata.
         """
-        if file_path is None:
+        if byte_stream is None:
             return ""
-        
-        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-            return f.read()
+        else:
+            return byte_stream.decode("utf-8", errors="ignore")
     
 
 
@@ -58,45 +57,50 @@ class Zeiss_Orion_Nanofab (Microscope):
                          orientation="horizontal",
                          threshold=10)
 
-    def get_metadata(self, file_path=None) -> str:
-        try:
-            values = self.get_xml(file_path)
-        except:
-            values = None
+    def get_metadata(self, byte_stream=None) -> str:
+        
+        values = self.get_xml(byte_stream)
+
         # check if values is a non-empty dictionary
         if isinstance(values, dict):
             return json.dumps(values, indent=4, ensure_ascii=False)
-        return Microscope().get_metadata(file_path)
+        return Microscope().get_metadata(byte_stream)
         
-    def get_xml(self, file_path=None):
+    def get_xml(self, byte_stream=None):
         # This only works for Zeiss Orion files yet
-
         # first check if image was loaded
-        if file_path is None:
+        if byte_stream is None:
             return None
         
         # get last line of file
-        with open(file_path, 'rb') as f:
-            try:  # catch OSError in case of a one line file 
-                # move to the second last character
-                f.seek(-2, os.SEEK_END)
-                # move to the beginning of the line
-                while f.read(1) != b'\n':
-                    f.seek(-2, os.SEEK_CUR)
-            except OSError:
-                f.seek(0)
-            # remove last character as it is null
-            last_line = f.readline().decode()[:-1]
-            
+        last_line = get_last_line(byte_stream)
+        
         try:
             root = ET.fromstring(last_line)
         except ET.ParseError as e:
-            raise "There was a problem parsing the XML string.\n"\
-                f"Problematic part of the XML string: {last_line[max(0, e.position[1]-10):e.position[1]+10]}"
+            # return None
+            raise Exception("There was a problem parsing the XML string.\n"\
+                f"Problematic part of the XML string: {last_line[max(0, e.position[1]-10):e.position[1]+10]}"\
+                    "Are you sure this is a Zeiss Orion Nanofab file?")
         # Create a dictionary to store the values
         values = parse_element(root)
         
         return values
+    
+def get_last_line(byte_stream):
+     with io.BytesIO(byte_stream) as f:
+        f.seek(0, io.SEEK_END)  # Go to the end of the file
+        position = f.tell()  # Get the position (this is the size of the file in bytes)
+        line = b''
+        while position >= 0:
+            f.seek(position)
+            next_char = f.read(1)
+            if next_char == b'\n' and line:  # Stop if a newline is found and line is not empty
+                break
+            line = next_char + line
+            position -= 1
+        #remove last end character
+        return line.decode(encoding='utf-8', errors='ignore').strip()[:-1]
     
 def parse_element(element):
     """Recursively parse an XML element and its children into a dictionary."""

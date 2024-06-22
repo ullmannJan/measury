@@ -295,9 +295,9 @@ class XMLWindow(SemmyWindow):
 
         self.setMinimumHeight(500)
         
-        file_path = self.parent.data_handler.file_path
+        byte_stream = self.parent.data_handler.img_byte_stream
 
-        values = self.parent.main_ui.get_microscope().get_metadata(file_path)
+        values = self.parent.main_ui.get_microscope().get_metadata(byte_stream)
         # create scrollable text area
         self.text_area = QPlainTextEdit(self)
         self.text_area.setPlainText(values)
