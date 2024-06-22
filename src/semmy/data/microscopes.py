@@ -59,13 +59,14 @@ class Zeiss_Orion_Nanofab (Microscope):
                          threshold=10)
 
     def get_metadata(self, file_path=None) -> str:
-
-        values = self.get_xml(file_path)
+        try:
+            values = self.get_xml(file_path)
+        except:
+            values = None
         # check if values is a non-empty dictionary
-        if values is not None:
+        if isinstance(values, dict):
             return json.dumps(values, indent=4, ensure_ascii=False)
-        else:
-            return Microscope().get_metadata(file_path)
+        return Microscope().get_metadata(file_path)
         
     def get_xml(self, file_path=None):
         # This only works for Zeiss Orion files yet
@@ -84,20 +85,14 @@ class Zeiss_Orion_Nanofab (Microscope):
                     f.seek(-2, os.SEEK_CUR)
             except OSError:
                 f.seek(0)
-            try:
-                # remove last character as it is null
-                last_line = f.readline().decode()[:-1]
-            except UnicodeDecodeError as e:
-                raise "Could not decode the last line of the file: {e}"
-        
+            # remove last character as it is null
+            last_line = f.readline().decode()[:-1]
+            
         try:
             root = ET.fromstring(last_line)
         except ET.ParseError as e:
             raise "There was a problem parsing the XML string.\n"\
                 f"Problematic part of the XML string: {last_line[max(0, e.position[1]-10):e.position[1]+10]}"
-        except Exception as e:
-            raise "There was a problem parsing the XML string: {e}"
-
         # Create a dictionary to store the values
         values = parse_element(root)
         

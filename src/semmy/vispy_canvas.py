@@ -84,19 +84,16 @@ class VispyCanvas(SceneCanvas):
 
         self.freeze()
 
-    def update_image(self, data=None):
+    def update_image(self):
 
         if self.data_handler.file_path is not None:
             try:
-                if data is not None:
-                    self.data_handler.img_data = data
-                else:    
-                    # if semmy file is loaded we have already collected data of photo                    
-                    if  self.data_handler.file_path.suffix not in self.data_handler.file_extensions:
-                        # opencv reads images in BGR format, so we need to convert it to RGB
-                        self.data_handler.logger.debug(f"update data_handler.img_data = {self.data_handler.file_path}")
-                        BGR_img = cv2.imdecode(np.fromfile(self.data_handler.file_path, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
-                        self.data_handler.img_data = cv2.cvtColor(BGR_img, cv2.COLOR_BGR2RGB)
+                   
+
+                # opencv reads images in BGR format, so we need to convert it to RGB
+                self.data_handler.logger.debug(f"update data_handler.file_path = {self.data_handler.file_path}")
+                BGR_img = cv2.imdecode(np.frombuffer(self.data_handler.img_byte_stream, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
+                self.data_handler.img_data = cv2.cvtColor(BGR_img, cv2.COLOR_BGR2RGB)
 
                 self.draw_image()
 

@@ -11,6 +11,7 @@ from copy import deepcopy
 import logging
 import numpy as np  
 from time import sleep
+import cv2
 
 
 from . import semmy_path
@@ -21,6 +22,7 @@ from .data.microscopes import load_microscopes
 
 class DataHandler:
     img_data = None
+    img_byte_stream = None
     file_path: Path | None = None
 
     main_window: dict | None = None
@@ -158,8 +160,10 @@ class DataHandler:
             structure_data[key] = [[obj.__class__, deepcopy(obj.save())] for obj in val]
         
         if save_image:
-            scaling = (self.main_window.main_ui.pixel_edit.text(), self.main_window.main_ui.length_edit.text(), self.main_window.main_ui.units_dd.currentText())
-            output = (self.img_data, structure_data, scaling)
+            scaling = (self.main_window.main_ui.pixel_edit.text(), 
+                        self.main_window.main_ui.length_edit.text(), 
+                        self.main_window.main_ui.units_dd.currentText())
+            output = (self.img_byte_stream, structure_data, scaling)
         else:
             output = (None, structure_data, None)
         with open(filename, 'wb') as save_file:
@@ -199,20 +203,21 @@ class DataHandler:
             loaded_data = pickle.load(file)
             scaling = (None, None, None)
             if len(loaded_data) == 2:
-                img_data, structure_data = loaded_data
+                img_byte_stream, structure_data = loaded_data
             elif len(loaded_data) == 3:
-                img_data, structure_data, scaling = loaded_data
+                img_byte_stream, structure_data, scaling = loaded_data
             # data: dict = yaml.load(file, Loader=yaml.Loader)
             
             reply = QMessageBox.StandardButton.Yes
             question = None
             
-            if self.img_data is None and img_data is None:
+            if self.img_data is None and img_byte_stream is None:
                 self.main_window.raise_error("You can't load measurements without loading an image first.")
                 return
             
-            if self.drawing_data or self.img_data is not None:
-                if img_data is None:
+            # there is an image with measurements
+            if self.drawing_data and self.img_data is not None:
+                if img_byte_stream is None:
                     if structure_data:
                         # only measurments / no image
                         question = "Do you want to load new measurements?\n\nThis will remove the current measurements."  
@@ -236,9 +241,21 @@ class DataHandler:
                 
                 self.delete_all_objects()
                 self.file_path = file_path
-                if img_data is not None:
-                    self.img_data = img_data
-                    self.logger.debug("set data_handler.img_data to loaded file data")
+                if img_byte_stream is not None:
+                    if isinstance(img_byte_stream, bytes):
+                        self.img_byte_stream = img_byte_stream
+                    else: # for old file format where just the pixel matrix is stored
+                        # Step 1: Encode the image data to a specific format
+                        self.logger.warning("old file format detected")
+                        success, encoded_image = cv2.imencode('.png', 
+                                                            img_byte_stream, 
+                                                            [int(cv2.IMWRITE_PNG_COMPRESSION), 5])
+
+                        if success:
+                            # Step 2: Convert the encoded image to a byte stream
+                            self.img_byte_stream = encoded_image.tobytes()
+                            
+                    self.logger.debug("set data_handler.img_byte_stream to loaded file data")
                     vispy_instance.update_image()
                 
                 if structure_data:
@@ -280,6 +297,7 @@ class DataHandler:
                     
                     if reply == QMessageBox.StandardButton.Yes:
                         self.file_path = file_path
+                        self.img_byte_stream = file_path.read_bytes()
                         self.delete_all_objects()
                         self.main_window.main_ui.reset_scaling()
                         vispy_instance.update_image()
@@ -311,9 +329,21 @@ class DataHandler:
                 ptr = clipboard_data.constBits()
                 ptr.setsize(height * width * 4)
 
-                # Convert the pixel data to a numpy array and reshape it
-                img_array = np.frombuffer(ptr, dtype=np.uint8).reshape((height, width, 4))[:,:,[2,1,0]]               
-                vispy_instance.update_image(data=img_array)
+                # Convert the pixel data to a byte stream
+                img_data = np.frombuffer(ptr, dtype=np.uint8).reshape((height, width, 4))
+
+                # Step 1: Encode the image data to a specific format (e.g., '.png')
+                success, encoded_image = cv2.imencode('.png', 
+                                                      img_data, 
+                                                      [int(cv2.IMWRITE_PNG_COMPRESSION), 5])
+
+                if success:
+                    # Step 2: Convert the encoded image to a byte stream
+                    self.img_byte_stream = encoded_image.tobytes()
+                            
+                    vispy_instance.update_image()
+                else:
+                    raise Exception("Could not encode image data")
                 
         except Exception as error:
             self.logger.error(f"Could not open from clipboard:\n{error}")
