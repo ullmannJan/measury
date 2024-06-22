@@ -1,5 +1,4 @@
 # absolute imports
-from yaml import safe_load
 from pathlib import Path
 from PyQt6.QtWidgets import QFileDialog, QMessageBox
 from PyQt6.QtGui import QGuiApplication, QUndoCommand
@@ -168,8 +167,7 @@ class DataHandler:
             output = (None, structure_data, None)
         with open(filename, 'wb') as save_file:
             pickle.dump(output, save_file, pickle.HIGHEST_PROTOCOL, **kwargs)
-        # with open(filename, 'w') as save_file:
-        #     yaml.dump(data, save_file, allow_unicode=True)
+
         
     def load_into_view(self, drawing_data, vispy_instance):
         """
@@ -206,7 +204,6 @@ class DataHandler:
                 img_byte_stream, structure_data = loaded_data
             elif len(loaded_data) == 3:
                 img_byte_stream, structure_data, scaling = loaded_data
-            # data: dict = yaml.load(file, Loader=yaml.Loader)
             
             reply = QMessageBox.StandardButton.Yes
             question = None

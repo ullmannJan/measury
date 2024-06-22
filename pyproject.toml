@@ -12,7 +12,6 @@ dependencies = [
     'vispy',
     'PyQt6',
     'pyopengl',
-    'pyyaml',
     'opencv-python',
     'scipy',
     'importlib-metadata; python_version<"3.11"',
