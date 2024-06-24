@@ -1,4 +1,4 @@
-import semmy
+import measury
 import logging
 from pathlib import Path
 script_dir = Path(__file__).parent.resolve()
@@ -6,9 +6,9 @@ script_dir = Path(__file__).parent.resolve()
 if __name__ == '__main__':
     logging.basicConfig(level=logging.CRITICAL,
                         format='%(asctime)s  %(levelname)-10s %(name)s: %(message)s')
-    logger = logging.getLogger("Semmy")
+    logger = logging.getLogger("Measury")
     logger.setLevel(logging.INFO)
-    # semmy.run(logger=logger)
-    # semmy.run(file_path=script_dir/r"tests/test_data/test_file.semmy", logger=logger)
-    semmy.run(file_path=script_dir/r"img/ZeissNIM_001.tif", logger=logger)
+    # measury.run(logger=logger)
+    # measury.run(file_path=script_dir/r"tests/test_data/test_file.measury", logger=logger)
+    measury.run(file_path=script_dir/r"img/ZeissNIM_001.tif", logger=logger)
     

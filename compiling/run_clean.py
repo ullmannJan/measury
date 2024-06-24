@@ -1,5 +1,5 @@
-import semmy
+import measury
 
 if __name__ == '__main__':
-    semmy.run()
+    measury.run()
     

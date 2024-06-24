@@ -7,11 +7,11 @@ from PyQt6.QtCore import Qt, pyqtSignal
 
 
 # relative imports
-from . import __version__ as semmy_version
-from . import semmy_path
+from . import __version__ as measury_version
+from . import measury_path
 from .settings import Settings, DEFAULT_SETTINGS
 
-class SemmyWindow(QWidget):
+class MeasuryWindow(QWidget):
     """
     This "window" is a QWidget. If it has no parent, it
     will appear as a free-floating window as we want.
@@ -27,12 +27,12 @@ class SemmyWindow(QWidget):
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
-        self.setWindowTitle(f"Semmy: {title}")
-        self.setWindowIcon(QIcon(str(semmy_path/"data/tape_measure_128.ico")))
+        self.setWindowTitle(f"Measury: {title}")
+        self.setWindowIcon(QIcon(str(measury_path/"data/tape_measure_128.ico")))
         self.setMinimumSize(300,200)
 
 
-class SaveWindow(SemmyWindow):
+class SaveWindow(MeasuryWindow):
     """
     The window displayed to save the data.
     """
@@ -59,7 +59,7 @@ class SaveWindow(SemmyWindow):
         return self.parent.data_handler.save_storage_file(save_image=self.save_img_checkbox.isChecked())
 
 
-class AboutWindow(SemmyWindow):
+class AboutWindow(MeasuryWindow):
     """
     The window displaying the about.
     """
@@ -68,14 +68,14 @@ class AboutWindow(SemmyWindow):
         
         self.info_layout = QVBoxLayout()
 
-        self.info_layout.addWidget(QLabel(f"<b>Semmy {semmy_version}</b>"))
+        self.info_layout.addWidget(QLabel(f"<b>Measury {measury_version}</b>"))
         self.info_layout.addWidget(QLabel("A simple tool for measuring distances in images."))
         self.info_layout.addWidget(QLabel("Developed by:"))
         self.info_layout.addWidget(QLabel("Jan Ullmann"))
 
         self.layout.addLayout(self.info_layout)
 
-class DataWindow(SemmyWindow):
+class DataWindow(MeasuryWindow):
     """
     The window displaying the data results.
     """
@@ -101,7 +101,7 @@ class DataWindow(SemmyWindow):
         cb.setText(self.parent.data_handler.calculate_results_string())
 
         
-class SettingsWindow(SemmyWindow):
+class SettingsWindow(MeasuryWindow):
     
     def __init__(self, *args, **kwargs):
         super().__init__(title="Settings", *args, **kwargs)
@@ -286,7 +286,7 @@ class ColorPicker(QPushButton):
         self.color_picker.setCurrentColor(color)
         self.update_color(color)
 
-class XMLWindow(SemmyWindow):
+class XMLWindow(MeasuryWindow):
     """
     The window displaying the xml values of a file.
     """

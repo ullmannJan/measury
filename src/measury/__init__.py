@@ -8,6 +8,6 @@ except ImportError:
     version_tuple = (0, 0, "unknown version")
 
 # for compiling the program
-semmy_path = Path(__file__).parent.resolve()
+measury_path = Path(__file__).parent.resolve()
 
 from .app import run

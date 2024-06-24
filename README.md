@@ -1,8 +1,8 @@
-# SEMMY
+# Measury
 
-![Semmy_Logo](img/logo/tape_measure_128.png)
+![Measury_Logo](img/logo/tape_measure_128.png)
 
-This is the repository for the SEM picture analyzer SEMMY. The Goal ist to simplify and accelerate the measurements of structures from images.
+Measury is a measurement tool for microscope images. The Goal ist to simplify and accelerate the measurements of structures from images.
 
 ## Functionality
 
@@ -13,7 +13,7 @@ Supports all image formats supported by ```opencv```.
 
 ### Automatic-Scaling
 Automatic Detection of Scaling bar. Just select the tool *identify scaling* and click on the scale bar. 
-SEM-Profiles can store locations of scale bar for certain types of microscopes for easier detection.
+Microscope profiles can store locations of scale bar for certain types of microscopes for easier detection.
 
 ### Moving/Handling
 You can move the image by dragging the mouse wheel or by selecting *move* mode
@@ -33,14 +33,14 @@ There are several Tools available to measure your structures.
 
 First create an empty miniconda environment
 
-    conda create -n semmy
-    conda activate semmy
+    conda create -n measury
+    conda activate measury
 
-Then install the semmy package
+Then install the measury package
 
     pip install .
 
-To run Semmy simply 
+To run Measury simply 
 
     python run.py
 

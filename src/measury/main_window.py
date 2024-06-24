@@ -10,7 +10,7 @@ from sys import modules as sys_modules
 
 
 # relative imports
-from . import semmy_path
+from . import measury_path
 from .main_ui import MainUI
 from .right_ui import RightUI
 from .vispy_canvas import VispyCanvas
@@ -32,7 +32,7 @@ class MainWindow(QMainWindow):
         # settings
         self.data_handler = data_handler
 
-        self.settings = Settings(self, "Semmy", "Semmy")
+        self.settings = Settings(self, "Measury", "Measury")
         self.settings.load_settings()
         
         self.setAcceptDrops(True)
@@ -52,8 +52,8 @@ class MainWindow(QMainWindow):
         self.initUI()        
 
     def initUI(self):
-        self.setWindowTitle("Semmy")
-        self.setWindowIcon(QIcon(str(semmy_path/"data/tape_measure_128.ico")))
+        self.setWindowTitle("Measury")
+        self.setWindowIcon(QIcon(str(measury_path/"data/tape_measure_128.ico")))
         self.setMinimumSize(700,700)
         # self.setStyleSheet("background-color: white") 
 
@@ -102,20 +102,20 @@ class MainWindow(QMainWindow):
         centerAction.setStatusTip('Center Image')
         centerAction.triggered.connect(self.vispy_canvas.center_image)
         
-        hideAction = QAction(QIcon(str(semmy_path/"data/ghost_icon.png")), 
+        hideAction = QAction(QIcon(str(measury_path/"data/ghost_icon.png")), 
                              'Hide Objects', self)
         hideAction.setShortcut('Ctrl+H')
         hideAction.setStatusTip('Hide Objects')
         hideAction.triggered.connect(self.vispy_canvas.hide_all_objects_w_undo)
         
-        showAction = QAction(QIcon(str(semmy_path/"data/show_icon.png"))
+        showAction = QAction(QIcon(str(measury_path/"data/show_icon.png"))
                              , 'Show Objects', self)
         showAction.setShortcut('Ctrl+Shift+H')
         showAction.setStatusTip('Show Objects')
         showAction.triggered.connect(self.vispy_canvas.show_all_objects_w_undo)
         
         # Settings
-        settingsAction = QAction(QIcon(str(semmy_path/"data/gear_icon.png")), 'Settings', self)
+        settingsAction = QAction(QIcon(str(measury_path/"data/gear_icon.png")), 'Settings', self)
         settingsAction.setShortcut('Ctrl+I')
         settingsAction.setStatusTip('Open settings page')
         settingsAction.triggered.connect(self.open_settings_page)
@@ -128,7 +128,7 @@ class MainWindow(QMainWindow):
         # About
         aboutAction = QAction(self.style().standardIcon(QStyle.StandardPixmap.SP_MessageBoxInformation), 
                               'About', self)
-        aboutAction.setStatusTip('Show information about Semmy')
+        aboutAction.setStatusTip('Show information about Measury')
         aboutAction.triggered.connect(self.open_about_page)
         
         measurementAction = QAction(self.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogDetailedView), 

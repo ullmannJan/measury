@@ -1,13 +1,13 @@
 import PyInstaller.__main__
 import shutil
 from pathlib import Path
-from semmy import __version__ as semmy_version
+from measury import __version__ as measury_version
 script_path = Path(__file__).parent.resolve()
 
 
 if __name__ == '__main__':
     # set program name and method
-    program_name = "Semmy" + "_" + semmy_version
+    program_name = "Measury" + "_" + measury_version
     method = "onedir"
     zipped = False
 
@@ -20,7 +20,7 @@ if __name__ == '__main__':
         '--specpath', 'build',
         '--icon', '../img/logo/tape_measure_128.ico',
         '--collect-all', 'vispy',
-        '--collect-all', 'semmy',
+        '--collect-all', 'measury',
         '--noconfirm'
     ])
 

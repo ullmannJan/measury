@@ -3,7 +3,7 @@ requires = ["setuptools", "setuptools_scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "semmy"
+name = "measury"
 description = "A tool to measure pictures with scale_bars"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
@@ -34,4 +34,4 @@ readme = { file = "README.md" }
 where = ["src"]
 
 [tool.setuptools_scm]
-write_to = "src/semmy/_version.py"
+write_to = "src/measury/_version.py"

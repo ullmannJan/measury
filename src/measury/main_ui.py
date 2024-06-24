@@ -34,7 +34,7 @@ class MainUI(QWidget):
         self.image_box = QGroupBox("Image Settings", self)
         self.image_layout = QVBoxLayout()
 
-        self.select_image_button = QPushButton("Select SEM File", self)
+        self.select_image_button = QPushButton("Select File", self)
         self.image_layout.addWidget(self.select_image_button)
         
         self.select_image_button.clicked.connect(lambda : self.select_sem_file(file_path=None))
@@ -90,7 +90,7 @@ class MainUI(QWidget):
         self.layout.addWidget(self.tools_create_box)
         
         
-        # select SEM/HIM
+        # select microscope
         select_sem_layout = QHBoxLayout()
         self.sem_label = QLabel("Select Microscope:", self)
         select_sem_layout.addWidget(self.sem_label)
@@ -220,7 +220,7 @@ class MainUI(QWidget):
             self.data_handler.open_file(file_path, self.vispy_canvas)
             
     def openFileNameDialog(self):
-        file_name, _ = QFileDialog.getOpenFileName(self,"Select SEM Image", "","All Files (*);;Python Files (*.py)")
+        file_name, _ = QFileDialog.getOpenFileName(self,"Select Image", "","All Files (*);;Python Files (*.py)")
         if file_name:
             return file_name
 

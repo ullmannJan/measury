@@ -9,10 +9,9 @@ from sys import platform
 from copy import deepcopy
 import logging
 import numpy as np  
-from time import sleep
 import cv2
 
-# you need this as they are implicitly used
+# you need this import as they are implicitly used
 from .drawable_objects import EditRectVisual, EditLineVisual, EditEllipseVisual
 from .data.microscopes import load_microscopes
 
@@ -28,7 +27,7 @@ class DataHandler:
     units: dict
     logger: logging.Logger | None = None
     
-    file_extensions = ('.sem', '.semmy')
+    file_extensions = ('.sem', '.measury')
 
     # database (dict) of sems with points in scaling bar
     def __init__(self, logger=None):
@@ -40,7 +39,7 @@ class DataHandler:
         else:
             logging.basicConfig(level=logging.CRITICAL,
                                 format='%(asctime)s  %(levelname)-10s %(name)s: %(message)s')
-            self.logger = logging.getLogger("Semmy")
+            self.logger = logging.getLogger("Measury")
             self.logger.setLevel(logging.CRITICAL)
 
         # drawing data is a dictionary of the form:
@@ -138,7 +137,7 @@ class DataHandler:
             self.logger.warning(f"Could not open file location: {path.parent}:\n{error}")
             self.main_window.raise_error(f"Could not open file location: {path.parent}")
 
-    def save_file_dialog(self, file_name="semmy.semmy", extensions="Semmy Files (*.semmy *.sem)"):
+    def save_file_dialog(self, file_name="measury.measury", extensions="Measury Files (*.measury *.sem)"):
         filename, _ = QFileDialog.getSaveFileName(self.main_window.main_ui, 
                                                 "Save", 
                                                 file_name, 
@@ -148,7 +147,7 @@ class DataHandler:
         
     def save_storage_file(self, save_image=True, **kwargs):
         
-        filename = self.save_file_dialog(file_name=str(self.file_path.with_suffix('.semmy')))
+        filename = self.save_file_dialog(file_name=str(self.file_path.with_suffix('.measury')))
         if filename is None:
             return
         
@@ -188,7 +187,7 @@ class DataHandler:
                 
         
     def load_storage_file(self, file_path, vispy_instance):
-        """load .semmy data from a file and update the view
+        """load .measury data from a file and update the view
 
         """
 
