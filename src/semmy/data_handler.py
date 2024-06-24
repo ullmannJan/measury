@@ -12,8 +12,6 @@ import numpy as np
 from time import sleep
 import cv2
 
-
-from . import semmy_path
 # you need this as they are implicitly used
 from .drawable_objects import EditRectVisual, EditLineVisual, EditEllipseVisual
 from .data.microscopes import load_microscopes

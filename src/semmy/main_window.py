@@ -1,6 +1,6 @@
 # absolute imports
 from PyQt6.QtOpenGLWidgets import QOpenGLWidget
-from PyQt6.QtGui import QAction, QIcon, QColor, QUndoCommand, QUndoStack
+from PyQt6.QtGui import QAction, QIcon, QUndoStack
 from PyQt6.QtWidgets import (QApplication, QMainWindow,
                              QWidget, QHBoxLayout, QSplitter,
                              QMessageBox, QToolButton, 
