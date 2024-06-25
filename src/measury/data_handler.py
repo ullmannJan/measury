@@ -3,7 +3,7 @@ from pathlib import Path
 from PyQt6.QtWidgets import QFileDialog, QMessageBox
 from PyQt6.QtGui import QGuiApplication, QUndoCommand
 import pickle
-from os import startfile
+import os
 from subprocess import Popen
 from sys import platform
 from copy import deepcopy
@@ -123,7 +123,7 @@ class DataHandler:
             
                 if platform == "win32":
                     # For Windows
-                    startfile(path.parent)
+                    os.startfile(path.parent)
                 elif platform == "darwin":
                     # For MacOS
                     Popen(["open", str(path.parent)])
