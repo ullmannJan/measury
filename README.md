@@ -1,5 +1,10 @@
 # Measury
 
+
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/ullmannJan/measury)
+![CI/CD Status](https://img.shields.io/circleci/build/github/ullmannJan/measury/main)
+
+
 ![Measury_Logo](img/logo/tape_measure_128.ico)
 
 Measury is a measurement tool for microscope images. The Goal ist to simplify and accelerate the measurements of structures from images.
