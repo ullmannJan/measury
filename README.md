@@ -60,10 +60,13 @@ Then, simply calling pytest will run the tests
 ## Compiling
 
 To compile this project it is advised to use ```pyinstaller```. 
+> It is important to use Pyinstaller >= 6.0.0
+
 This guides you through all steps that are needed for running it.
 First, ```pyinstaller``` should be installed via pip or conda
 
-    # pip install pyinstaller # this results in some dll error, but I haven't looked into why
+    pip install pyinstaller 
+    # or with conda
     conda install -c conda-forge pyinstaller
 
 Finally, run the compiling script which calls pyinstaller

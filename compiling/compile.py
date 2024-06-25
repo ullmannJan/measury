@@ -21,6 +21,7 @@ if __name__ == '__main__':
         '--icon', '../img/logo/tape_measure_128.ico',
         '--collect-all', 'vispy',
         '--collect-all', 'measury',
+        '--collect-all', 'scipy',
         '--noconfirm'
     ])
 
