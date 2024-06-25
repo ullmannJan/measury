@@ -7,6 +7,7 @@ DEFAULT_SETTINGS = {
     "graphics/image_rendering": "nearest",
     "graphics/scale_bar_color": QColor(255, 0, 0, 255),
     "ui/microscope": "Generic_Microscope",
+    "misc/file_extensions": [".msry", ".measury"],
 }
 
 class Settings(QSettings):
@@ -30,6 +31,7 @@ class Settings(QSettings):
             if self.value(key) is None:
                 # No settings exist, load the default settings
                 self.load_defaults()
+
             
     def save(self, key, value):
         """Manage saving all the settings."""

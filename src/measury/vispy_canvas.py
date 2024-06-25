@@ -382,6 +382,8 @@ class VispyCanvas(SceneCanvas):
     def find_scale_bar_width(self, seed_points, relative=True, threshold=10):
         # get width of scaling bar by floodFilling an area of similar pixels.
         # The start point needs to be given
+
+        if self.start_state: return
         
         self.scale_bar_params = (seed_points, relative, threshold)
         

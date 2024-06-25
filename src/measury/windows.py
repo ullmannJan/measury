@@ -154,11 +154,27 @@ class SettingsWindow(MeasuryWindow):
         self.resetHistoryButton.clicked.connect(self.parent.reset_undo_stack)
         self.misc_layout.addWidget(self.resetHistoryButton)
 
+        self.default_microscope_layout = QHBoxLayout()
+        self.default_microscope_label = QLabel("Default Microscope", self)
+        self.default_microscope_layout.addWidget(self.default_microscope_label)
         self.default_microscope_dd = QComboBox(self)
         self.default_microscope_dd.addItems(self.parent.data_handler.sem_db.keys())   
         self.default_microscope_dd.setCurrentText(self.settings.value("ui/microscope")) 
         self.default_microscope_dd.currentTextChanged.connect(self.update_window)
-        self.misc_layout.addWidget(self.default_microscope_dd) 
+        self.default_microscope_layout.addWidget(self.default_microscope_dd) 
+        self.misc_layout.addLayout(self.default_microscope_layout)
+
+        self.file_extensions_layout = QHBoxLayout()
+        self.file_extensions_label = QLabel("File Extensions", self)
+        self.file_extensions_layout.addWidget(self.file_extensions_label)
+        self.file_extensions = QLineEdit(self)
+        self.file_extensions.setPlaceholderText("File extensions")
+        file_ext_string = ";".join(self.settings.value("misc/file_extensions"))
+        self.file_extensions.setText(file_ext_string)
+        self.file_extensions.textChanged.connect(self.update_window)
+        self.file_extensions_layout.addWidget(self.file_extensions)
+        self.misc_layout.addLayout(self.file_extensions_layout)
+        
         
         self.misc_layout.addStretch()   
         
@@ -228,6 +244,8 @@ class SettingsWindow(MeasuryWindow):
         self.border_color_picker.selectedColor = DEFAULT_SETTINGS.get("graphics/object_border_color")
         self.scale_bar_color_picker.selectedColor = DEFAULT_SETTINGS.get("graphics/scale_bar_color")
         self.default_microscope_dd.setCurrentText(DEFAULT_SETTINGS.get("ui/microscope"))
+        file_ext_string = ";".join(DEFAULT_SETTINGS.get("misc/file_extensions"))
+        self.file_extensions.setText(file_ext_string)
         self.update_window()
     
     def update_window(self):
@@ -243,6 +261,7 @@ class SettingsWindow(MeasuryWindow):
         self.settings.save("graphics/image_rendering", self.rendering_combobox.currentText())
         self.settings.save("graphics/scale_bar_color", self.scale_bar_color_picker.selectedColor)
         self.settings.save("ui/microscope", self.default_microscope_dd.currentText())
+        self.settings.save("misc/file_extensions", self.file_extensions.text().split(";"))
         self.update_window()
         self.parent.vispy_canvas.update_object_colors()
         # update color of the scalebar
@@ -251,11 +270,15 @@ class SettingsWindow(MeasuryWindow):
     @property
     def changed(self):
         """Check if there is a change in the settings gui."""
-        return self.color_picker.selectedColor.getRgb() != self.settings.value("graphics/object_color").getRgb() or \
-                self.border_color_picker.selectedColor.getRgb() != self.settings.value("graphics/object_border_color").getRgb() or \
-                self.rendering_combobox.currentText() != self.settings.value("graphics/image_rendering") or \
-                self.scale_bar_color_picker.selectedColor.getRgb() != self.settings.value("graphics/scale_bar_color").getRgb() or \
-                self.default_microscope_dd.currentText() != self.settings.value("ui/microscope")
+        color_cond = self.color_picker.selectedColor.getRgb() != self.settings.value("graphics/object_color").getRgb()
+        border_col_cond = self.border_color_picker.selectedColor.getRgb() != self.settings.value("graphics/object_border_color").getRgb()
+        rendering_cond = self.rendering_combobox.currentText() != self.settings.value("graphics/image_rendering") 
+        scale_color_cond = self.scale_bar_color_picker.selectedColor.getRgb() != self.settings.value("graphics/scale_bar_color").getRgb()
+        d_microscope_cond = self.default_microscope_dd.currentText() != self.settings.value("ui/microscope")
+        file_ext_cond = set(self.file_extensions.text().split(";")) != set(self.settings.value("misc/file_extensions"))
+
+        return color_cond or border_col_cond or rendering_cond or scale_color_cond or d_microscope_cond or file_ext_cond
+
 
 class ColorPicker(QPushButton):
     

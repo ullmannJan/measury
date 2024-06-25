@@ -27,8 +27,6 @@ class DataHandler:
     units: dict
     logger: logging.Logger | None = None
     
-    file_extensions = ('.msry', '.measury')
-
     # database (dict) of sems with points in scaling bar
     def __init__(self, logger=None):
 
@@ -111,7 +109,6 @@ class DataHandler:
                 if object in val:
                     return k, val.index(object)
             raise LookupError("Object could not be found in drawing_data")
-    
 
     def generate_output_name(self):
         # return string that is not in the drawing_data keys and increases each time
@@ -163,6 +160,8 @@ class DataHandler:
             output = (self.img_byte_stream, structure_data, scaling)
         else:
             output = (None, structure_data, None)
+        
+        # save to file
         with open(filename, 'wb') as save_file:
             pickle.dump(output, save_file, pickle.HIGHEST_PROTOCOL, **kwargs)
 
@@ -197,12 +196,7 @@ class DataHandler:
         """load .msry data from a file and update the view
 
         """
-
-        # with open(file_path, 'rb') as file:
-            
-        #     self.logger.info(f"opened file: {file_path}")
-        #     loaded_data = pickle.load(file)
-            
+  
         loaded_data = self.load_from_pickle(file_path)
         scaling = (None, None, None)
         if len(loaded_data) == 2:
@@ -288,9 +282,11 @@ class DataHandler:
             if file_path:
                 file_path = Path(file_path)
                 
-                if file_path.suffix in self.file_extensions:
+                # check if it is a storage file
+                if file_path.suffix in self.main_window.settings.value("misc/file_extensions"):
                     self.load_storage_file(file_path, vispy_instance=vispy_instance)
                 
+                # just assume it is an image file
                 else:
                     reply = QMessageBox.StandardButton.Yes
                     if self.img_data is not None:
