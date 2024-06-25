@@ -92,6 +92,7 @@ class DataHandler:
                     self.main_window.main_ui.structure_dd.setCurrentText("")
             
     def delete_all_objects(self):
+        self.main_window.vispy_canvas.unselect()
         for structure_list in list(self.drawing_data.values()):
             for object in structure_list:
                object.delete()
