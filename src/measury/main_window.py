@@ -30,6 +30,10 @@ class MainWindow(QMainWindow):
     def __init__(self, data_handler, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # settings
+
+        # dont use dark mode
+        QApplication.setStyle("WindowsVista")
+
         self.data_handler = data_handler
 
         self.settings = Settings(self, "Measury", "Measury")

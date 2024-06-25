@@ -27,7 +27,7 @@ class DataHandler:
     units: dict
     logger: logging.Logger | None = None
     
-    file_extensions = ('.sem', '.measury')
+    file_extensions = ('.msry', '.measury')
 
     # database (dict) of sems with points in scaling bar
     def __init__(self, logger=None):
@@ -137,7 +137,7 @@ class DataHandler:
             self.logger.warning(f"Could not open file location: {path.parent}:\n{error}")
             self.main_window.raise_error(f"Could not open file location: {path.parent}")
 
-    def save_file_dialog(self, file_name="measury.measury", extensions="Measury Files (*.measury *.sem)"):
+    def save_file_dialog(self, file_name="measury.msry", extensions="Measury Files (*.measury *.msry)"):
         filename, _ = QFileDialog.getSaveFileName(self.main_window.main_ui, 
                                                 "Save", 
                                                 file_name, 
@@ -147,7 +147,7 @@ class DataHandler:
         
     def save_storage_file(self, save_image=True, **kwargs):
         
-        filename = self.save_file_dialog(file_name=str(self.file_path.with_suffix('.measury')))
+        filename = self.save_file_dialog(file_name=str(self.file_path.with_suffix('.msry')))
         if filename is None:
             return
         
@@ -187,7 +187,7 @@ class DataHandler:
                 
         
     def load_storage_file(self, file_path, vispy_instance):
-        """load .measury data from a file and update the view
+        """load .msry data from a file and update the view
 
         """
 

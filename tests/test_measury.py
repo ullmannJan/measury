@@ -36,7 +36,7 @@ def test_open_measury_file():
     app = App()
     app.run(run_vispy=False)
     app.vispy_app.process_events()
-    app.data_handler.open_file(Path(__file__).parent/Path("test_data/test_file.measury"), 
+    app.data_handler.open_file(Path(__file__).parent/Path("test_data/test_file.msry"), 
                                        vispy_instance=app.main_window.vispy_canvas)
     app.close()
 
@@ -52,14 +52,14 @@ def test_identify_scaling():
 
 def test_start_with_image():
 
-    app = App(file_path=Path(__file__).parent/Path("test_data/test_file.measury"))
+    app = App(file_path=Path(__file__).parent/Path("test_data/test_file.msry"))
     app.run(run_vispy=False)
     app.vispy_app.process_events()
     app.close()
     
 def test_open_right_ui():
 
-    app = App(file_path=Path(__file__).parent/Path("test_data/test_file.measury"))
+    app = App(file_path=Path(__file__).parent/Path("test_data/test_file.msry"))
     app.run(run_vispy=False)
     app.vispy_app.process_events()
     app.main_window.right_ui.show_ui()
