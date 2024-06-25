@@ -1,39 +1,39 @@
 name: Compile Project
 
 on:
-    push:
-      tags:
-        - "*"
+  push:
+    tags:
+      - "*"
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
+  build:
+      runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v2
+      steps:
+          - name: Checkout code
+            uses: actions/checkout@v2
 
-            - name: Set up Python
-              uses: actions/setup-python@v2
-              with:
-                    python-version: 3.x
+          - name: Set up Python
+            uses: actions/setup-python@v2
+            with:
+                  python-version: 3.x
 
-            - name: Install dependencies
-              run: |
-                pip install .
-                pip install pyinstaller
+          - name: Install dependencies
+            run: |
+              pip install .
+              pip install pyinstaller
 
-            - name: Build plugin
-              run: |
-                python ./compiling/compile.py
-        
-            - name: Create release
-              env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              run: |
-                tag="${GITHUB_REF#refs/tags/}"
-        
-                  gh release create "$tag" \
-                    --title="$tag" \
-                    --draft \
-                    Measury-$tag.zip
+          - name: Build plugin
+            run: |
+              python ./compiling/compile.py
+      
+          - name: Create release
+            env:
+              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            run: |
+              tag="${GITHUB_REF#refs/tags/}"
+      
+                gh release create "$tag" \
+                  --title="$tag" \
+                  --draft \
+                  Measury-$tag.zip
