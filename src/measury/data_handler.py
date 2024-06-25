@@ -185,94 +185,103 @@ class DataHandler:
             for val in drawing_data.values():
                 for object in val:
                     object.parent = vispy_instance.view.scene
-                
+
+    def load_from_pickle(self, file_path):
+        self.logger.info(f"opened storage file: {file_path}")
+        with open(file_path, 'rb') as file:
+            unpickler = CustomUnpickler(file)
+            obj = unpickler.load()
+        return obj       
         
     def load_storage_file(self, file_path, vispy_instance):
         """load .msry data from a file and update the view
 
         """
 
-
-        with open(file_path, 'rb') as file:
+        # with open(file_path, 'rb') as file:
             
-            self.logger.info(f"opened file: {file_path}")
-            loaded_data = pickle.load(file)
-            scaling = (None, None, None)
-            if len(loaded_data) == 2:
-                img_byte_stream, structure_data = loaded_data
-            elif len(loaded_data) == 3:
-                img_byte_stream, structure_data, scaling = loaded_data
+        #     self.logger.info(f"opened file: {file_path}")
+        #     loaded_data = pickle.load(file)
             
-            reply = QMessageBox.StandardButton.Yes
-            question = None
-            
-            if self.img_data is None and img_byte_stream is None:
-                self.main_window.raise_error("You can't load measurements without loading an image first.")
-                return
-            
-            # there is an image with measurements
-            if self.drawing_data and self.img_data is not None:
-                if img_byte_stream is None:
-                    if structure_data:
-                        # only measurments / no image
-                        question = "Do you want to load new measurements?\n\nThis will remove the current measurements."  
-                    else:
-                        # if the file is empty
-                        return 
-                else:
-                    # image included
-                    if structure_data:
-                        question = "Do you want to load a new image with other measurements?\n\nThis will replace the current image and measurements."
-                    else:     
-                        question = "Do you want to load a new image?\n\nThis will replace the current image and remove the measurements."
-            
-            if question is not None:
-                reply = QMessageBox.warning(self.main_window.main_ui, "Warning",
-                        question,
-                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                        QMessageBox.StandardButton.No)
-            
-            if reply is QMessageBox.StandardButton.Yes:
-                
-                self.delete_all_objects()
-                self.file_path = file_path
-                if img_byte_stream is not None:
-                    if isinstance(img_byte_stream, bytes):
-                        self.img_byte_stream = img_byte_stream
-                    else: # for old file format where just the pixel matrix is stored
-                        # Step 1: Encode the image data to a specific format
-                        self.logger.warning("old file format detected")
-                        success, encoded_image = cv2.imencode('.png', 
-                                                            img_byte_stream, 
-                                                            [int(cv2.IMWRITE_PNG_COMPRESSION), 5])
-
-                        if success:
-                            # Step 2: Convert the encoded image to a byte stream
-                            self.img_byte_stream = encoded_image.tobytes()
-                            
-                    self.logger.debug("set data_handler.img_byte_stream to loaded file data")
-                    vispy_instance.update_image()
-                
+        loaded_data = self.load_from_pickle(file_path)
+        scaling = (None, None, None)
+        if len(loaded_data) == 2:
+            img_byte_stream, structure_data = loaded_data
+        elif len(loaded_data) == 3:
+            img_byte_stream, structure_data, scaling = loaded_data
+        
+        reply = QMessageBox.StandardButton.Yes
+        question = None
+        
+        if self.img_data is None and img_byte_stream is None:
+            self.main_window.raise_error("You can't load measurements without loading an image first.")
+            return
+        
+        # there is an image with measurements
+        if self.drawing_data and self.img_data is not None:
+            if img_byte_stream is None:
                 if structure_data:
-                    for key, val in structure_data.items():
-                        for obj_type, obj_data in val:
-                            new_object = obj_type(settings=self.main_window.settings, **obj_data, parent=vispy_instance.view.scene)
-                            vispy_instance.create_new_object(new_object, structure_name=key)                    
-                
-                if scaling[0] is not None:
-                    self.main_window.main_ui.pixel_edit.setText(str(scaling[0]))
-                    self.main_window.main_ui.length_edit.setText(str(scaling[1]))
-                    # find the index of the unit in the dropdown and set it
-                    index = self.main_window.main_ui.units_dd.findText(scaling[2])
-                    if index == -1:
-                        self.main_window.main_ui.units_dd.addItem(scaling[2])
-                        self.main_window.main_ui.units_dd.setCurrentIndex(self.main_window.main_ui.units_dd.count()-1)
-                    else:
-                        self.main_window.main_ui.units_dd.setCurrentIndex(index)
-                    self.main_window.main_ui.units_changed()
-                
-                self.main_window.main_ui.update_structure_dd()           
-    
+                    # only measurments / no image
+                    question = "Do you want to load new measurements?\n\nThis will remove the current measurements."  
+                else:
+                    # if the file is empty
+                    return 
+            else:
+                # image included
+                if structure_data:
+                    question = "Do you want to load a new image with other measurements?\n\nThis will replace the current image and measurements."
+                else:     
+                    question = "Do you want to load a new image?\n\nThis will replace the current image and remove the measurements."
+        
+        if question is not None:
+            reply = QMessageBox.warning(self.main_window.main_ui, "Warning",
+                    question,
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No)
+        
+        if reply is QMessageBox.StandardButton.Yes:
+            
+            self.delete_all_objects()
+            self.file_path = file_path
+            if img_byte_stream is not None:
+                if isinstance(img_byte_stream, bytes):
+                    self.img_byte_stream = img_byte_stream
+                else: # for old file format where just the pixel matrix is stored
+                    # Step 1: Encode the image data to a specific format
+                    self.logger.warning("old file format detected")
+                    success, encoded_image = cv2.imencode('.png', 
+                                                        img_byte_stream, 
+                                                        [int(cv2.IMWRITE_PNG_COMPRESSION), 5])
+
+                    if success:
+                        # Step 2: Convert the encoded image to a byte stream
+                        self.img_byte_stream = encoded_image.tobytes()
+                        
+                self.logger.debug("set data_handler.img_byte_stream to loaded file data")
+                vispy_instance.update_image()
+            
+            if structure_data:
+                for key, val in structure_data.items():
+                    for obj_type, obj_data in val:
+                        new_object = obj_type(settings=self.main_window.settings, 
+                                                **obj_data, 
+                                                parent=vispy_instance.view.scene)
+                        vispy_instance.create_new_object(new_object, structure_name=key)                    
+            
+            if scaling[0] is not None:
+                self.main_window.main_ui.pixel_edit.setText(str(scaling[0]))
+                self.main_window.main_ui.length_edit.setText(str(scaling[1]))
+                # find the index of the unit in the dropdown and set it
+                index = self.main_window.main_ui.units_dd.findText(scaling[2])
+                if index == -1:
+                    self.main_window.main_ui.units_dd.addItem(scaling[2])
+                    self.main_window.main_ui.units_dd.setCurrentIndex(self.main_window.main_ui.units_dd.count()-1)
+                else:
+                    self.main_window.main_ui.units_dd.setCurrentIndex(index)
+                self.main_window.main_ui.units_changed()
+            
+            self.main_window.main_ui.update_structure_dd()           
+
     def open_file(self, file_path: str|Path|None, vispy_instance):
         
         try:
@@ -429,4 +438,13 @@ class DeleteAllObjectsCommand(QUndoCommand):
         # Delete all objects
         self.data_handler.delete_all_objects()
 
-    
+
+class CustomUnpickler(pickle.Unpickler):
+    def find_class(self, module, name):
+
+        # if drawable_objects is in the module name,
+        # then replace everything before drawable_objects 
+        # with measury. This allows for the loading of old files
+        if "drawable_objects" in module:
+            module = "measury.drawable_objects"
+        return super().find_class(module, name)
