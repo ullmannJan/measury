@@ -18,7 +18,8 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install system dependencies
-      run: sudo apt-get update && sudo apt-get install -y libegl1-mesa
+      run: | 
+        sudo apt-get update && sudo apt-get install -y libegl1-mesa
         sudo apt-get install -y xvfb
     - name: Install dependencies
       run: |
