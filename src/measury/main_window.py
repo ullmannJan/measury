@@ -66,7 +66,7 @@ class MainWindow(QMainWindow):
                              'Open File', self)
         openAction.setShortcut('Ctrl+O')
         openAction.setStatusTip('Open document')
-        openAction.triggered.connect(lambda : self.main_ui.select_sem_file(file_path=None))
+        openAction.triggered.connect(lambda : self.main_ui.select_file(file_path=None))
         
         imageFromClipboardAction = QAction(self.style().standardIcon(QStyle.StandardPixmap.SP_FileIcon), 
                                            'Image from Clipboard', self)

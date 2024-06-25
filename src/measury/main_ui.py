@@ -28,8 +28,6 @@ class MainUI(QWidget):
         self.layout = QVBoxLayout(self)
         self.setMinimumWidth(175)
 
-        # sem settings
-
         # image settings
         self.image_box = QGroupBox("Image Settings", self)
         self.image_layout = QVBoxLayout()
@@ -37,7 +35,7 @@ class MainUI(QWidget):
         self.select_image_button = QPushButton("Select File", self)
         self.image_layout.addWidget(self.select_image_button)
         
-        self.select_image_button.clicked.connect(lambda : self.select_sem_file(file_path=None))
+        self.select_image_button.clicked.connect(lambda : self.select_file(file_path=None))
 
         self.center_image_button = QPushButton("Center Image", self)
         self.image_layout.addWidget(self.center_image_button)
@@ -91,15 +89,15 @@ class MainUI(QWidget):
         
         
         # select microscope
-        select_sem_layout = QHBoxLayout()
-        self.sem_label = QLabel("Select Microscope:", self)
-        select_sem_layout.addWidget(self.sem_label)
+        select_micop_layout = QHBoxLayout()
+        self.micop_label = QLabel("Select Microscope:", self)
+        select_micop_layout.addWidget(self.micop_label)
 
-        self.dd_select_sem = QComboBox(self)
-        self.dd_select_sem.addItems(self.data_handler.sem_db.keys())
-        self.dd_select_sem.setCurrentText(self.main_window.settings.value("ui/microscope"))
-        select_sem_layout.addWidget(self.dd_select_sem)
-        self.tools_scaling_layout.addLayout(select_sem_layout)
+        self.dd_select_micop = QComboBox(self)
+        self.dd_select_micop.addItems(self.data_handler.micros_db.keys())
+        self.dd_select_micop.setCurrentText(self.main_window.settings.value("ui/microscope"))
+        select_micop_layout.addWidget(self.dd_select_micop)
+        self.tools_scaling_layout.addLayout(select_micop_layout)
         
         scaling_vertical_layout = QHBoxLayout()
         self.scaling_direction_dd = QComboBox(self)
@@ -211,7 +209,7 @@ class MainUI(QWidget):
         
         self.setLayout(self.layout)
     
-    def select_sem_file(self, file_path=None):
+    def select_file(self, file_path=None):
         if file_path is None:
             file_path = self.openFileNameDialog()
         if file_path:
@@ -230,12 +228,12 @@ class MainUI(QWidget):
             self.save_window.show()
 
     def get_microscope(self) -> Microscope:
-        return self.data_handler.sem_db[self.dd_select_sem.currentText()]()
+        return self.data_handler.micros_db[self.dd_select_micop.currentText()]()
 
     def automatic_scaling(self):
         #only when image is loaded
         if not self.vispy_canvas.start_state:
-            # get seedPoint from sem_db
+            # get seedPoint from micros_db
             try:
                 seed_points = self.get_microscope().seed_points
                 orientation = self.get_microscope().orientation

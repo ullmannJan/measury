@@ -158,7 +158,7 @@ class SettingsWindow(MeasuryWindow):
         self.default_microscope_label = QLabel("Default Microscope", self)
         self.default_microscope_layout.addWidget(self.default_microscope_label)
         self.default_microscope_dd = QComboBox(self)
-        self.default_microscope_dd.addItems(self.parent.data_handler.sem_db.keys())   
+        self.default_microscope_dd.addItems(self.parent.data_handler.micros_db.keys())   
         self.default_microscope_dd.setCurrentText(self.settings.value("ui/microscope")) 
         self.default_microscope_dd.currentTextChanged.connect(self.update_window)
         self.default_microscope_layout.addWidget(self.default_microscope_dd) 

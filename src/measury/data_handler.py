@@ -27,10 +27,9 @@ class DataHandler:
     units: dict
     logger: logging.Logger | None = None
     
-    # database (dict) of sems with points in scaling bar
     def __init__(self, logger=None):
 
-        self.sem_db = load_microscopes()
+        self.micros_db = load_microscopes()
             
         if logger is not None:
             self.logger = logger

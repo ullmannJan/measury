@@ -40,7 +40,7 @@ class VispyCanvas(SceneCanvas):
         
         
         # title
-        self.title_label = Label("SEM-Image", color='black', font_size=12)
+        self.title_label = Label("Microscope-Image", color='black', font_size=12)
         self.title_label.height_max = 40
         self.grid.add_widget(self.title_label, row=0, col=0, col_span=3)
 
@@ -148,7 +148,7 @@ class VispyCanvas(SceneCanvas):
             
             if self.start_state:
                 # when no image is selected open file opening sequence by clicking
-                self.main_ui.select_sem_file()
+                self.main_ui.select_file()
 
     def on_mouse_press(self, event):
         # transform so that coordinates start at 0 in self.view window
@@ -307,8 +307,9 @@ class VispyCanvas(SceneCanvas):
         
         # if click is above box
         elif tr.map(event.pos)[1] < 0 and tr.map(event.pos)[0] > 0 and tr.map(event.pos)[0] < self.view.size[0] :
-            if self.data_handler.file_path and \
-               self.data_handler.file_path.name != "clipboard":
+            if not self.data_handler.file_path:
+                self.main_ui.select_file() 
+            elif self.data_handler.file_path.name != "clipboard":
                 self.data_handler.open_file_location(self.data_handler.file_path)
 
     def create_new_object(self, new_object, pos=None, selected=False, structure_name=None):
