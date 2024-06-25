@@ -2,7 +2,8 @@
 
 
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/ullmannJan/measury)
-![CI/CD Status](https://img.shields.io/circleci/build/github/ullmannJan/measury/main)
+[![tests](https://github.com/ullmannJan/measury/actions/workflows/pytest.yml/badge.svg)](https://github.com/ullmannJan/measury/actions/workflows/pytest.yml)
+
 
 
 ![Measury_Logo](img/logo/tape_measure_128.ico)
