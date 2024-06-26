@@ -45,7 +45,7 @@ jobs:
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v2
         with:
-          name: linux-zip
+          name: linux-gz
           path: ./dist/*_lnx.tar.gz
 
   create-release:
@@ -64,6 +64,6 @@ jobs:
           gh release create "$tag" \
             --title="$tag" \
             --draft \
-            dist/*_win.zip \
-            dist/*_lnx.tar.gz
+            dist/windows-zip/*_win.zip \
+            dist/linux-gz/*_lnx.tar.gz
         shell: bash
