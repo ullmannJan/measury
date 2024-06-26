@@ -46,7 +46,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: linux-zip
-          path: ./dist/*_lnx.gztar
+          path: ./dist/*_lnx.tar.gz
 
   create-release:
     needs: [build-windows, build-linux]
@@ -56,14 +56,14 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           path: dist
-      - name: Create release
+      - name: Create release and upload artifacts
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           tag="${GITHUB_REF#refs/tags/}"
-          filePaths=$(ls dist/*_{win.zip,lnx.gztar}) # Adjust the pattern to match your file naming convention
           gh release create "$tag" \
             --title="$tag" \
             --draft \
-            $filePaths
+            dist/*_win.zip \
+            dist/*_lnx.tar.gz
         shell: bash
