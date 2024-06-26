@@ -35,10 +35,10 @@ jobs:
             env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             run: |
-              tag="${GITHUB_REF#refs/tags/}"
               filePath=$(ls ./dist/Measury_*.zip) # Adjust the pattern to match your file naming convention
+              echo $filePath
 
-              gh release create "$tag" \
+              gh release create "Test" \
                 --title="$tag" \
                 --draft \
                 "$filePath"
