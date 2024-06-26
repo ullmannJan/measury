@@ -49,10 +49,13 @@ jobs:
           path: ./dist/*_lnx.tar.gz
 
   create-release:
+    permissions:
+      contents: write
     needs: [build-windows, build-linux]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      
       - name: Download all artifacts
         uses: actions/download-artifact@v2
         with:
