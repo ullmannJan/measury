@@ -61,7 +61,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           tag="${GITHUB_REF#refs/tags/}"
-          filePaths=$(ls dist/*_{win,lnx}.zip) # Adjust the pattern to match your file naming convention
+          filePaths=$(ls dist/*_{win.zip,lnx.gztar}) # Adjust the pattern to match your file naming convention
           gh release create "$tag" \
             --title="$tag" \
             --draft \
