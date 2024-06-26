@@ -8,40 +8,61 @@ on:
       - "*"
 
 jobs:
-  build:
-      runs-on: ubuntu-latest
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+      - name: Install dependencies and build
+        run: |
+          pip install .
+          pip install pyinstaller
+          python ./compiling/compile.py zipped
+          
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: windows-zip
+          path: ./dist/*_win.zip
 
-      permissions:
-        contents: write
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+      - name: Install dependencies and build
+        run: |
+          pip install .
+          pip install pyinstaller
+          python ./compiling/compile.py zipped
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: linux-zip
+          path: ./dist/*_lnx.zip
 
-      steps:
-          - name: Checkout code
-            uses: actions/checkout@v2
-
-          - name: Set up Python
-            uses: actions/setup-python@v2
-            with:
-                  python-version: 3.x
-          - name: Install system dependencies
-            run: | 
-              sudo apt-get update && sudo apt-get install -y libegl1-mesa
-          - name: Install dependencies
-            run: |
-              pip install .
-              pip install pyinstaller
-
-          - name: Build plugin
-            run: |
-              python ./compiling/compile.py zipped
-      
-          - name: Create release
-            env:
-              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            run: |
-              tag="${GITHUB_REF#refs/tags/}"
-              filePath=$(ls ./dist/Measury_*.zip) # Adjust the pattern to match your file naming convention
-
-              gh release create "$tag" \
-                --title="$tag" \
-                --draft \
-                "$filePath"
+  create-release:
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: dist
+      - name: Create release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          filePaths=$(ls dist/*_{win,lnx}.zip) # Adjust the pattern to match your file naming convention
+          gh release create "$tag" \
+            --title="$tag" \
+            --draft \
+            $filePaths
+        shell: bash

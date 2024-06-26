@@ -9,7 +9,7 @@ if __name__ == '__main__':
     # set program name and method
     program_name = "Measury" + "_" + measury_version
     method = "onedir"
-    zipped = True
+    zipped = False
     if len(sys.argv) > 1 and sys.argv[1] == "zipped":
         zipped = True
 
@@ -30,4 +30,7 @@ if __name__ == '__main__':
     # zip output for easy distribution
     output_path = (script_path/f"../dist/{program_name}").resolve()
     if zipped:
-        shutil.make_archive(output_path, 'zip', output_path)
+        if sys.platform == 'win32':
+            shutil.make_archive(output_path.with_name(program_name+"_win"), 'zip', output_path)
+        else:
+            shutil.make_archive(output_path.with_name(program_name+"_lnx"), 'gztar', output_path)
