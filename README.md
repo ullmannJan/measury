@@ -8,7 +8,7 @@
 
 ![Measury_Logo](img/logo/tape_measure_128.ico)
 
-Measury is a measurement tool for microscope images. The Goal ist to simplify and accelerate the measurements of structures from images.
+Measury is a measurement tool for microscope images. The goal ist to simplify and accelerate the measurements of structures from images.
 
 ## Functionality
 
