@@ -2,10 +2,8 @@ name: compile_release
 
 on:
   push:
-    branches:
-      - main
     tags:
-      - "*"
+      - "*.*.*"
 
 jobs:
   build-windows:
