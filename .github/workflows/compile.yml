@@ -9,12 +9,12 @@ jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       # to get old tags
         with:
           fetch-depth: 0
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.x
       - name: Install dependencies and build
@@ -23,7 +23,7 @@ jobs:
           pip install pyinstaller
           python ./compiling/compile.py zipped
       - name: Upload Windows artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: windows
           path: ./dist/*.zip
@@ -31,12 +31,12 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       # to get old tags
         with:
           fetch-depth: 0
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.x
       - name: Install dependencies and build
@@ -46,7 +46,7 @@ jobs:
           pip install pyinstaller
           python ./compiling/compile.py zipped
       - name: Upload Linux artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: linux
           path: ./dist/*.tar.gz
@@ -54,12 +54,12 @@ jobs:
   build-macos:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       # to get old tags
         with:
           fetch-depth: 0
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.x
       - name: Install dependencies and build for macOS
@@ -70,7 +70,7 @@ jobs:
           pip install pillow
           python ./compiling/compile.py zipped
       - name: Upload macOS artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: macos
           path: ./dist/*.tar.gz
@@ -81,12 +81,12 @@ jobs:
     needs: [build-windows, build-linux, build-macos]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       
       - name: Download all artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           path: dist
       - name: Create release and upload artifacts
@@ -99,7 +99,7 @@ jobs:
             --draft \
             dist/windows/*.zip \
             dist/linux/*.tar.gz \
-            dist/macos/*.tag.gz
+            dist/macos/*.tar.gz
         shell: bash
 
   delete-artifacts:
