@@ -103,7 +103,8 @@ jobs:
         shell: bash
 
   delete-artifacts:
-    needs: [create-release] # Ensure this runs after all other jobs that create artifacts
+    needs: [build-windows, build-linux, build-macos, create-release] # Ensure this runs after all other jobs that create artifacts
+    if: always()
     permissions:
       contents: write
     runs-on: ubuntu-latest
