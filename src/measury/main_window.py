@@ -29,15 +29,16 @@ class MainWindow(QMainWindow):
 
     def __init__(self, data_handler, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # settings
 
-        # dont use dark mode
-        QApplication.setStyle("WindowsVista")
 
         self.data_handler = data_handler
 
+        # settings
         self.settings = Settings(self, "Measury", "Measury")
         self.settings.load_settings()
+        
+        # set style
+        QApplication.setStyle(self.settings.value("graphics/style"))
         
         self.setAcceptDrops(True)
 
@@ -239,6 +240,10 @@ class MainWindow(QMainWindow):
     def open_xml_window(self):
         self.data_window = XMLWindow(parent=self)
         self.data_window.show()
+
+    def update_style(self):
+        self.data_handler.logger.info("Updating style to " + self.settings.value("graphics/style"))
+        QApplication.setStyle(self.settings.value("graphics/style"))
                         
         
 class DropEnabledQOpenGLWidget(QOpenGLWidget):
