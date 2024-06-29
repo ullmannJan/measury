@@ -10,6 +10,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
+      # to get old tags
         with:
           fetch-depth: 0
       - name: Set up Python
@@ -26,12 +27,13 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: windows-zip
-          path: ./dist/*_win.zip
+          path: ./dist/*_win_x86_64.zip
 
   build-linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      # to get old tags
         with:
           fetch-depth: 0
       - name: Set up Python
@@ -48,7 +50,29 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: linux-gz
-          path: ./dist/*_lnx.tar.gz
+          path: ./dist/*_lnx_x86_64.tar.gz
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      # to get old tags
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+      - name: Install dependencies and build for macOS
+        run: |
+          pip install .
+          pip install pyinstaller
+          python ./compiling/compile.py zipped
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: macos-zip
+          path: ./dist/*_mac_x86_64.zip
 
   create-release:
     permissions:
@@ -72,6 +96,7 @@ jobs:
           gh release create "$tag" \
             --title="$tag" \
             --draft \
-            dist/windows-zip/*_win.zip \
-            dist/linux-gz/*_lnx.tar.gz
+            dist/windows-zip/*_win_x86_64.zip \
+            dist/linux-gz/*_lnx_x86_64.tar.gz \
+            dist/macos-zip/*_mac_x86_64.zip
         shell: bash
