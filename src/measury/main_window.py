@@ -1,6 +1,6 @@
 # absolute imports
 from PyQt6.QtOpenGLWidgets import QOpenGLWidget
-from PyQt6.QtGui import QAction, QIcon, QUndoStack
+from PyQt6.QtGui import QAction, QIcon, QUndoStack, QPalette
 from PyQt6.QtWidgets import (QApplication, QMainWindow,
                              QWidget, QHBoxLayout, QSplitter,
                              QMessageBox, QToolButton, 
@@ -244,6 +244,14 @@ class MainWindow(QMainWindow):
     def update_style(self):
         self.data_handler.logger.info("Updating style to " + self.settings.value("graphics/style"))
         QApplication.setStyle(self.settings.value("graphics/style"))
+        print(self.is_dark_mode())
+
+    def is_dark_mode(self):
+        app = QApplication.instance()  # Ensures it works with the current QApplication instance
+        if not app:  # If the application does not exist, create a new instance
+            app = QApplication([])
+        return app.palette().color(QPalette.ColorRole.Window).lightness() < 128
+
                         
         
 class DropEnabledQOpenGLWidget(QOpenGLWidget):

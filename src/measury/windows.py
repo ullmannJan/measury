@@ -1,7 +1,7 @@
 # absolute imports
 from PyQt6.QtWidgets import QVBoxLayout, QLabel, QWidget, \
     QGroupBox, QPushButton, QCheckBox, QLineEdit, QHBoxLayout, \
-    QColorDialog, QComboBox, QTabWidget, QPlainTextEdit
+    QColorDialog, QComboBox, QTabWidget, QPlainTextEdit, QStyleFactory
 from PyQt6.QtGui import QIcon, QGuiApplication, QColor, QTextCursor
 from PyQt6.QtCore import Qt, pyqtSignal
 
@@ -203,7 +203,6 @@ class SettingsWindow(MeasuryWindow):
 
         self.graphics_style_dd = QComboBox(self)
 
-        from PyQt6.QtWidgets import QStyleFactory
         available_styles = QStyleFactory.keys()
 
         self.graphics_style_dd.addItems(available_styles)
@@ -301,8 +300,8 @@ class SettingsWindow(MeasuryWindow):
                 self.settings.save(key, value)
                 
         self.update_window()
-        self.parent.vispy_canvas.update_object_colors()
         self.parent.update_style()
+        self.parent.vispy_canvas.update_colors()
         # update color of the scalebar
         self.parent.vispy_canvas.find_scale_bar_width(*self.parent.vispy_canvas.scale_bar_params)
     
