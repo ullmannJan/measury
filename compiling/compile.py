@@ -1,6 +1,7 @@
 import PyInstaller.__main__
 import shutil
 import sys
+import platform
 from pathlib import Path
 from measury import __version__ as measury_version
 script_path = Path(__file__).parent.resolve()
@@ -29,8 +30,28 @@ if __name__ == '__main__':
 
     # zip output for easy distribution
     output_path = (script_path/f"../dist/{program_name}").resolve()
+    # Modify the output_path based on architecture
     if zipped:
-        if sys.platform == 'win32':
-            shutil.make_archive(output_path.with_name(program_name+"_win"), 'zip', output_path)
+
+        # Determine the architecture
+        arch = platform.machine()
+        match sys.platform:
+            case 'win32':
+                archive_format = 'zip'
+                suffix = "_win"
+            case 'linux':
+                archive_format = 'gztar'
+                suffix = "_lnx"
+            case 'darwin':
+                archive_format = 'gztar'
+                suffix = "_mac"
+
+        # Append architecture to suffix
+        if 'arm' in arch.lower():
+            suffix += '_arm'
+        elif 'x86_64' in arch.lower() or 'AMD64' in arch.lower():
+            suffix += '_x64'
         else:
-            shutil.make_archive(output_path.with_name(program_name+"_lnx"), 'gztar', output_path)
+            suffix += '_unknown'
+
+        shutil.make_archive(output_path.with_name(f"{program_name}{suffix}"), archive_format, output_path)
