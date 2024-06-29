@@ -22,7 +22,8 @@ jobs:
           pip install .
           pip install pyinstaller
           python ./compiling/compile.py zipped
-          
+          # rename file
+          mv ./dist/*_win.zip ./dist/*_win_x86_64.zip
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v2
         with:
@@ -46,6 +47,8 @@ jobs:
           pip install .
           pip install pyinstaller
           python ./compiling/compile.py zipped
+          # rename file
+          mv ./dist/*_lnx.tar.gz ./dist/*_lnx_x86_64.tar.gz
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v2
         with:
@@ -67,8 +70,11 @@ jobs:
         run: |
           pip install .
           pip install pyinstaller
+          # install pillow bc it needs to convert to .icns
           pip install pillow
           python ./compiling/compile.py zipped
+          # rename file
+          mv ./dist/*_mac.zip ./dist/*_mac_x86_64.zip
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v2
         with:
