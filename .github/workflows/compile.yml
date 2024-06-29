@@ -99,5 +99,5 @@ jobs:
             --draft \
             dist/windows-zip/*_win_x86_64.zip \
             dist/linux-gz/*_lnx_x86_64.tar.gz \
-            dist/macos-zip/*_mac_x86_64.zip
+            dist/macos-zip/*_mac_x86_64.tag.gz
         shell: bash
