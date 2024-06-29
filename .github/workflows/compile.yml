@@ -25,7 +25,7 @@ jobs:
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v2
         with:
-          name: windows-zip
+          name: windows
           path: ./dist/*.zip
 
   build-linux:
@@ -48,7 +48,7 @@ jobs:
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v2
         with:
-          name: linux-gz
+          name: linux
           path: ./dist/*.tar.gz
 
   build-macos:
@@ -72,7 +72,7 @@ jobs:
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v2
         with:
-          name: macos-zip
+          name: macos
           path: ./dist/*.tar.gz
 
   create-release:
@@ -97,7 +97,22 @@ jobs:
           gh release create "$tag" \
             --title="$tag" \
             --draft \
-            dist/windows-zip/*.zip \
-            dist/linux-gz/*.tar.gz \
-            dist/macos-zip/*.tag.gz
+            dist/windows/*.zip \
+            dist/linux/*.tar.gz \
+            dist/macos/*.tag.gz
         shell: bash
+
+  delete-artifacts:
+    runs-on: ubuntu-latest
+    needs: [create-release] # Ensure this runs after all other jobs that create artifacts
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: geekyeggo/delete-artifact@v5
+        with:
+            name: |
+              windows
+              linux
+              macos
+    
