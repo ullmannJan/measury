@@ -51,7 +51,5 @@ if __name__ == '__main__':
             suffix += '_arm'
         elif 'x86_64' in arch.lower() or 'AMD64' in arch.lower():
             suffix += '_x64'
-        else:
-            suffix += '_unknown'
 
         shutil.make_archive(output_path.with_name(f"{program_name}{suffix}"), archive_format, output_path)
