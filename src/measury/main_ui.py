@@ -1,19 +1,23 @@
 # absolute imports
-from PyQt6.QtWidgets import QMessageBox, QVBoxLayout, QHBoxLayout, \
+from PyQt6.QtWidgets import QVBoxLayout, QHBoxLayout, \
         QPushButton, QTableWidget, QWidget, QFileDialog, QComboBox, QLabel, \
         QButtonGroup, QLineEdit, QGroupBox, QTableWidgetItem, QListWidget, \
         QInputDialog
 from PyQt6.QtGui import QDoubleValidator
+from PyQt6.QtCore import Qt
 from pathlib import Path
+import numpy as np
 
 # relative imports
 from .windows import SaveWindow
 from .data.microscopes import Microscope
+from .drawable_objects import ControlPoints
 
 
 class MainUI(QWidget):
     
     main_window = None
+    update_full_table = False
     
     def __init__(self, main_window, parent=None):
         
@@ -112,12 +116,11 @@ class MainUI(QWidget):
 
         # scaling
 
-        self.scaling = 1.
+        self.scaling_factor= 1.
         
         posDouble = QDoubleValidator()
         posDouble.setBottom(0)
-        # posInt = QIntValidator()
-        # posInt.setBottom(0)
+     
         self.pixel_edit = QLineEdit(self, placeholderText="Enter value")
         self.pixel_edit.setValidator(posDouble)
         self.pixel_edit.textChanged.connect(self.update_scaling)
@@ -134,6 +137,7 @@ class MainUI(QWidget):
         self.units_dd.setEditable(True)
         self.units_dd.addItems(self.data_handler.units.keys())
         # setting for default unit
+        self.units_dd.setMinimumWidth(60)
         self.units_dd.setCurrentIndex(3)
         self.units_dd.currentTextChanged.connect(self.units_changed)
         scaling.addWidget(self.units_dd)
@@ -180,9 +184,15 @@ class MainUI(QWidget):
         self.selected_object_layout.addWidget(self.object_list)
 
         self.selected_object_table = QTableWidget()
+        # run, when cell content changes via GUI
+        self.selected_object_table.itemChanged.connect(self.cell_content_changed)
         self.selected_object_table.setRowCount(0)
 
         self.selected_object_table.setColumnCount(5)
+        #  disable changing
+        # self.selected_object_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        
+        
         # do not hide for column headers
         self.selected_object_table.horizontalHeader().hide()
         self.selected_object_table.verticalHeader().hide()
@@ -208,7 +218,98 @@ class MainUI(QWidget):
         self.openSaveWindow.clicked.connect(self.open_save_window)
         
         self.setLayout(self.layout)
-    
+
+    def update_object_table(self, object):
+
+        # selection table
+        self.update_full_table = True
+        self.clear_object_table()
+
+        props = object.output_properties()
+        self.selected_object_table.setRowCount(len(props.keys()))
+        for i, key in enumerate(props):
+            self.selected_object_table.setItem(i, 0, 
+                                QTableWidgetItem(key))
+            
+            value, unit = props[key]
+            # if there is a conversion possible
+            if self.scaling_factor!= 1 :
+                scaled_length = 1 * np.array(value)
+                if key in ['length', 'area', 'radius', 'width', 'height', 'center']:
+                    scaled_length *= self.scaling_factor
+                    exponent = unit[-1] if unit[-1] in ['²', '³'] else ""
+                    self.selected_object_table.setItem(i, 2, 
+                            QTableWidgetItem(self.units_dd.currentText()+exponent))
+                else:
+                    self.selected_object_table.setItem(i, 2, 
+                            QTableWidgetItem(unit))
+                self.selected_object_table.setItem(i, 1, 
+                                QTableWidgetItem(str(scaled_length)))
+            else: # to attach flags so you cant edit these columns
+                self.selected_object_table.setItem(i, 1, 
+                                QTableWidgetItem(""))
+                self.selected_object_table.setItem(i, 2, 
+                            QTableWidgetItem(""))
+                
+
+            # if setting selected that pixels should be shown too
+            if True or not self.scaling_factor!= 1 : 
+                self.selected_object_table.setItem(i, 3, 
+                                        QTableWidgetItem(str(value)))
+
+                self.selected_object_table.setItem(i, 4, 
+                            QTableWidgetItem(unit))
+            
+        self.selected_object_table.resizeColumnsToContents()
+        # make only column 3 editable
+        for i in range(self.selected_object_table.rowCount()):
+            for j in range(self.selected_object_table.columnCount()):
+                if j != 3 and j != 1:
+                    item = self.selected_object_table.item(i, j)
+                    if item:
+                        item.setFlags(item.flags() & Qt.ItemFlag.ItemIsEnabled)
+
+        self.update_full_table = False
+
+
+
+
+    # Slot function that gets called when an item's content changes
+    # currently it does nothing as it is not possible to change somethin
+    def cell_content_changed(self, item: QTableWidgetItem):
+        # in case we update everything, we do not want to trigger this function
+        if self.update_full_table:
+            return
+        
+        # item is the QTableWidgetItem that was changed
+        row, column = item.row(), item.column()
+        new_value = item.text()
+        
+        sel_object = self.vispy_canvas.get_selected_object()
+        obj_property = list(sel_object.output_properties().keys())[row]
+        old_value = sel_object.output_properties()[obj_property][0]
+
+        if isinstance(old_value, np.ndarray):
+            old_type = old_value.dtype
+            # load numpy array from string
+            new_value = np.array([float(val) for val in new_value.strip("[]").split(" ") if val], dtype=old_type)
+        else:
+            old_type = type(old_value)
+            new_value = old_type(new_value)
+        # only allow changes in the data value column
+        if column == 3:
+            # self.vispy_canvas.update_object_property(sel_object, obj_property, new_value)
+            self.vispy_canvas.update_object_property(sel_object, obj_property, new_value)
+            self.data_handler.logger.info(f"Changed {obj_property} from {old_value} to {new_value}")
+        if column == 1 and self.scaling_factor!= 1:
+            # self.vispy_canvas.update_object_property(sel_object, obj_property, new_value/self.scaling_factor)
+            self.vispy_canvas.update_object_property(sel_object, obj_property, new_value, self.scaling_factor)
+            self.data_handler.logger.info(f"Changed {obj_property} from {old_value*self.scaling_factor} to {new_value}")
+
+        self.vispy_canvas.selection_update()            
+
+        
+        
     def select_file(self, file_path=None):
         if file_path is None:
             file_path = self.openFileNameDialog()
@@ -251,9 +352,9 @@ class MainUI(QWidget):
         length = self.length_edit.text()
         pixels = self.pixel_edit.text()
         if length != "" and pixels != "":
-            self.scaling = float(length.replace(',',''))/float(pixels.replace(',',''))
+            self.scaling_factor= float(length.replace(',',''))/float(pixels.replace(',',''))
         else:
-            self.scaling = 1
+            self.scaling_factor= 1
         self.units_changed()
     
     def reset_scaling(self):

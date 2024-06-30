@@ -1,9 +1,10 @@
 # absolute imports
 import numpy as np
 import cv2
-from vispy.scene import SceneCanvas, visuals, AxisWidget, Label, Text
+from vispy.scene import SceneCanvas, visuals, AxisWidget, Label
 from PyQt6.QtWidgets import QTableWidgetItem, QInputDialog
-from PyQt6.QtGui import QUndoCommand, QPalette
+from PyQt6.QtGui import QUndoCommand
+from PyQt6.QtCore import Qt
 
 # relative imports
 from .drawable_objects import EditEllipseVisual, EditRectVisual, ControlPoints, EditLineVisual, LineControlPoints
@@ -468,20 +469,7 @@ class VispyCanvas(SceneCanvas):
     def find_scale_bar_width_w_undo(self, seed_point_percentage, relative=True, threshold=10):
         command = FindScalingBarWidthCommand(self, seed_point_percentage, relative, threshold)
         self.main_window.undo_stack.push(command)
-      
-    # can be deleted  
-    # def on_mouse_release(self, event):
-    #     # transform so that coordinates start at 0 in self.view window
-    #     tr = self.scene.node_transform(self.view)
-    #     # only activate when over self.view by looking if coordinates < 0 or > size of self.view
-    #     if not( (tr.map(event.pos)[:2] > self.view.size).any() or (tr.map(event.pos)[:2] < (0,0)).any() ):
-    #         if not self.start_state:
-    #             match event.button:
-    #                 case 1: 
-    #                     if event.is_dragging:
-    #                         if self.selected_object is not None:
-    #                             # save in undo history
-    #                             print(f"move ended for object {self.selected_object}")
+
 
     def on_mouse_move(self, event):
 
@@ -557,38 +545,21 @@ class VispyCanvas(SceneCanvas):
         self.main_ui.update_object_list()
         self.main_ui.object_list.item(index).setSelected(True)
         
-        # selection table
-        self.main_ui.clear_object_table()
+        self.main_ui.update_object_table(object)
 
-        props = object.output_properties()
-        self.main_ui.selected_object_table.setRowCount(len(props.keys()))
-        for i, key in enumerate(props):
-            self.main_ui.selected_object_table.setItem(i, 0, 
-                                QTableWidgetItem(key))
-            
-            value, unit = props[key]
-            # if there is a conversion possible
-            if self.main_ui.scaling != 1 :
-                scaled_length = 1 * np.array(value)
-                if key in ['length', 'area', 'radius', 'width', 'height', 'center']:
-                    scaled_length *= self.main_ui.scaling
-                    exponent = unit[-1] if unit[-1] in ['²', '³'] else ""
-                    self.main_ui.selected_object_table.setItem(i, 2, 
-                            QTableWidgetItem(self.main_ui.units_dd.currentText()+exponent))
-                else:
-                    self.main_ui.selected_object_table.setItem(i, 2, 
-                            QTableWidgetItem(unit))
-                self.main_ui.selected_object_table.setItem(i, 1, 
-                            QTableWidgetItem(str(scaled_length)))
+    def update_object_property(self, obj, prop, value, scaling_factor=None):
+        if obj is None:
+            obj = self.get_selected_object()
+        # update object property
+        obj.update_property(prop, value, scaling_factor)
+        # update ui to display properties of selected object
 
-            if True: # if setting selected that pixels should be shown too
-                self.main_ui.selected_object_table.setItem(i, 3, 
-                            QTableWidgetItem(str(value)))
-                self.main_ui.selected_object_table.setItem(i, 4, 
-                            QTableWidgetItem(unit))
-            
-        self.main_ui.selected_object_table.resizeColumnsToContents()
-
+    def get_selected_object(self):
+        """always returns the whole object instance, even if controlpoints are selected
+        """
+        if isinstance(self.selected_object, (ControlPoints, LineControlPoints)):
+            return self.selected_object.parent
+        return self.selected_object
 
     def delete_object(self, object=None):
         # delete selected object if no other is given

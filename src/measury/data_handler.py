@@ -360,9 +360,9 @@ class DataHandler:
             for prop in props:
                 data = [obj.output_properties()[prop][0] for obj in object_list]
                 unit = object_list[0].output_properties()[prop][1]
-                if self.main_window.main_ui.scaling != 1 :
+                if self.main_window.main_ui.scaling_factor != 1 :
                     if prop in ['length', 'area', 'radius', 'width', 'height', 'center']:
-                        data = [d*self.main_window.main_ui.scaling for d in data]
+                        data = [d*self.main_window.main_ui.scaling_factor for d in data]
                         exponent = unit[-1] if unit[-1] in ['²', '³'] else ""
                         unit = self.main_window.main_ui.units_dd.currentText() + exponent
                 

@@ -96,7 +96,7 @@ class DataWindow(MeasuryWindow):
         self.layout.addWidget(label)
 
         # Copy Button
-        self.copyButton = QPushButton("Copy", self)
+        self.copyButton = QPushButton("Copy to Clipboard", self)
         self.copyButton.clicked.connect(self.copy_to_clipboard)
         self.layout.addWidget(self.copyButton)
         # Save Button

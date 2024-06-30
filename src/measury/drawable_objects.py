@@ -279,7 +279,7 @@ class EditVisual(Compound):
         self.form.transform = tr
 
     def update_from_controlpoints(self):
-        None
+        pass
 
     @property
     def selectable(self):
@@ -303,7 +303,30 @@ class EditVisual(Compound):
     @angle.setter
     def angle(self, val):
         self.control_points.angle = val
+        # self.update_from_controlpoints()
+
+    # height
+    @property
+    def height(self):
+        return self.control_points._height
+    @height.setter
+    def height(self, val):
+        self.control_points._height = val
+        self.control_points.update_points()
+        self.update_from_controlpoints()
+
     
+    # width
+    @property
+    def width(self):
+        return self.control_points._width
+    @width.setter
+    def width(self, val):
+        self.control_points._width = val
+        self.control_points.update_points()
+        self.update_from_controlpoints()
+    
+    # center
     @property
     def center(self):
         return self.control_points.get_center()
@@ -328,7 +351,10 @@ class EditVisual(Compound):
         del self
         
     def update_colors(self, color, border_color):
-        ...
+        pass
+
+    def update_property(self, prop, val, scaling_factor=None):
+        pass
 
 
 class EditRectVisual(EditVisual):
@@ -358,24 +384,6 @@ class EditRectVisual(EditVisual):
         self.add_subvisual(self.form)
         self.control_points.update_bounds()
         self.rotate(self.angle)
-    
-    @property
-    def height(self):
-        return self.control_points._height
-    @height.setter
-    def height(self, val):
-        self.control_points._height = val
-        self.control_points.update_points()
-        self.form.height = val
-        
-    @property
-    def width(self):
-        return self.control_points._width
-    @width.setter
-    def width(self, val):
-        self.control_points._width = val
-        self.control_points.update_points()
-        self.form.width = val
     
     def set_center(self, val):
         self.control_points.set_center(val[0:2])
@@ -409,6 +417,18 @@ class EditRectVisual(EditVisual):
                 area=(self.form.height*self.form.width, "px²"),
                 angle=(np.rad2deg(self.control_points._angle), "°"),
                 )
+    
+    def update_property(self, prop, val, scaling_factor=None):
+        if scaling_factor is None:
+            scaling_factor = 1
+        match prop:
+            case "center": self.set_center(val/scaling_factor)
+            case "width": self.width = val/scaling_factor
+            case "height": self.height = val/scaling_factor
+            case "angle": 
+                self.angle = np.deg2rad(val)
+                self.update_transform()
+
         
     def save(self):
         return dict(
@@ -487,23 +507,6 @@ class EditEllipseVisual(EditVisual):
     def set_center(self, val):
         self.control_points.set_center(val)
         self.form.center = val
-        
-    @property
-    def height(self):
-        return self.control_points._height
-    @height.setter
-    def height(self, val):
-        self.control_points._height = val
-        self.control_points.update_points()
-
-        
-    @property
-    def width(self):
-        return self.control_points._width
-    @width.setter
-    def width(self, val):
-        self.control_points._width = val
-        self.control_points.update_points()
 
     def update_from_controlpoints(self):
         try:
@@ -533,6 +536,19 @@ class EditEllipseVisual(EditVisual):
                 area=(np.prod(self.form.radius)*np.pi, "px²"),
                 angle=(np.rad2deg(self.control_points._angle), "°"),
                 )
+
+    def update_property(self, prop, val, scaling_factor=None):
+        if scaling_factor is None:
+            scaling_factor = 1
+        match prop:
+            case "center": self.set_center(val/scaling_factor)
+            case "radius": 
+                self.width = val[0]/scaling_factor
+                self.height = val[1]/scaling_factor
+            case "angle": 
+                self.angle = np.deg2rad(val)
+                self.update_transform()
+
     
     def save(self):
         return dict(
@@ -748,6 +764,18 @@ class EditLineVisual(EditVisual):
             length=[self.length, "px"],
             angle=[angle[0], "°"]
             )
+    
+    def update_property(self, prop, val, scaling_factor=None):
+        if scaling_factor is None:
+            scaling_factor = 1
+        match prop:
+            case "length": 
+                # get normalized vector
+                norm_vec = np.diff(self.control_points.coords, axis=0)/self.length*scaling_factor
+                self.control_points.coords[1] = self.control_points.coords[0] + val*norm_vec
+                self.update_from_controlpoints()
+                self.control_points.update_points()
+            
     
     def save(self):
         return dict(
