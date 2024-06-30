@@ -1,7 +1,7 @@
 # absolute imports
 import numpy as np
 import cv2
-from vispy.scene import SceneCanvas, visuals, AxisWidget, Label, transforms
+from vispy.scene import SceneCanvas, visuals, AxisWidget, Label, Text
 from PyQt6.QtWidgets import QTableWidgetItem, QInputDialog
 from PyQt6.QtGui import QUndoCommand, QPalette
 
@@ -67,6 +67,8 @@ class VispyCanvas(SceneCanvas):
                                 text_color=self.text_color)
         self.xaxis.height_max = 50
         self.grid.add_widget(self.xaxis, row=2, col=1)
+
+        self.update_axis_color()
 
         # padding right
         right_padding = self.grid.add_widget(row=1, col=2, row_span=2)
@@ -365,32 +367,37 @@ class VispyCanvas(SceneCanvas):
 
     def update_background_color(self, color=None):
         if color is None:
-            color = self.main_window.palette().color(QPalette.ColorRole.Window)
+            color = self.main_window.get_bg_color()
+        # if self.main_window.is_dark_mode():
+        #     color = "black"
+        # else:
+        #     color = (240/255, 240/255, 240/255, 1)
 
-        if self.main_window.is_dark_mode():
-            color = "black"
-        else:
-            color = (240/255, 240/255, 240/255, 1)
         # Convert QColor to RGBA tuple with values in range 0-1
-        self.bgcolor = color #(color.red() / 255, color.green() / 255, color.blue() / 255, color.alpha() / 255)
+        self.bgcolor = (color.red() / 255, color.green() / 255, color.blue() / 255, color.alpha() / 255)
         self.update()
 
-    def update_text_color(self):
+    def update_axis_color(self):
         
         if self.main_window.is_dark_mode():
             color = "white"
         else:
             color = "black"
         # Convert QColor to RGBA tuple with values in range 0-1
-        self.title_label.color = color  
-        self.xaxis.text_color = color
-        self.xaxis.axis_color = color
-        self.yaxis.axis_color = color
-        self.yaxis.text_color = color
+        # self.title_label.color = color  
+        self.xaxis.axis.text_color = color
+        # self.xaxis.axis.axis_color = color
+        self.xaxis.axis.tick_color = color
+        self.yaxis.axis.text_color = color
+        # self.yaxis.axis.axis_color = color
+        self.yaxis.axis.tick_color = color
+
+        # title color
+        self.title_label._text_visual.color = color
 
     def update_colors(self):
         self.update_background_color()
-        self.update_text_color()
+        self.update_axis_color()
         self.update_object_colors()
 
     def check_creation_allowed(self, new_object, structure_name=None):

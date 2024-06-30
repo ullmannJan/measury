@@ -49,10 +49,9 @@ class MainWindow(QMainWindow):
         self.main_ui = MainUI(self, parent=self)
         self.vispy_canvas.main_window = self
         self.vispy_canvas.main_ui = self.main_ui
-        
+
         # create undo stack
         self.undo_stack = QUndoStack(self)
-        
 
         self.initUI()        
 
@@ -202,15 +201,19 @@ class MainWindow(QMainWindow):
     def open_about_page(self):
         self.about_window = AboutWindow(parent=self)
         self.about_window.show()
+        self.about_window.activateWindow()
         
     def open_settings_page(self):
+        self.get_bg_color()
         self.about_window = SettingsWindow(parent=self)
         self.about_window.show()
+        self.about_window.activateWindow()
 
     def open_data_page(self):
         if self.data_handler.drawing_data:
             self.data_window = DataWindow(parent=self)
             self.data_window.show()
+            self.data_window.activateWindow()
         
     def closeEvent(self, event):
         QApplication.closeAllWindows()
@@ -242,15 +245,21 @@ class MainWindow(QMainWindow):
         self.data_window.show()
 
     def update_style(self):
-        self.data_handler.logger.info("Updating style to " + self.settings.value("graphics/style"))
+        self.data_handler.logger.info("Updating style to " + self.settings.value("graphics/style") + f" dark_mode = {self.is_dark_mode()}")
         QApplication.setStyle(self.settings.value("graphics/style"))
-        print(self.is_dark_mode())
+        QApplication.processEvents()
 
     def is_dark_mode(self):
         app = QApplication.instance()  # Ensures it works with the current QApplication instance
         if not app:  # If the application does not exist, create a new instance
             app = QApplication([])
         return app.palette().color(QPalette.ColorRole.Window).lightness() < 128
+    
+    def get_bg_color(self):
+        color = self.palette().color(QPalette.ColorRole.Window)
+        print(color.red(), color.green(), color.blue(), color.alpha())
+
+        return color
 
                         
         

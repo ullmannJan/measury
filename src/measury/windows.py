@@ -31,6 +31,15 @@ class MeasuryWindow(QWidget):
         self.setWindowIcon(QIcon(str(measury_path/"data/tape_measure_128.ico")))
         self.setMinimumSize(300,200)
 
+    def closeEvent(self, event):
+        """
+        Override the close event to set focus back to the parent window.
+        """
+        if self.parent:
+            self.parent.setFocus()
+            self.parent.activateWindow()
+        super().closeEvent(event)
+
 
 class SaveWindow(MeasuryWindow):
     """
@@ -280,7 +289,6 @@ class SettingsWindow(MeasuryWindow):
         self.reset_button.setEnabled(not self.settings.is_default)
         self.save_button.setEnabled(self.changed)
 
-
     @property
     def current_selection(self):
         return {
@@ -299,11 +307,13 @@ class SettingsWindow(MeasuryWindow):
                 value = self.current_selection.get(key)
                 self.settings.save(key, value)
                 
-        self.update_window()
         self.parent.update_style()
-        self.parent.vispy_canvas.update_colors()
+        # update the window and the color palette
+        
+        self.update_window()
         # update color of the scalebar
         self.parent.vispy_canvas.find_scale_bar_width(*self.parent.vispy_canvas.scale_bar_params)
+        self.parent.vispy_canvas.update_colors()
     
     @property
     def changed(self):
