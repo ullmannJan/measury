@@ -8,7 +8,7 @@ from subprocess import Popen
 from sys import platform
 from copy import deepcopy
 import logging
-import numpy as np  
+import numpy as np
 import cv2
 
 # you need this import as they are implicitly used
@@ -26,16 +26,18 @@ class DataHandler:
 
     units: dict
     logger: logging.Logger | None = None
-    
+
     def __init__(self, logger=None):
 
         self.micros_db = load_microscopes()
-            
+
         if logger is not None:
             self.logger = logger
         else:
-            logging.basicConfig(level=logging.CRITICAL,
-                                format='%(asctime)s  %(levelname)-10s %(name)s: %(message)s')
+            logging.basicConfig(
+                level=logging.CRITICAL,
+                format="%(asctime)s  %(levelname)-10s %(name)s: %(message)s",
+            )
             self.logger = logging.getLogger("Measury")
             self.logger.setLevel(logging.CRITICAL)
 
@@ -46,9 +48,17 @@ class DataHandler:
         #   ...
         # }
         self.drawing_data = dict()
-        self.units = dict(fm=1e-15, pm=1e-12, Å=1e-10, 
-                          nm=1e-9, µm=1e-6, mm=1e-3, 
-                          cm=1e-2, m=1, km=1e3, )
+        self.units = dict(
+            fm=1e-15,
+            pm=1e-12,
+            Å=1e-10,
+            nm=1e-9,
+            µm=1e-6,
+            mm=1e-3,
+            cm=1e-2,
+            m=1,
+            km=1e3,
+        )
 
     def save_object(self, structure_name, object):
         """save object into storage structure
@@ -65,7 +75,7 @@ class DataHandler:
             self.drawing_data[structure_name] = list()
         self.drawing_data[structure_name].append(object)
         self.logger.info(f"object {object} saved in {structure_name} in drawing_data")
-        
+
         return structure_name
 
     def delete_object(self, object):
@@ -87,21 +97,21 @@ class DataHandler:
                 del self.drawing_data[object_name]
                 if self.main_window.main_ui.structure_dd.currentText() == object_name:
                     self.main_window.main_ui.structure_dd.setCurrentText("")
-            
+
     def delete_all_objects(self):
         self.main_window.vispy_canvas.unselect()
         for structure_list in list(self.drawing_data.values()):
             for object in structure_list:
-               object.delete()
-            
+                object.delete()
+
         self.drawing_data = dict()
         self.main_window.main_ui.update_structure_dd()
         self.logger.info("Deleted all measurements")
-        
+
     def delete_all_objects_w_undo(self):
         command = DeleteAllObjectsCommand(self)
         self.main_window.undo_stack.push(command)
-        
+
     def find_object(self, object):
         if self.drawing_data:
             for k, val in self.drawing_data.items():
@@ -115,12 +125,11 @@ class DataHandler:
         while f"structure_{i:03d}" in self.drawing_data.keys():
             i += 1
         return f"structure_{i:03d}"
-    
-    
+
     def open_file_location(self, path: Path):
         try:
             if path is not None:
-            
+
                 if platform == "win32":
                     # For Windows
                     os.startfile(path.parent)
@@ -131,40 +140,46 @@ class DataHandler:
                     # For Linux
                     Popen(["xdg-open", str(path.parent)])
         except Exception as error:
-            self.logger.warning(f"Could not open file location: {path.parent}:\n{error}")
+            self.logger.warning(
+                f"Could not open file location: {path.parent}:\n{error}"
+            )
             self.main_window.raise_error(f"Could not open file location: {path.parent}")
 
-    def save_file_dialog(self, file_name="measury.msry", extensions="Measury Files (*.measury *.msry)"):
-        filename, _ = QFileDialog.getSaveFileName(self.main_window.main_ui, 
-                                                "Save", 
-                                                file_name, 
-                                                extensions)
+    def save_file_dialog(
+        self, file_name="measury.msry", extensions="Measury Files (*.measury *.msry)"
+    ):
+        filename, _ = QFileDialog.getSaveFileName(
+            self.main_window.main_ui, "Save", file_name, extensions
+        )
         if filename:
             return filename
-        
+
     def save_storage_file(self, save_image=True, **kwargs):
-        
-        filename = self.save_file_dialog(file_name=str(self.file_path.with_suffix('.msry')))
+
+        filename = self.save_file_dialog(
+            file_name=str(self.file_path.with_suffix(".msry"))
+        )
         if filename is None:
             return
-        
+
         structure_data = dict()
         for key, val in self.drawing_data.items():
             structure_data[key] = [[obj.__class__, deepcopy(obj.save())] for obj in val]
-        
+
         if save_image:
-            scaling = (self.main_window.main_ui.pixel_edit.text(), 
-                        self.main_window.main_ui.length_edit.text(), 
-                        self.main_window.main_ui.units_dd.currentText())
+            scaling = (
+                self.main_window.main_ui.pixel_edit.text(),
+                self.main_window.main_ui.length_edit.text(),
+                self.main_window.main_ui.units_dd.currentText(),
+            )
             output = (self.img_byte_stream, structure_data, scaling)
         else:
             output = (None, structure_data, None)
-        
+
         # save to file
-        with open(filename, 'wb') as save_file:
+        with open(filename, "wb") as save_file:
             pickle.dump(output, save_file, pickle.HIGHEST_PROTOCOL, **kwargs)
 
-        
     def load_into_view(self, drawing_data, vispy_instance):
         """
         Loads the drawing data into the view and the drawing_data dictionary.
@@ -186,81 +201,88 @@ class DataHandler:
 
     def load_from_pickle(self, file_path):
         self.logger.info(f"opened storage file: {file_path}")
-        with open(file_path, 'rb') as file:
+        with open(file_path, "rb") as file:
             unpickler = CustomUnpickler(file)
             obj = unpickler.load()
-        return obj       
-        
-    def load_storage_file(self, file_path, vispy_instance):
-        """load .msry data from a file and update the view
+        return obj
 
-        """
-  
+    def load_storage_file(self, file_path, vispy_instance):
+        """load .msry data from a file and update the view"""
+
         loaded_data = self.load_from_pickle(file_path)
         scaling = (None, None, None)
         if len(loaded_data) == 2:
             img_byte_stream, structure_data = loaded_data
         elif len(loaded_data) == 3:
             img_byte_stream, structure_data, scaling = loaded_data
-        
+
         reply = QMessageBox.StandardButton.Yes
         question = None
-        
+
         if self.img_data is None and img_byte_stream is None:
-            self.main_window.raise_error("You can't load measurements without loading an image first.")
+            self.main_window.raise_error(
+                "You can't load measurements without loading an image first."
+            )
             return
-        
+
         # there is an image with measurements
         if self.drawing_data and self.img_data is not None:
             if img_byte_stream is None:
                 if structure_data:
                     # only measurments / no image
-                    question = "Do you want to load new measurements?\n\nThis will remove the current measurements."  
+                    question = "Do you want to load new measurements?\n\nThis will remove the current measurements."
                 else:
                     # if the file is empty
-                    return 
+                    return
             else:
                 # image included
                 if structure_data:
                     question = "Do you want to load a new image with other measurements?\n\nThis will replace the current image and measurements."
-                else:     
+                else:
                     question = "Do you want to load a new image?\n\nThis will replace the current image and remove the measurements."
-        
+
         if question is not None:
-            reply = QMessageBox.warning(self.main_window.main_ui, "Warning",
-                    question,
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                    QMessageBox.StandardButton.No)
-        
+            reply = QMessageBox.warning(
+                self.main_window.main_ui,
+                "Warning",
+                question,
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+
         if reply is QMessageBox.StandardButton.Yes:
-            
+
             self.delete_all_objects()
             self.file_path = file_path
             if img_byte_stream is not None:
                 if isinstance(img_byte_stream, bytes):
                     self.img_byte_stream = img_byte_stream
-                else: # for old file format where just the pixel matrix is stored
+                else:  # for old file format where just the pixel matrix is stored
                     # Step 1: Encode the image data to a specific format
                     self.logger.warning("old file format detected")
-                    success, encoded_image = cv2.imencode('.png', 
-                                                        img_byte_stream, 
-                                                        [int(cv2.IMWRITE_PNG_COMPRESSION), 5])
+                    success, encoded_image = cv2.imencode(
+                        ".png", img_byte_stream, [int(cv2.IMWRITE_PNG_COMPRESSION), 5]
+                    )
 
                     if success:
                         # Step 2: Convert the encoded image to a byte stream
                         self.img_byte_stream = encoded_image.tobytes()
-                        
-                self.logger.debug("set data_handler.img_byte_stream to loaded file data")
+
+                self.logger.debug(
+                    "set data_handler.img_byte_stream to loaded file data"
+                )
                 vispy_instance.update_image()
-            
+
             if structure_data:
                 for key, val in structure_data.items():
                     for obj_type, obj_data in val:
-                        new_object = obj_type(settings=self.main_window.settings, 
-                                                **obj_data, 
-                                                parent=vispy_instance.view.scene)
-                        vispy_instance.create_new_object(new_object, structure_name=key)                    
-            
+                        new_object = obj_type(
+                            settings=self.main_window.settings,
+                            **obj_data,
+                            parent=vispy_instance.view.scene,
+                        )
+                        vispy_instance.create_new_object(new_object, structure_name=key)
+
             if scaling[0] is not None:
                 self.main_window.main_ui.pixel_edit.setText(str(scaling[0]))
                 self.main_window.main_ui.length_edit.setText(str(scaling[1]))
@@ -268,39 +290,47 @@ class DataHandler:
                 index = self.main_window.main_ui.units_dd.findText(scaling[2])
                 if index == -1:
                     self.main_window.main_ui.units_dd.addItem(scaling[2])
-                    self.main_window.main_ui.units_dd.setCurrentIndex(self.main_window.main_ui.units_dd.count()-1)
+                    self.main_window.main_ui.units_dd.setCurrentIndex(
+                        self.main_window.main_ui.units_dd.count() - 1
+                    )
                 else:
                     self.main_window.main_ui.units_dd.setCurrentIndex(index)
                 self.main_window.main_ui.units_changed()
-            
-            self.main_window.main_ui.update_structure_dd()           
 
-    def open_file(self, file_path: str|Path|None, vispy_instance):
-        
+            self.main_window.main_ui.update_structure_dd()
+
+    def open_file(self, file_path: str | Path | None, vispy_instance):
+
         try:
             if file_path:
                 file_path = Path(file_path)
-                
+
                 # check if it is a storage file
-                if file_path.suffix in self.main_window.settings.value("misc/file_extensions"):
+                if file_path.suffix in self.main_window.settings.value(
+                    "misc/file_extensions"
+                ):
                     self.load_storage_file(file_path, vispy_instance=vispy_instance)
-                
+
                 # just assume it is an image file
                 else:
                     reply = QMessageBox.StandardButton.Yes
                     if self.img_data is not None:
-                        reply = QMessageBox.warning(self.main_window.main_ui, "Warning",
+                        reply = QMessageBox.warning(
+                            self.main_window.main_ui,
+                            "Warning",
                             "Do you want to load a new image?\n\nThis will replace the current image and remove the measurements.",
-                            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                            QMessageBox.StandardButton.No)
-                    
+                            QMessageBox.StandardButton.Yes
+                            | QMessageBox.StandardButton.No,
+                            QMessageBox.StandardButton.No,
+                        )
+
                     if reply == QMessageBox.StandardButton.Yes:
                         self.file_path = file_path
                         self.img_byte_stream = file_path.read_bytes()
                         self.delete_all_objects()
                         self.main_window.main_ui.reset_scaling()
                         vispy_instance.update_image()
-                        
+
         except Exception as error:
             self.logger.error(f"Could not open file: {file_path}:\n{error}")
             self.main_window.raise_error(f"Could not open file: {file_path}: {error}")
@@ -310,17 +340,20 @@ class DataHandler:
         reply = QMessageBox.StandardButton.Yes
         try:
             if self.img_data is not None:
-                reply = QMessageBox.warning(self.main_window.main_ui, "Warning",
+                reply = QMessageBox.warning(
+                    self.main_window.main_ui,
+                    "Warning",
                     "Do you want to load a new image?\n\nThis will replace the current image and remove the measurements.",
                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                    QMessageBox.StandardButton.No)
+                    QMessageBox.StandardButton.No,
+                )
 
             if reply == QMessageBox.StandardButton.Yes:
                 self.file_path = Path("clipboard")
                 self.delete_all_objects()
                 self.main_window.main_ui.reset_scaling()
                 clipboard = QGuiApplication.clipboard()
-                
+
                 clipboard_data = clipboard.image()
                 width = clipboard_data.width()
                 height = clipboard_data.height()
@@ -329,27 +362,29 @@ class DataHandler:
                 ptr.setsize(height * width * 4)
 
                 # Convert the pixel data to a byte stream
-                img_data = np.frombuffer(ptr, dtype=np.uint8).reshape((height, width, 4))
+                img_data = np.frombuffer(ptr, dtype=np.uint8).reshape(
+                    (height, width, 4)
+                )
 
                 # Step 1: Encode the image data to a specific format (e.g., '.png')
-                success, encoded_image = cv2.imencode('.png', 
-                                                      img_data, 
-                                                      [int(cv2.IMWRITE_PNG_COMPRESSION), 5])
+                success, encoded_image = cv2.imencode(
+                    ".png", img_data, [int(cv2.IMWRITE_PNG_COMPRESSION), 5]
+                )
 
                 if success:
                     # Step 2: Convert the encoded image to a byte stream
                     self.img_byte_stream = encoded_image.tobytes()
-                            
+
                     vispy_instance.update_image()
                 else:
                     raise Exception("Could not encode image data")
-                
+
         except Exception as error:
             self.logger.error(f"Could not open from clipboard:\n{error}")
             self.main_window.raise_error(f"Could not open from clipboard: {error}")
-            
+
     def calculate_results(self):
-        """calculate the average and standard deviation of 
+        """calculate the average and standard deviation of
         the measurements for each structure in drawing_data
         """
 
@@ -360,18 +395,33 @@ class DataHandler:
             for prop in props:
                 data = [obj.output_properties()[prop][0] for obj in object_list]
                 unit = object_list[0].output_properties()[prop][1]
-                if self.main_window.main_ui.scaling_factor != 1 :
-                    if prop in ['length', 'area', 'radius', 'width', 'height', 'center']:
-                        data = [d*self.main_window.main_ui.scaling_factor for d in data]
-                        exponent = unit[-1] if unit[-1] in ['²', '³'] else ""
-                        unit = self.main_window.main_ui.units_dd.currentText() + exponent
-                
+                if self.main_window.main_ui.scaling_factor != 1:
+                    if prop in [
+                        "length",
+                        "area",
+                        "radius",
+                        "width",
+                        "height",
+                        "center",
+                    ]:
+                        data = [
+                            d * self.main_window.main_ui.scaling_factor for d in data
+                        ]
+                        exponent = unit[-1] if unit[-1] in ["²", "³"] else ""
+                        unit = (
+                            self.main_window.main_ui.units_dd.currentText() + exponent
+                        )
+
                 if len(data) == 1:
                     results[structure_name][prop] = (np.mean(data), None, unit)
                 else:
-                    results[structure_name][prop] = (np.mean(data),np.std(data)/np.sqrt(len(object_list)), unit)
+                    results[structure_name][prop] = (
+                        np.mean(data),
+                        np.std(data) / np.sqrt(len(object_list)),
+                        unit,
+                    )
         return results
-    
+
     def calculate_results_string(self):
         results = self.calculate_results()
         # sort dict
@@ -390,29 +440,32 @@ class DataHandler:
                 results_string += f" {prop_results[2]}\n"
             results_string += "\n"
         return results_string
-    
+
     def save_measurements_file(self):
-        filename = self.save_file_dialog(file_name=str(self.file_path.with_suffix('.meas')),extensions="Measurement File (*.meas)")
+        filename = self.save_file_dialog(
+            file_name=str(self.file_path.with_suffix(".meas")),
+            extensions="Measurement File (*.meas)",
+        )
         if filename is None:
             return
-        
-        with open(filename, 'wb') as save_file:
+
+        with open(filename, "wb") as save_file:
             # write to text file
-            save_file.write(self.calculate_results_string().encode('utf-8'))
-            
+            save_file.write(self.calculate_results_string().encode("utf-8"))
+
     def rename_structure(self, structure, new_structure):
         if new_structure in self.drawing_data:
             self.main_window.raise_error("This structure already exists!")
         elif new_structure == "" or new_structure.isspace():
             self.main_window.raise_error("This name is not valid")
         else:
-            self.drawing_data[new_structure] = self.drawing_data[structure] 
+            self.drawing_data[new_structure] = self.drawing_data[structure]
             del self.drawing_data[structure]
             return True
-        
+
         return False
-    
-    
+
+
 class DeleteAllObjectsCommand(QUndoCommand):
     def __init__(self, data_handler: DataHandler):
         super().__init__()
@@ -425,8 +478,9 @@ class DeleteAllObjectsCommand(QUndoCommand):
         self.data_handler.logger.info("Undoing delete all objects")
         self.data_handler.drawing_data = self.old_drawing_data
         self.main_window.main_ui.update_structure_dd()
-        self.data_handler.load_into_view(self.data_handler.drawing_data, 
-                                         self.main_window.vispy_canvas)
+        self.data_handler.load_into_view(
+            self.data_handler.drawing_data, self.main_window.vispy_canvas
+        )
         self.data_handler.logger.info("Restored all measurements")
 
     def redo(self):
@@ -438,7 +492,7 @@ class CustomUnpickler(pickle.Unpickler):
     def find_class(self, module, name):
 
         # if drawable_objects is in the module name,
-        # then replace everything before drawable_objects 
+        # then replace everything before drawable_objects
         # with measury. This allows for the loading of old files
         if "drawable_objects" in module:
             module = "measury.drawable_objects"

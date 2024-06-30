@@ -11,20 +11,20 @@ DEFAULT_SETTINGS = {
     "misc/file_extensions": [".msry", ".measury"],
 }
 
+
 class Settings(QSettings):
-    
-    def __init__(self, parent, organization:str, application:str):
+
+    def __init__(self, parent, organization: str, application: str):
         super().__init__(organization, application)
         self.parent = parent
-        
-    
+
     def load_defaults(self):
         """Manage loading all the settings."""
         self.parent.data_handler.logger.info("Loading default settings")
         for key, value in DEFAULT_SETTINGS.items():
             self.setValue(key, value)
         self.sync()
-        
+
     def load_settings(self):
         """Load all the settings."""
         self.parent.data_handler.logger.info("Loading settings")
@@ -33,7 +33,6 @@ class Settings(QSettings):
                 # No settings exist, load the default settings
                 self.load_defaults()
 
-            
     def save(self, key, value):
         """Manage saving all the settings."""
         self.parent.data_handler.logger.info(f"Saving setting: {key}")
@@ -44,27 +43,28 @@ class Settings(QSettings):
     def is_default(self):
         """Test if the settings are the default values."""
         return self.equals_settings(DEFAULT_SETTINGS)
-    
-    def equals_settings(self, settings:dict):
+
+    def equals_settings(self, settings: dict):
         """Compare the settings to the default settings."""
         # check if the keys are the same
         if set(self.allKeys()) != set(settings.keys()):
-            self.parent.data_handler.logger.info(f"Settings not equal: {set(self.allKeys())} {set(settings.keys())}")
+            self.parent.data_handler.logger.info(
+                f"Settings not equal: {set(self.allKeys())} {set(settings.keys())}"
+            )
             return False
         # check if the values are the same
         for key in settings.keys():
             # for lists we need to compare the sets
             if isinstance(settings.get(key), list):
                 if set(self.value(key)) != set(settings.get(key)):
-                    self.parent.data_handler.logger.info(f"Settings not equal: {set(self.allKeys())} {set(settings.keys())}")
+                    self.parent.data_handler.logger.info(
+                        f"Settings not equal: {set(self.allKeys())} {set(settings.keys())}"
+                    )
                     return False
             # otherwise simply compare the values
             elif self.value(key) != settings.get(key):
-                self.parent.data_handler.logger.info(f"Settings not equal: {key} {self.value(key)} {settings.get(key)}")
+                self.parent.data_handler.logger.info(
+                    f"Settings not equal: {key} {self.value(key)} {settings.get(key)}"
+                )
                 return False
         return True
-        
-        
-                
-        
-        

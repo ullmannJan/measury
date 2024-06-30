@@ -4,7 +4,8 @@ from abc import ABC
 from typing import Optional, Tuple
 import json
 import xml.etree.ElementTree as ET
-import io    
+import io
+
 
 def load_microscopes():
     microscopes = dict()
@@ -14,23 +15,25 @@ def load_microscopes():
     return microscopes
 
 
-
 class Microscope(ABC):
-    def __init__(self, 
-                 seed_points: Optional[Tuple[float, float]] = None, 
-                 orientation: Optional[str] = None, 
-                 threshold: Optional[int] = None):
+    def __init__(
+        self,
+        seed_points: Optional[Tuple[float, float]] = None,
+        orientation: Optional[str] = None,
+        threshold: Optional[int] = None,
+    ):
         """
         Initializes a new instance of the Microscope class.
 
-        :param seed_points: A tuple representing the seed points for the microscope.
+        :param seed_points: A tuple representing the seed points for the
+                            microscope.
         :param orientation: The orientation of the microscope.
         :param threshold: The threshold value used for processing.
         """
         self.seed_points = seed_points
         self.orientation = orientation
         self.threshold = threshold
-    
+
     def get_metadata(self, byte_stream: Optional[bytes] = None) -> str:
         """
         Abstract method to get the metadata of a microscope image.
@@ -42,66 +45,77 @@ class Microscope(ABC):
             return ""
         else:
             return byte_stream.decode("utf-8", errors="ignore")
-    
 
 
-class Generic_Microscope (Microscope):
+class Generic_Microscope(Microscope):
 
     def __init__(self):
         super().__init__()
 
-class Zeiss_Orion_Nanofab (Microscope):
+
+class Zeiss_Orion_Nanofab(Microscope):
 
     def __init__(self):
-        super().__init__(seed_points=(0.698243, 0.92768),
-                         orientation="horizontal",
-                         threshold=10)
+        super().__init__(
+            seed_points=(0.698243, 0.92768),
+            orientation="horizontal",
+            threshold=10
+        )
 
     def get_metadata(self, byte_stream=None) -> str:
-        
+
         values = self.get_xml(byte_stream)
 
         # check if values is a non-empty dictionary
         if isinstance(values, dict):
             return json.dumps(values, indent=4, ensure_ascii=False)
         return Microscope().get_metadata(byte_stream)
-        
+
     def get_xml(self, byte_stream=None):
         # This only works for Zeiss Orion files yet
         # first check if image was loaded
         if byte_stream is None:
             return None
-        
+
         # get last line of file
         last_line = get_last_line(byte_stream)
-        
+
         try:
             root = ET.fromstring(last_line)
         except ET.ParseError as e:
             # return None
-            raise Exception("There was a problem parsing the XML string.\n"\
-                f"Problematic part of the XML string: {last_line[max(0, e.position[1]-10):e.position[1]+10]}"\
-                    "Are you sure this is a Zeiss Orion Nanofab file?")
+            raise Exception(
+                "There was a problem parsing the XML string.\n"
+                "Problematic part of the XML string: "
+                f"{last_line[max(0, e.position[1]-10):e.position[1]+10]}"
+                "Are you sure this is a Zeiss Orion Nanofab file?"
+            )
         # Create a dictionary to store the values
         values = parse_element(root)
-        
+
         return values
-    
+
+
 def get_last_line(byte_stream):
-     with io.BytesIO(byte_stream) as f:
-        f.seek(0, io.SEEK_END)  # Go to the end of the file
-        position = f.tell()  # Get the position (this is the size of the file in bytes)
-        line = b''
+    with io.BytesIO(byte_stream) as f:
+        # Go to the end of the file
+        f.seek(0, io.SEEK_END)
+        # Get the position (this is the size of the file in bytes)
+        position = f.tell()
+        line = b""
         while position >= 0:
             f.seek(position)
             next_char = f.read(1)
-            if next_char == b'\n' and line:  # Stop if a newline is found and line is not empty
+            if (
+                next_char == b"\n" and line
+            ):  # Stop if a newline is found and line is not empty
                 break
             line = next_char + line
             position -= 1
-        #remove last end character
-        return line.decode(encoding='utf-8', errors='ignore').strip()[:-1]
-    
+        # remove last end character
+        return line.decode(encoding="utf-8", errors="ignore").strip()[:-1]
+
+
 def parse_element(element):
     """Recursively parse an XML element and its children into a dictionary."""
 
@@ -113,7 +127,8 @@ def parse_element(element):
         # Recursively parse the child element
         child_data = parse_element(child)
 
-        # If the child's tag is already in the node dictionary, add the child's data to that tag
+        # If the child's tag is already in the node dictionary,
+        # add the child's data to that tag
         if child.tag in node:
             # If there's only one child with this tag so far, put it in a list
             if type(node[child.tag]) is list:
@@ -129,19 +144,26 @@ def parse_element(element):
 
     return node
 
-class GUZ (Microscope):
+
+class GUZ(Microscope):
 
     def __init__(self):
-        super().__init__(seed_points=(0.02051, 0.94922), 
-                         orientation="horizontal", 
-                         threshold=10)
+        super().__init__(
+            seed_points=(0.02051, 0.94922),
+            orientation="horizontal",
+            threshold=10
+        )
 
-class Jeol_JSM_6500F (Microscope):
+
+class Jeol_JSM_6500F(Microscope):
 
     def __init__(self):
-        super().__init__(seed_points=(0.777344, 0.951172),
-                        orientation="horizontal",
-                        threshold=10)
+        super().__init__(
+            seed_points=(0.777344, 0.951172),
+            orientation="horizontal",
+            threshold=10
+        )
+
 
 if __name__ == "__main__":
     microscopes = load_microscopes()
