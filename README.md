@@ -19,7 +19,7 @@ Measury is a measurement tool for microscope images. The goal ist to simplify an
 ### Load Images
 Supports all image formats supported by ```opencv```.
 
-### Automatic-Scaling
+### Automatic Scaling Bar Detection
 Automatic Detection of Scaling bar. Just select the tool *identify scaling* and click on the scale bar. 
 Microscope profiles can store locations of scale bar for certain types of microscopes for easier detection.
 
