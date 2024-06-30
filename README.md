@@ -13,6 +13,8 @@ Measury is a measurement tool for microscope images. The goal ist to simplify an
 ## Functionality
 
 <!-- Add image of program -->
+![grafik](https://github.com/ullmannJan/measury/assets/102742052/44ee3b11-9188-4198-8e00-994649d147e1)
+
 
 ### Load Images
 Supports all image formats supported by ```opencv```.
