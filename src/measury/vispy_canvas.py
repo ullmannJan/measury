@@ -588,7 +588,6 @@ class VispyCanvas(SceneCanvas):
                                     nearest_multiple = round(angle / (np.pi / 4)) * (np.pi / 4)
                                     # Snap to the nearest multiple if the angle is close to it
                                     if abs(angle - nearest_multiple) < np.deg2rad(10):
-                                        print("nearest_multiple", nearest_multiple)
                                         angle = nearest_multiple + self.selected_object.drag_reference_angle
 
                                 self.selected_object.rotate(angle)

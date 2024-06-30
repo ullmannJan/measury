@@ -878,7 +878,6 @@ class EditLineVisual(EditVisual):
                     norm_vecs = (
                         np.diff(self.control_points.coords, axis=0) / self.length
                     )
-                    print(norm_vecs)
                     for i, vec in enumerate(norm_vecs):
                         self.control_points.coords[i + 1] = (
                             self.control_points.coords[i]
