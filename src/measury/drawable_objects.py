@@ -595,7 +595,9 @@ class LineControlPoints(Compound):
     @property
     def length(self):
         diff = np.diff(self.coords, axis=0)
-        self._length = np.sum(np.abs(np.linalg.norm(diff, axis=1))) 
+        self._length = np.abs(np.linalg.norm(diff, axis=1)) 
+        if len(self._length) == 1:
+            self._length = self._length[0]
         return self._length
         # deprecated
         # self._length = abs(np.linalg.norm(self.start-self.end))
@@ -770,9 +772,16 @@ class EditLineVisual(EditVisual):
             scaling_factor = 1
         match prop:
             case "length": 
-                # get normalized vector
-                norm_vec = np.diff(self.control_points.coords, axis=0)/self.length*scaling_factor
-                self.control_points.coords[1] = self.control_points.coords[0] + val*norm_vec
+                if isinstance(val, np.ndarray):
+                    norm_vecs = np.diff(self.control_points.coords, axis=0)/self.length
+                    print(norm_vecs)
+                    for i, vec in enumerate(norm_vecs):
+                        self.control_points.coords[i+1] = self.control_points.coords[i] + val[i]/scaling_factor*vec
+                    
+                else:
+                    # get normalized vector
+                    norm_vec = np.diff(self.control_points.coords, axis=0)/self.length
+                    self.control_points.coords[1] = self.control_points.coords[0] + val/scaling_factor*norm_vec
                 self.update_from_controlpoints()
                 self.control_points.update_points()
             
