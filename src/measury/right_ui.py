@@ -5,7 +5,7 @@ from PyQt6.QtGui import QIntValidator
 
 import numpy as np
 from vispy import scene
-from vispy.scene import LinePlot, InfiniteLine, Text
+from vispy.scene import LinePlot, InfiniteLine, Text, SceneCanvas
 from vispy.scene.widgets import AxisWidget, Label
 
 
@@ -18,8 +18,8 @@ class RightUI(QWidget):
     
     def __init__(self, main_window, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.initUI()
         self.main_window = main_window
+        self.initUI()
         
     def initUI(self):
         self.layout = QVBoxLayout()
@@ -41,8 +41,7 @@ class RightUI(QWidget):
         
         
         # add intensity plot
-        self.vispy_intensity_plot = None
-        self.create_intensity_plot()
+        self.vispy_intensity_plot = IntensityPlot(self.main_window)
         self.layout.addWidget(self.vispy_intensity_plot.native)
         
         # add buttons to customize interpolation
@@ -104,12 +103,115 @@ class RightUI(QWidget):
             self.content_size = self.layout.sizeHint().width()
         self.main_window.splitter.setSizes([size[0]-self.content_size//2, size[1]-self.content_size//2, self.content_size])
         
-    def create_intensity_plot(self):
+        
+
+    def update_intensity_plot(self, resize=True):
+        if self.isHidden():
+            return
+        
+        selected_element = self.main_window.vispy_canvas.selected_object
+        # when clicked on control points, get the parent
+        if isinstance(selected_element, (LineControlPoints, ControlPoints)):
+            selected_element = selected_element.parent
+        if isinstance(selected_element, (EditLineVisual, EditRectVisual)):
+            image = self.main_window.data_handler.img_data
+            # get ui settings
+            interpolation_factor = int(self.ppx_edit.text()) if self.ppx_edit.text() else 1
+            spline_order = int(self.order_dd.currentText())
+            
+            # calculate intensity profile
+            if isinstance(selected_element, EditLineVisual):
+                length = selected_element.length
+                if int(length) <= 0: return
+                intensity, _ = selected_element.intensity_profile(image=image, 
+                                                               n=interpolation_factor*int(length), 
+                                                               order=spline_order)
+                distance = np.linspace(0, length, len(intensity))
+                if selected_element.angle%90 == 0:
+                    distance += np.min(selected_element.control_points.coords[:,0])    
+            elif isinstance(selected_element, EditRectVisual):
+                if spline_order > 1:
+                    spline_order = 1
+                    self.order_dd.setCurrentText("1")
+                    self.main_window.raise_error("Spline order for rectangles is limited to 1")
                 
-        self.vispy_intensity_plot = scene.SceneCanvas(size = (400, 300), 
-                                                      show=False, 
-                                                      bgcolor=(240/255, 240/255, 240/255,1))
-        grid = self.vispy_intensity_plot.central_widget.add_grid(margin=0)
+                length = selected_element.width
+                if int(length) <= 0: return
+                intensity, _ = selected_element.intensity_profile(image=image, 
+                                                               n_x=interpolation_factor*int(length),
+                                                               n_y=interpolation_factor*int(selected_element.height),
+                                                               order=spline_order)
+                distance = np.linspace(0, length, len(intensity))
+                if selected_element.angle%90 == 0:
+                    distance += np.min(selected_element.control_points.coords[:,0,0])    
+            
+            intensity *= 1e-3
+            
+            # automatically set correct axis limits
+            if resize:
+                self.vispy_intensity_plot.diagram.camera.set_range(x=(np.min(distance), np.max(distance)), y=(np.min(intensity), np.max(intensity)))
+            # update the line plot
+            self.vispy_intensity_plot.intensity_line.set_data((distance, intensity))
+        else:
+            self.vispy_intensity_plot.intensity_line.set_data([[0,0], [0,0]])
+            self.vispy_intensity_plot.diagram.camera.set_range(x=(0, 1), y=(0, 1))
+        
+    def save_intensity_plot(self):
+        
+        file_path = self.main_window.data_handler.save_file_dialog("intensity", "CSV (*.txt *.csv)") 
+        if not file_path: return
+        
+        selected_element = self.main_window.vispy_canvas.selected_object
+        if isinstance(selected_element, (LineControlPoints, ControlPoints)):
+            selected_element = selected_element.parent
+        if isinstance(selected_element, (EditLineVisual, EditRectVisual)):
+            image = self.main_window.data_handler.img_data
+            interpolation_factor = int(self.ppx_edit.text()) if self.ppx_edit.text() else 1
+            
+            if isinstance(selected_element, EditLineVisual):
+                length = int(selected_element.length)
+                if length <= 0: return
+                intensity, eval_coords = selected_element.intensity_profile(image=image, 
+                                                               n=interpolation_factor*length)
+                
+                np.savetxt(file_path, 
+                        np.column_stack((intensity, eval_coords)), 
+                        delimiter="\t", 
+                        header="intensity, pixel_x, pixel_y",
+                        fmt="%.2f")
+                
+            elif isinstance(selected_element, EditRectVisual):
+                length = int(selected_element.width)
+                if length <= 0: return
+                intensity, eval_coords = selected_element.intensity_profile(image=image, 
+                                                               n_x=interpolation_factor*length,
+                                                               n_y=interpolation_factor*int(selected_element.height))
+        
+                np.savetxt(file_path, 
+                        np.column_stack((intensity, np.reshape(eval_coords, (len(intensity), -1)))), 
+                        delimiter="\t", 
+                        header="intensity, pixel_x, pixel_y, pixel_x, pixel_y, ...",
+                        fmt="%.2f")
+
+    def update_colors(self):
+        self.vispy_intensity_plot.update_colors()
+    
+
+class IntensityPlot(SceneCanvas):
+
+    CANVAS_SHAPE = (400, 300)
+    main_window = None
+
+    def __init__(self, main_window) -> None:
+
+        self.main_window = main_window
+        
+        SceneCanvas.__init__(self,
+                             size=self.CANVAS_SHAPE, 
+                            )
+        
+        self.unfreeze()
+        grid = self.central_widget.add_grid(margin=0)
 
         # Create a ViewBox and add it to the Grid
         self.diagram = grid.add_view(row=1, col=1, bgcolor='white', camera='panzoom')
@@ -157,102 +259,37 @@ class RightUI(QWidget):
                                 anchor_x='left',
                                 anchor_y='top',
                                 pos=(55,20),
-                                parent=self.vispy_intensity_plot.central_widget)
+                                parent=self.central_widget)
         
-        self.vispy_intensity_plot.events.mouse_move.connect(self.on_mouse_move)
+        self.freeze()
         
-    def update_intensity_plot(self, resize=True):
-        if self.isHidden():
-            return
+        self.update_colors()
+
         
-        selected_element = self.main_window.vispy_canvas.selected_object
-        # when clicked on control points, get the parent
-        if isinstance(selected_element, (LineControlPoints, ControlPoints)):
-            selected_element = selected_element.parent
-        if isinstance(selected_element, (EditLineVisual, EditRectVisual)):
-            image = self.main_window.data_handler.img_data
-            # get ui settings
-            interpolation_factor = int(self.ppx_edit.text()) if self.ppx_edit.text() else 1
-            spline_order = int(self.order_dd.currentText())
-            
-            # calculate intensity profile
-            if isinstance(selected_element, EditLineVisual):
-                length = selected_element.length
-                if int(length) <= 0: return
-                intensity, _ = selected_element.intensity_profile(image=image, 
-                                                               n=interpolation_factor*int(length), 
-                                                               order=spline_order)
-                distance = np.linspace(0, length, len(intensity))
-                if selected_element.angle%90 == 0:
-                    distance += np.min(selected_element.control_points.coords[:,0])    
-            elif isinstance(selected_element, EditRectVisual):
-                if spline_order > 1:
-                    spline_order = 1
-                    self.order_dd.setCurrentText("1")
-                    self.main_window.raise_error("Spline order for rectangles is limited to 1")
-                
-                length = selected_element.width
-                if int(length) <= 0: return
-                intensity, _ = selected_element.intensity_profile(image=image, 
-                                                               n_x=interpolation_factor*int(length),
-                                                               n_y=interpolation_factor*int(selected_element.height),
-                                                               order=spline_order)
-                distance = np.linspace(0, length, len(intensity))
-                if selected_element.angle%90 == 0:
-                    distance += np.min(selected_element.control_points.coords[:,0,0])    
-            
-            intensity *= 1e-3
-            
-            # automatically set correct axis limits
-            if resize:
-                self.diagram.camera.set_range(x=(np.min(distance), np.max(distance)), y=(np.min(intensity), np.max(intensity)))
-            # update the line plot
-            self.intensity_line.set_data((distance, intensity))
+    def update_colors(self):
+        if self.main_window.is_dark_mode():
+            color = "white"
         else:
-            self.intensity_line.set_data([[0,0], [0,0]])
-            self.diagram.camera.set_range(x=(0, 1), y=(0, 1))
+            color = "black"
+
+        self.title_label._text_visual.color = color
+        self.intensity_line.set_data(color=color)
+        # self.v_line.color = color
+        # self.h_line.color = color
+        self.mouse_label.color = color
+        self.x_axis.axis.text_color = color
+        self.x_axis.axis.tick_color = color
+        self.y_axis.axis.text_color = color
+        self.y_axis.axis.tick_color = color
+        bg_color = self.main_window.get_bg_color()
+        bg_color = (bg_color.red() / 255, bg_color.green() / 255, bg_color.blue() / 255, bg_color.alpha() / 255)
+        self.diagram.bgcolor = bg_color
+        self.bgcolor = bg_color
         
-    def save_intensity_plot(self):
-        
-        file_path = self.main_window.data_handler.save_file_dialog("intensity", "CSV (*.txt *.csv)") 
-        if not file_path: return
-        
-        selected_element = self.main_window.vispy_canvas.selected_object
-        if isinstance(selected_element, (LineControlPoints, ControlPoints)):
-            selected_element = selected_element.parent
-        if isinstance(selected_element, (EditLineVisual, EditRectVisual)):
-            image = self.main_window.data_handler.img_data
-            interpolation_factor = int(self.ppx_edit.text()) if self.ppx_edit.text() else 1
-            
-            if isinstance(selected_element, EditLineVisual):
-                length = int(selected_element.length)
-                if length <= 0: return
-                intensity, eval_coords = selected_element.intensity_profile(image=image, 
-                                                               n=interpolation_factor*length)
-                
-                np.savetxt(file_path, 
-                        np.column_stack((intensity, eval_coords)), 
-                        delimiter="\t", 
-                        header="intensity, pixel_x, pixel_y",
-                        fmt="%.2f")
-                
-            elif isinstance(selected_element, EditRectVisual):
-                length = int(selected_element.width)
-                if length <= 0: return
-                intensity, eval_coords = selected_element.intensity_profile(image=image, 
-                                                               n_x=interpolation_factor*length,
-                                                               n_y=interpolation_factor*int(selected_element.height))
-        
-                np.savetxt(file_path, 
-                        np.column_stack((intensity, np.reshape(eval_coords, (len(intensity), -1)))), 
-                        delimiter="\t", 
-                        header="intensity, pixel_x, pixel_y, pixel_x, pixel_y, ...",
-                        fmt="%.2f")
-                
-    
+
     def on_mouse_move(self, event):
         
-        tr = self.vispy_intensity_plot.scene.node_transform(self.diagram)
+        tr = self.scene.node_transform(self.diagram)
         # Get the position of the mouse in data coordinates
         if not( (tr.map(event.pos)[:2] > self.diagram.size).any() or ((tr.map(event.pos)[:2] < (0,0)).any() )):
             
@@ -267,7 +304,7 @@ class RightUI(QWidget):
                     self.diagram.camera.pan(dpos)  # Pan the camera based on the mouse movement
         
             else:
-                tr = self.vispy_intensity_plot.scene.node_transform(self.diagram.scene)
+                tr = self.scene.node_transform(self.diagram.scene)
                 pos = tr.map(event.pos)
                 #disable panning
                 self.diagram.camera._viewbox.events.mouse_move.disconnect(
@@ -278,7 +315,7 @@ class RightUI(QWidget):
                 self.h_line.set_data(pos[1])
                 
                 # Update the view
-                self.vispy_intensity_plot.update()
+                self.update()
 
                 # update coordinates label
                 if self.mouse_label.text == "":

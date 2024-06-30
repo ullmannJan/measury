@@ -247,7 +247,6 @@ class MainWindow(QMainWindow):
     def update_style(self):
         self.data_handler.logger.info("Updating style to " + self.settings.value("graphics/style") + f" dark_mode = {self.is_dark_mode()}")
         QApplication.setStyle(self.settings.value("graphics/style"))
-        QApplication.processEvents()
 
     def is_dark_mode(self):
         app = QApplication.instance()  # Ensures it works with the current QApplication instance
@@ -256,9 +255,8 @@ class MainWindow(QMainWindow):
         return app.palette().color(QPalette.ColorRole.Window).lightness() < 128
     
     def get_bg_color(self):
+        QApplication.processEvents()
         color = self.palette().color(QPalette.ColorRole.Window)
-        print(color.red(), color.green(), color.blue(), color.alpha())
-
         return color
 
                         

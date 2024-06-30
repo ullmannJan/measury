@@ -314,6 +314,7 @@ class SettingsWindow(MeasuryWindow):
         # update color of the scalebar
         self.parent.vispy_canvas.find_scale_bar_width(*self.parent.vispy_canvas.scale_bar_params)
         self.parent.vispy_canvas.update_colors()
+        self.parent.right_ui.update_colors()
     
     @property
     def changed(self):
