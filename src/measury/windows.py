@@ -1,7 +1,7 @@
 # absolute imports
 from PyQt6.QtWidgets import QVBoxLayout, QLabel, QWidget, \
     QGroupBox, QPushButton, QCheckBox, QLineEdit, QHBoxLayout, \
-    QColorDialog, QComboBox, QTabWidget, QPlainTextEdit
+    QColorDialog, QComboBox, QTabWidget, QPlainTextEdit, QStyleFactory
 from PyQt6.QtGui import QIcon, QGuiApplication, QColor, QTextCursor
 from PyQt6.QtCore import Qt, pyqtSignal
 
@@ -30,6 +30,15 @@ class MeasuryWindow(QWidget):
         self.setWindowTitle(f"Measury: {title}")
         self.setWindowIcon(QIcon(str(measury_path/"data/tape_measure_128.ico")))
         self.setMinimumSize(300,200)
+
+    def closeEvent(self, event):
+        """
+        Override the close event to set focus back to the parent window.
+        """
+        if self.parent:
+            self.parent.setFocus()
+            self.parent.activateWindow()
+        super().closeEvent(event)
 
 
 class SaveWindow(MeasuryWindow):
@@ -87,7 +96,7 @@ class DataWindow(MeasuryWindow):
         self.layout.addWidget(label)
 
         # Copy Button
-        self.copyButton = QPushButton("Copy", self)
+        self.copyButton = QPushButton("Copy to Clipboard", self)
         self.copyButton.clicked.connect(self.copy_to_clipboard)
         self.layout.addWidget(self.copyButton)
         # Save Button
@@ -102,10 +111,9 @@ class DataWindow(MeasuryWindow):
 
         
 class SettingsWindow(MeasuryWindow):
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(title="Settings", *args, **kwargs)
-        # self.setMinimumHeight(500)
 
         self.settings: Settings = self.parent.settings
         self.settings.load_settings()
@@ -119,7 +127,8 @@ class SettingsWindow(MeasuryWindow):
 
         self.tab_widget.addTab(self.graphics, "Graphics")
         self.tab_widget.addTab(self.misc, "Misc")
-        self.tab_widget.resize(300, 400)
+        self.tab_widget.setMinimumSize(350, 200)
+        
 
         self.create_graphics_ui()
         self.create_misc_ui()
@@ -144,6 +153,7 @@ class SettingsWindow(MeasuryWindow):
         self.button_layout.addWidget(self.reset_button)
         
         self.layout.addLayout(self.main_layout)
+        self.adjustSize()
 
     def create_misc_ui(self):
         
@@ -168,7 +178,7 @@ class SettingsWindow(MeasuryWindow):
         self.file_extensions_label = QLabel("File Extensions", self)
         self.file_extensions_layout.addWidget(self.file_extensions_label)
         self.file_extensions = QLineEdit(self)
-        self.file_extensions.setPlaceholderText("File extensions")
+        self.file_extensions.setPlaceholderText(".msry;.measury")
         file_ext_string = ";".join(self.settings.value("misc/file_extensions"))
         self.file_extensions.setText(file_ext_string)
         self.file_extensions.textChanged.connect(self.update_window)
@@ -195,7 +205,24 @@ class SettingsWindow(MeasuryWindow):
         self.rendering_layout.addWidget(self.rendering_label)
         self.rendering_layout.addWidget(self.rendering_combobox)
         self.graphics_layout.addLayout(self.rendering_layout)
-        
+
+        # graphics style
+        self.graphics_style_layout = QHBoxLayout()
+        self.graphics_style_label = QLabel("Graphics Style", self)
+
+        self.graphics_style_dd = QComboBox(self)
+
+        available_styles = QStyleFactory.keys()
+
+        self.graphics_style_dd.addItems(available_styles)
+        self.graphics_style_dd.setCurrentText(self.settings.value('graphics/style'))
+        self.graphics_style_dd.currentTextChanged.connect(self.update_window)
+
+        self.graphics_style_layout.addWidget(self.graphics_style_label)
+        self.graphics_style_layout.addWidget(self.graphics_style_dd)
+        self.graphics_layout.addLayout(self.graphics_style_layout)
+
+
         # Color Selector inside
         self.color_layout = QHBoxLayout()
         self.color_label = QLabel("Object Color", self)
@@ -236,17 +263,24 @@ class SettingsWindow(MeasuryWindow):
             
         self.graphics.setLayout(self.graphics_layout)
 
-    def reset_to_defaults(self):
-        """Reset the settings to the default values."""
+    def set_settings(self, settings:dict):
+        """Set Settings to a value."""
         
-        self.rendering_combobox.setCurrentText(DEFAULT_SETTINGS.get("graphics/image_rendering"))
-        self.color_picker.selectedColor = DEFAULT_SETTINGS.get("graphics/object_color")
-        self.border_color_picker.selectedColor = DEFAULT_SETTINGS.get("graphics/object_border_color")
-        self.scale_bar_color_picker.selectedColor = DEFAULT_SETTINGS.get("graphics/scale_bar_color")
-        self.default_microscope_dd.setCurrentText(DEFAULT_SETTINGS.get("ui/microscope"))
-        file_ext_string = ";".join(DEFAULT_SETTINGS.get("misc/file_extensions"))
+        self.rendering_combobox.setCurrentText(settings.get("graphics/image_rendering"))
+        self.color_picker.selectedColor = settings.get("graphics/object_color")
+        self.border_color_picker.selectedColor = settings.get("graphics/object_border_color")
+        self.scale_bar_color_picker.selectedColor = settings.get("graphics/scale_bar_color")
+        self.graphics_style_dd.setCurrentText(settings.get("graphics/style"))
+        
+        self.default_microscope_dd.setCurrentText(settings.get("ui/microscope"))
+        file_ext_string = ";".join(settings.get("misc/file_extensions"))
         self.file_extensions.setText(file_ext_string)
         self.update_window()
+
+    def reset_to_defaults(self):
+        """Reset the settings to the default values."""
+        self.set_settings(DEFAULT_SETTINGS)
+        self.reset_button.setEnabled(False)
     
     def update_window(self):
         """Update the windows with the new settings."""
@@ -254,30 +288,38 @@ class SettingsWindow(MeasuryWindow):
         # set button states
         self.reset_button.setEnabled(not self.settings.is_default)
         self.save_button.setEnabled(self.changed)
+
+    @property
+    def current_selection(self):
+        return {
+            "graphics/object_color": self.color_picker.selectedColor,
+            "graphics/object_border_color": self.border_color_picker.selectedColor,
+            "graphics/image_rendering": self.rendering_combobox.currentText(),
+            "graphics/scale_bar_color": self.scale_bar_color_picker.selectedColor,
+            "graphics/style": self.graphics_style_dd.currentText(),
+            "ui/microscope": self.default_microscope_dd.currentText(),
+            "misc/file_extensions": self.file_extensions.text().split(";")
+        }
         
     def save(self):
-        self.settings.save("graphics/object_color", self.color_picker.selectedColor)
-        self.settings.save("graphics/object_border_color", self.border_color_picker.selectedColor)
-        self.settings.save("graphics/image_rendering", self.rendering_combobox.currentText())
-        self.settings.save("graphics/scale_bar_color", self.scale_bar_color_picker.selectedColor)
-        self.settings.save("ui/microscope", self.default_microscope_dd.currentText())
-        self.settings.save("misc/file_extensions", self.file_extensions.text().split(";"))
+        for key in self.current_selection.keys():
+            if key in DEFAULT_SETTINGS.keys():
+                value = self.current_selection.get(key)
+                self.settings.save(key, value)
+                
+        self.parent.update_style()
+        # update the window and the color palette
+        
         self.update_window()
-        self.parent.vispy_canvas.update_object_colors()
         # update color of the scalebar
         self.parent.vispy_canvas.find_scale_bar_width(*self.parent.vispy_canvas.scale_bar_params)
+        self.parent.vispy_canvas.update_colors()
+        self.parent.right_ui.update_colors()
     
     @property
     def changed(self):
         """Check if there is a change in the settings gui."""
-        color_cond = self.color_picker.selectedColor.getRgb() != self.settings.value("graphics/object_color").getRgb()
-        border_col_cond = self.border_color_picker.selectedColor.getRgb() != self.settings.value("graphics/object_border_color").getRgb()
-        rendering_cond = self.rendering_combobox.currentText() != self.settings.value("graphics/image_rendering") 
-        scale_color_cond = self.scale_bar_color_picker.selectedColor.getRgb() != self.settings.value("graphics/scale_bar_color").getRgb()
-        d_microscope_cond = self.default_microscope_dd.currentText() != self.settings.value("ui/microscope")
-        file_ext_cond = set(self.file_extensions.text().split(";")) != set(self.settings.value("misc/file_extensions"))
-
-        return color_cond or border_col_cond or rendering_cond or scale_color_cond or d_microscope_cond or file_ext_cond
+        return not self.settings.equals_settings(self.current_selection)
 
 
 class ColorPicker(QPushButton):

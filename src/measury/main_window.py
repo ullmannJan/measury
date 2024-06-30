@@ -1,6 +1,6 @@
 # absolute imports
 from PyQt6.QtOpenGLWidgets import QOpenGLWidget
-from PyQt6.QtGui import QAction, QIcon, QUndoStack
+from PyQt6.QtGui import QAction, QIcon, QUndoStack, QPalette
 from PyQt6.QtWidgets import (QApplication, QMainWindow,
                              QWidget, QHBoxLayout, QSplitter,
                              QMessageBox, QToolButton, 
@@ -29,15 +29,16 @@ class MainWindow(QMainWindow):
 
     def __init__(self, data_handler, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # settings
 
-        # dont use dark mode
-        QApplication.setStyle("WindowsVista")
 
         self.data_handler = data_handler
 
+        # settings
         self.settings = Settings(self, "Measury", "Measury")
         self.settings.load_settings()
+        
+        # set style
+        QApplication.setStyle(self.settings.value("graphics/style"))
         
         self.setAcceptDrops(True)
 
@@ -48,10 +49,9 @@ class MainWindow(QMainWindow):
         self.main_ui = MainUI(self, parent=self)
         self.vispy_canvas.main_window = self
         self.vispy_canvas.main_ui = self.main_ui
-        
+
         # create undo stack
         self.undo_stack = QUndoStack(self)
-        
 
         self.initUI()        
 
@@ -201,15 +201,19 @@ class MainWindow(QMainWindow):
     def open_about_page(self):
         self.about_window = AboutWindow(parent=self)
         self.about_window.show()
+        self.about_window.activateWindow()
         
     def open_settings_page(self):
+        self.get_bg_color()
         self.about_window = SettingsWindow(parent=self)
         self.about_window.show()
+        self.about_window.activateWindow()
 
     def open_data_page(self):
         if self.data_handler.drawing_data:
             self.data_window = DataWindow(parent=self)
             self.data_window.show()
+            self.data_window.activateWindow()
         
     def closeEvent(self, event):
         QApplication.closeAllWindows()
@@ -239,6 +243,22 @@ class MainWindow(QMainWindow):
     def open_xml_window(self):
         self.data_window = XMLWindow(parent=self)
         self.data_window.show()
+
+    def update_style(self):
+        self.data_handler.logger.info("Updating style to " + self.settings.value("graphics/style") + f" dark_mode = {self.is_dark_mode()}")
+        QApplication.setStyle(self.settings.value("graphics/style"))
+
+    def is_dark_mode(self):
+        app = QApplication.instance()  # Ensures it works with the current QApplication instance
+        if not app:  # If the application does not exist, create a new instance
+            app = QApplication([])
+        return app.palette().color(QPalette.ColorRole.Window).lightness() < 128
+    
+    def get_bg_color(self):
+        QApplication.processEvents()
+        color = self.palette().color(QPalette.ColorRole.Window)
+        return color
+
                         
         
 class DropEnabledQOpenGLWidget(QOpenGLWidget):
