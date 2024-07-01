@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "measury"
 description = "A tool to measure pictures with scale_bars"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 license = { file = "LICENSE" }
 dependencies = [
     'numpy<2.0',

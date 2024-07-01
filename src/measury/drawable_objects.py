@@ -445,6 +445,9 @@ class EditVisual(Compound):
     def update_property(self, prop, val, scaling_factor=None):
         pass
 
+    def get_modifiable_properties(self):
+        return None
+
 
 class EditRectVisual(EditVisual):
     def __init__(
@@ -525,6 +528,9 @@ class EditRectVisual(EditVisual):
             case "angle":
                 self.angle = np.deg2rad(val)
                 self.update_transform()
+    
+    def get_modifiable_properties(self):
+        return ["center", "width", "height", "angle"]
 
     def save(self):
         return dict(
@@ -650,6 +656,9 @@ class EditEllipseVisual(EditVisual):
             case "angle":
                 self.angle = np.deg2rad(val)
                 self.update_transform()
+    
+    def get_modifiable_properties(self):
+        return ["center", "radius", "angle"]
 
     def save(self):
         return dict(
@@ -892,6 +901,9 @@ class EditLineVisual(EditVisual):
                     )
                 self.update_from_controlpoints()
                 self.control_points.update_points()
+    
+    def get_modifiable_properties(self):
+        return ["length"]
 
     def save(self):
         return dict(coords=self.coords, num_points=self.num_points)
