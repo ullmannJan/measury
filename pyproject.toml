@@ -27,6 +27,9 @@ classifiers = [
 ]
 dynamic = ["version", "readme"]
 
+[project.urls]
+repository = "https://github.com/ullmannJan/measury"
+
 [tool.setuptools.dynamic]
 readme = { file = "README.md", content-type = "text/markdown" }
 
