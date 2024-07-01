@@ -4,6 +4,8 @@ on:
   repository_dispatch:
     types: [pytests]
   push:
+    branches:
+      - dev
   pull_request:
 
 jobs:
