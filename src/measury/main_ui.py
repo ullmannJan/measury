@@ -301,25 +301,21 @@ class MainUI(QWidget):
         else:
             old_type = type(old_value)
             new_value = old_type(new_value)
-        # only allow changes in the data value column
-        if column == 3:
-            # self.vispy_canvas.update_object_property(sel_object, obj_property, new_value)
-            self.vispy_canvas.update_object_property(
-                sel_object, obj_property, new_value
-            )
-            self.data_handler.logger.info(
-                f"Changed {obj_property} from {old_value} to {new_value}"
-            )
-        if column == 1 and self.scaling_factor != 1:
-            # self.vispy_canvas.update_object_property(sel_object, obj_property, new_value/self.scaling_factor)
-            self.vispy_canvas.update_object_property(
-                sel_object, obj_property, new_value, self.scaling_factor
-            )
-            self.data_handler.logger.info(
-                f"Changed {obj_property} from {old_value*self.scaling_factor} to {new_value}"
-            )
 
-        self.vispy_canvas.selection_update()
+        # only allow changes in the data value columns
+        if column == 3:
+            self.vispy_canvas.update_object_property_w_undo(
+                sel_object, obj_property, new_value, 
+                old_value=old_value
+            )
+          
+        if column == 1 and self.scaling_factor != 1:
+            self.vispy_canvas.update_object_property_w_undo(
+                sel_object, obj_property, new_value, 
+                self.scaling_factor, 
+                old_value=old_value
+            )
+            
 
     def select_file(self, file_path=None):
         if file_path is None:

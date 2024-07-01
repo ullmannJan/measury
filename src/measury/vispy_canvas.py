@@ -637,12 +637,25 @@ class VispyCanvas(SceneCanvas):
 
         self.main_ui.update_object_table(object)
 
+    def update_object_property_w_undo(self, obj, prop, value, scaling_factor=None, old_value=None):
+        # only push onto undo stack if property is modifiable
+        if prop in obj.get_modifiable_properties():
+            command = UpdateObjectCommand(self, obj, prop, value, scaling_factor, old_value)
+            self.main_window.undo_stack.push(command)
+        # otherwise just redraw old value
+        else:
+            self.selection_update()
+
     def update_object_property(self, obj, prop, value, scaling_factor=None):
         if obj is None:
             obj = self.get_selected_object()
         # update object property
-        obj.update_property(prop, value, scaling_factor)
+        changed = obj.update_property(prop, value, scaling_factor)
         # update ui to display properties of selected object
+        self.selection_update()
+
+        return changed
+
 
     def get_selected_object(self):
         """always returns the whole object instance,
@@ -895,3 +908,52 @@ class CreateObjectCommand(QUndoCommand):
         self.structure_name = self.vispy_canvas.create_new_object(
             self.new_object, self.pos, self.selected, self.structure_name
         )
+
+
+class UpdateObjectCommand(QUndoCommand):
+    def __init__(self, vispy_canvas, obj, prop, value, scaling_factor, old_value):
+        super().__init__()
+
+        self.vispy_canvas = vispy_canvas
+        self.obj = obj
+        self.prop = prop
+        self.value = value
+        self.scaling_factor = scaling_factor
+        self.old_value = old_value
+
+        if scaling_factor is None:
+            self.scaling_factor = 1
+    
+    def undo(self):
+        
+        # logging
+        if self.scaling_factor is None:
+            scaling = 1
+        else:
+            scaling = self.scaling_factor
+        self.vispy_canvas.data_handler.logger.info(
+            f"Undoing Change {self.prop} from {self.old_value*scaling} to {self.value}"
+        )
+
+        # update object property
+        self.vispy_canvas.update_object_property(
+            self.obj, self.prop, self.old_value, self.scaling_factor
+        )
+
+
+    def redo(self):
+        # logging
+        if self.scaling_factor is None:
+            scaling = 1
+        else:
+            scaling = self.scaling_factor
+        self.vispy_canvas.data_handler.logger.info(
+            f"Change {self.prop} from {self.old_value*scaling} to {self.value}"
+        )
+
+        # update object property
+        self.vispy_canvas.update_object_property(
+            self.obj, self.prop, self.value, self.scaling_factor
+        )
+        
+
