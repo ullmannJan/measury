@@ -15,6 +15,11 @@ Measury is a measurement tool for microscope images. The goal ist to simplify an
 <!-- Add image of program -->
 ![grafik](https://github.com/ullmannJan/measury/assets/102742052/44ee3b11-9188-4198-8e00-994649d147e1)
 
+### Start with 
+The program can be started via python or via the executable which is provided in the releases. In Python one simply calls:
+
+    import measury
+    measury.run()
 
 ### Load Images
 Supports all image formats supported by ```opencv```.
@@ -37,20 +42,24 @@ There are several Tools available to measure your structures.
     - Circle (by pressing Ctrl)
 - Angle
 
-## Running
+## Development
 
-First create an empty miniconda environment
+First create a Python environment of your choice (conda, venv, ect.) and activate it.
 
-    conda create -n measury
-    conda activate measury
+    python -m venv venv
 
-Then install the measury package
+Then install the measury package from source
 
     pip install .
 
-To run Measury simply 
+To run Measury simply by using the run.py file (which shows detailed logs)
 
     python run.py
+
+or via 
+
+    import measury
+    measury.run()
 
 ### Running tests
 
@@ -58,7 +67,7 @@ To run tests you will need to install pytest as well
 
     pip install pytest
 
-Then, simply calling pytest will run the tests
+Then, simply calling pytest will run the tests. For the graphical tests a display server has to be installed on the system.
 
     pytest     
     #or
