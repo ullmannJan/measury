@@ -29,7 +29,7 @@ if __name__ == "__main__":
             "--collect-all",
             "measury",
             "--collect-all",
-            "scipy",
+            "scipy.ndimage",
             "--noconfirm",
             "--icon",
         ]
@@ -67,7 +67,7 @@ if __name__ == "__main__":
         # Append architecture to suffix
         if "arm" in arch.lower():
             suffix += "_arm"
-        elif "x86_64" in arch.lower() or "AMD64" in arch.lower():
+        elif "x86_64" in arch.lower() or "amd64" in arch.lower():
             suffix += "_x64"
 
         shutil.make_archive(
