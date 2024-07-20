@@ -75,5 +75,6 @@ if __name__ == "__main__":
         shutil.make_archive(
             output_path.with_name(f"{program_name}{suffix}{extension}"),
             archive_format,
-            output_path,
+            root_dir=output_path.parent, # the dist folder so that we can archive the full folder
+            base_dir=f"{program_name}{extension}",
         )
