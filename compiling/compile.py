@@ -52,6 +52,7 @@ if __name__ == "__main__":
 
         # Determine the architecture
         arch = platform.machine()
+        extension = ""
         match sys.platform:
             case "win32":
                 archive_format = "zip"
@@ -62,6 +63,7 @@ if __name__ == "__main__":
             case "darwin":
                 archive_format = "gztar"
                 suffix = "_mac"
+                extension = ".app"
 
         # Append architecture to suffix
         if "arm" in arch.lower():
@@ -70,7 +72,7 @@ if __name__ == "__main__":
             suffix += "_x64"
 
         shutil.make_archive(
-            output_path.with_name(f"{program_name}{suffix}"),
+            output_path.with_name(f"{program_name}{suffix}{extension}"),
             archive_format,
             output_path,
         )
