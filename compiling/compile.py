@@ -37,8 +37,11 @@ if __name__ == "__main__":
     if sys.platform == "darwin":
         arguments.append("../img/logo/tape_measure_128.icns") 
         arguments.append("--windowed")
+        extension = ".app"
+
     else:
         arguments.append("../img/logo/tape_measure_128.ico")
+        extension = ""
 
 
     PyInstaller.__main__.run(
@@ -46,13 +49,12 @@ if __name__ == "__main__":
     )
 
     # zip output for easy distribution
-    output_path = (script_path / f"../dist/{program_name}").resolve()
+    output_path = (script_path / f"../dist/{program_name}{extension}").resolve()
     # Modify the output_path based on architecture
     if zipped:
 
         # Determine the architecture
         arch = platform.machine()
-        extension = ""
         match sys.platform:
             case "win32":
                 archive_format = "zip"
@@ -63,7 +65,6 @@ if __name__ == "__main__":
             case "darwin":
                 archive_format = "gztar"
                 suffix = "_mac"
-                extension = ".app"
 
         # Append architecture to suffix
         if "arm" in arch.lower():
