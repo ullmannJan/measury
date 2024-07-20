@@ -29,7 +29,7 @@ if __name__ == "__main__":
             "--collect-all",
             "measury",
             "--collect-all",
-            "scipy.ndimage",
+            "scipy",
             "--noconfirm",
             "--icon",
         ]
