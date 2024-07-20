@@ -37,7 +37,6 @@ if __name__ == "__main__":
     if sys.platform == "darwin":
         arguments.append("../img/logo/tape_measure_128.icns") 
         arguments.append("--windowed")
-        arguments.append("--osx-bundle-identifier")
     else:
         arguments.append("../img/logo/tape_measure_128.ico")
 
