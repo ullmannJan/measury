@@ -16,8 +16,7 @@ if __name__ == "__main__":
         zipped = True
 
     # run pyinstaller
-    PyInstaller.__main__.run(
-        [
+    arguments = [
             str(script_path / "run_clean.py"),
             f"--{method}",
             "--windowed",
@@ -25,8 +24,6 @@ if __name__ == "__main__":
             program_name,
             "--specpath",
             "build",
-            "--icon",
-            "../img/logo/tape_measure_128.ico",
             "--collect-all",
             "vispy",
             "--collect-all",
@@ -34,7 +31,19 @@ if __name__ == "__main__":
             "--collect-all",
             "scipy",
             "--noconfirm",
+            "--icon",
         ]
+    
+    if sys.platform == "darwin":
+        arguments.append("../img/logo/tape_measure_128.icns") 
+        arguments.append("--windowed")
+        arguments.append("--osx-bundle-identifier")
+    else:
+        arguments.append("../img/logo/tape_measure_128.ico")
+
+
+    PyInstaller.__main__.run(
+        arguments
     )
 
     # zip output for easy distribution
