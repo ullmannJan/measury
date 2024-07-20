@@ -93,7 +93,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macos
-          path: ./dist/*.app
+          path: ./dist/*.tar.gz
 
   create-release:
     permissions:
