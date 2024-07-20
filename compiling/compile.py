@@ -37,8 +37,11 @@ if __name__ == "__main__":
     if sys.platform == "darwin":
         arguments.append("../img/logo/tape_measure_128.icns") 
         arguments.append("--windowed")
+        extension = ".app"
+
     else:
         arguments.append("../img/logo/tape_measure_128.ico")
+        extension = ""
 
 
     PyInstaller.__main__.run(
@@ -46,7 +49,7 @@ if __name__ == "__main__":
     )
 
     # zip output for easy distribution
-    output_path = (script_path / f"../dist/{program_name}").resolve()
+    output_path = (script_path / f"../dist/{program_name}{extension}").resolve()
     # Modify the output_path based on architecture
     if zipped:
 
@@ -70,7 +73,8 @@ if __name__ == "__main__":
             suffix += "_x64"
 
         shutil.make_archive(
-            output_path.with_name(f"{program_name}{suffix}"),
+            output_path.with_name(f"{program_name}{suffix}{extension}"),
             archive_format,
-            output_path,
+            root_dir=output_path.parent, # the dist folder so that we can archive the full folder
+            base_dir=f"{program_name}{extension}",
         )
