@@ -145,7 +145,7 @@ def parse_element(element):
     return node
 
 
-class GUZ(Microscope):
+class Zeiss_Crossbeam_550L(Microscope):
 
     def __init__(self):
         super().__init__(
