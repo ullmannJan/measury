@@ -37,7 +37,7 @@ class App:
         if run_vispy:
             self.vispy_app.run()
 
-    def exception_hook(self, exception_type, exception_value, traceback):
+    def exception_hook(self, exception_type, exception_value: Exception, traceback):
         """
         Exception hook for the application.
 
@@ -50,7 +50,7 @@ class App:
         print(f"Unhandled exception: {exception_value}")
 
         # Display an error message box
-        self.main_window.raise_error(f"{exception_value, traceback}")
+        self.main_window.raise_error(exception_value)
         sys.__excepthook__(exception_type, exception_value, traceback)
 
     def close(self):

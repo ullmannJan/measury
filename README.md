@@ -13,7 +13,11 @@ Measury is a measurement tool for microscope images. The goal ist to simplify an
 ![grafik](https://github.com/ullmannJan/measury/assets/102742052/44ee3b11-9188-4198-8e00-994649d147e1)
 
 ### Start with 
-The program can be started via python or via the executable which is provided in the releases. In Python one simply calls:
+The program can be started via python or via the executable which is provided in the releases. Install via
+
+    pip install measury
+    
+In Python one simply calls:
 
     import measury
     measury.run()

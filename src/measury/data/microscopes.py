@@ -71,7 +71,7 @@ class Zeiss_Orion_Nanofab(Microscope):
             return json.dumps(values, indent=4, ensure_ascii=False)
         return Microscope().get_metadata(byte_stream)
 
-    def get_xml(self, byte_stream=None):
+    def get_xml(self, byte_stream=None) -> dict:
         # This only works for Zeiss Orion files yet
         # first check if image was loaded
         if byte_stream is None:
@@ -87,7 +87,7 @@ class Zeiss_Orion_Nanofab(Microscope):
             raise Exception(
                 "There was a problem parsing the XML string.\n"
                 "Problematic part of the XML string: "
-                f"{last_line[max(0, e.position[1]-10):e.position[1]+10]}"
+                f"'{last_line[max(0, e.position[1]-10):e.position[1]+10]}' "
                 "Are you sure this is a Zeiss Orion Nanofab file?"
             )
         # Create a dictionary to store the values
@@ -96,27 +96,32 @@ class Zeiss_Orion_Nanofab(Microscope):
         return values
 
 
-def get_last_line(byte_stream):
+def get_last_line(byte_stream) -> str:
     with io.BytesIO(byte_stream) as f:
         # Go to the end of the file
         f.seek(0, io.SEEK_END)
         # Get the position (this is the size of the file in bytes)
         position = f.tell()
         line = b""
+        # we're now moving backwards through the file
         while position >= 0:
             f.seek(position)
             next_char = f.read(1)
-            if (
-                next_char == b"\n" and line
-            ):  # Stop if a newline is found and line is not empty
+            # Stop if a newline is found and line is not empty
+            if next_char == b"\n" and line:
                 break
             line = next_char + line
             position -= 1
         # remove last end character
-        return line.decode(encoding="utf-8", errors="ignore").strip()[:-1]
+        last_line = line.decode(encoding="utf-8", errors="replace").strip()[:-1]
+        # remove all elements before the first '<' and the last '>' character
+        last_line = last_line[last_line.find("<"):last_line.rfind(">") + 1]
+        last_line.replace("\n", "")
+        
+        return last_line
 
 
-def parse_element(element):
+def parse_element(element) -> dict:
     """Recursively parse an XML element and its children into a dictionary."""
 
     # Create a dictionary to store the element's attributes
@@ -145,7 +150,7 @@ def parse_element(element):
     return node
 
 
-class GUZ(Microscope):
+class Zeiss_Crossbeam_550L(Microscope):
 
     def __init__(self):
         super().__init__(
