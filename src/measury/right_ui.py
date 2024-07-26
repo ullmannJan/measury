@@ -174,13 +174,14 @@ class RightUI(QWidget):
 
             width = selected_element.width
             width_integer = abs(int(width))
-            if width_integer <= 0:
+            height_integer = abs(int(selected_element.height))
+            if width_integer <= 0 or height_integer <= 0:
                 self.reset_intensity_plot()
                 return
             intensity, _ = selected_element.intensity_profile(
                 image=image,
                 n_x=interpolation_factor * width_integer,
-                n_y=interpolation_factor * abs(int(selected_element.height)),
+                n_y=interpolation_factor * height_integer,
                 order=spline_order,
             )
             distance = np.linspace(0, width, len(intensity))
