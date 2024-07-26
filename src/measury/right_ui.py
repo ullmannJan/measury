@@ -282,7 +282,11 @@ class IntensityPlot(SceneCanvas):
             tick_label_margin=15,
             text_color="black",
         )
+        self.xaxis_label = Label("px", color="black", font_size=8)
+        self.xaxis_label.height_max = 20
+        grid.add_widget(self.xaxis_label, row=3, col=1)
         self.x_axis.height_max = 30
+
         self.y_axis = AxisWidget(
             orientation="left",
             axis_font_size=8,
@@ -327,6 +331,7 @@ class IntensityPlot(SceneCanvas):
             color = "black"
 
         self.title_label._text_visual.color = color
+        self.xaxis_label._text_visual.color = color
         self.intensity_line.set_data(color=color)
         # self.v_line.color = color
         # self.h_line.color = color
