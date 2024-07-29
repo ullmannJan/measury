@@ -401,7 +401,7 @@ class DataHandler:
             for prop in props:
                 data = [obj.output_properties()[prop][0] for obj in object_list]
                 unit = object_list[0].output_properties()[prop][1]
-                if self.main_window.main_ui.scaling_factor != 1:
+                if self.main_window.main_ui.scaling_factor is not None:
                     if prop in [
                         "length",
                         "area",

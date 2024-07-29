@@ -149,6 +149,11 @@ class RightUI(QWidget):
             int(self.ppx_edit.text()) if self.ppx_edit.text() else 1
         )
         spline_order = int(self.order_dd.currentText())
+        
+        if self.main_window.main_ui.scaling_factor is None:
+            scaling_factor = 1
+        else:
+            scaling_factor = self.main_window.main_ui.scaling_factor
 
         # calculate intensity profile
         if isinstance(selected_element, EditLineVisual):
@@ -161,9 +166,9 @@ class RightUI(QWidget):
                 n=interpolation_factor * int(length),
                 order=spline_order,
             )
-            distance = np.linspace(0, length, len(intensity))
+            distance = np.linspace(0, length, len(intensity))*scaling_factor
             if selected_element.angle % 90 == 0:
-                distance += np.min(selected_element.control_points.coords[:, 0])
+                distance += np.min(selected_element.control_points.coords[:, 0])*scaling_factor
         elif isinstance(selected_element, EditRectVisual):
             if spline_order > 1:
                 spline_order = 1
@@ -184,9 +189,9 @@ class RightUI(QWidget):
                 n_y=interpolation_factor * height_integer,
                 order=spline_order,
             )
-            distance = np.linspace(0, width, len(intensity))
+            distance = np.linspace(0, width, len(intensity))*scaling_factor
             if selected_element.angle % 90 == 0:
-                distance += np.min(selected_element.control_points.coords[:, 0, 0])
+                distance += np.min(selected_element.control_points.coords[:, 0, 0])*scaling_factor
 
         intensity *= 1e-3
 

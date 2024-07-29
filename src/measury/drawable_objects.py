@@ -555,7 +555,7 @@ class EditRectVisual(EditVisual):
             starts, ends = ends, starts
 
         # Initialize an empty list to hold the intensity profiles
-        intensity_profile = np.zeros(n_x)
+        intensity_profile_line = np.zeros(n_x)
         evaluation_coords = np.empty((n_y, n_x, 2))
         img = np.sum(image, axis=2)
         # Iterate over all lines
@@ -569,11 +569,11 @@ class EditRectVisual(EditVisual):
             eval_coords = np.vstack([y_coords, x_coords])
 
             # Compute the intensity profile for the line
-            intensity_profile += map_coordinates(
+            intensity_profile_line += map_coordinates(
                 img, eval_coords, mode="constant", **kwargs
             )
 
-        return intensity_profile, evaluation_coords
+        return intensity_profile_line, evaluation_coords
 
     def update_colors(self, color, border_color):
         self.form.color = color

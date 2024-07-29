@@ -128,7 +128,7 @@ class MainUI(QWidget):
 
         # scaling
 
-        self.scaling_factor = 1.0
+        self.scaling_factor = None
 
         posDouble = QDoubleValidator()
         posDouble.setBottom(0)
@@ -242,7 +242,7 @@ class MainUI(QWidget):
 
             value, unit = props[key]
             # if there is a conversion possible
-            if self.scaling_factor != 1:
+            if self.scaling_factor is not None:
                 scaled_length = 1 * np.array(value)
                 if key in ["length", "area", "radius", "width", "height", "center"]:
                     scaled_length *= self.scaling_factor
@@ -260,7 +260,7 @@ class MainUI(QWidget):
                 self.selected_object_table.setItem(i, 2, QTableWidgetItem(""))
 
             # if setting selected that pixels should be shown too
-            if True or not self.scaling_factor != 1:
+            if True or not self.scaling_factor is not None:
                 self.selected_object_table.setItem(i, 3, QTableWidgetItem(str(value)))
 
                 self.selected_object_table.setItem(i, 4, QTableWidgetItem(unit))
@@ -369,7 +369,7 @@ class MainUI(QWidget):
                 pixels.replace(",", "")
             )
         else:
-            self.scaling_factor = 1
+            self.scaling_factor = None
         self.units_changed()
 
     def reset_scaling(self):
