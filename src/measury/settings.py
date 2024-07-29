@@ -8,6 +8,7 @@ DEFAULT_SETTINGS = {
     "graphics/scale_bar_color": QColor(255, 0, 0, 255),
     "graphics/style": "Fusion",
     "ui/microscope": "Generic_Microscope",
+    "ui/show_both_scaling": False,
     "misc/file_extensions": [".msry", ".measury"],
 }
 
@@ -61,10 +62,17 @@ class Settings(QSettings):
                         f"Settings not equal: {set(self.allKeys())} {set(settings.keys())}"
                     )
                     return False
+            # for boolean we need to set the type
+            elif isinstance(settings.get(key), bool):
+                if self.value(key, type=bool) != settings.get(key):
+                    self.parent.data_handler.logger.info(
+                        f"Setting not equal: {key} {self.value(key)} {settings.get(key)}"
+                    )
+                    return False
             # otherwise simply compare the values
             elif self.value(key) != settings.get(key):
                 self.parent.data_handler.logger.info(
-                    f"Settings not equal: {key} {self.value(key)} {settings.get(key)}"
+                    f"Setting not equal: {key} {self.value(key)} {settings.get(key)}"
                 )
                 return False
         return True

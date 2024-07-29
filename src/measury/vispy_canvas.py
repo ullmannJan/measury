@@ -21,7 +21,7 @@ class VispyCanvas(SceneCanvas):
     CANVAS_SHAPE = (800, 600)
     main_ui = None
     main_window = None
-    scale_bar_params = (None, True, 10)
+    scale_bar_params = (None, True, 10) # seed point, relative, threshold
     text_color = "black"
 
     def __init__(self, main_window):
@@ -614,15 +614,10 @@ class VispyCanvas(SceneCanvas):
     def selection_update(self, object=None):
 
         if object is None:
-            object = self.selected_object
+            object = self.get_selected_object()
         if self.selected_object is None:
             self.main_ui.clear_object_table()
             return
-
-        # in case the selected objects is a control point
-        # we want the parent object
-        if isinstance(object, (ControlPoints, LineControlPoints)):
-            object = self.selected_object.parent
 
         self.main_window.right_ui.update_intensity_plot()
 

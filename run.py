@@ -11,5 +11,5 @@ if __name__ == "__main__":
     )
     logger = logging.getLogger("Measury")
     logger.setLevel(logging.INFO)
-    measury.run(logger=logger)
-    # measury.run(file_path=script_dir/r"tests/test_data/test_file.msry", logger=logger)
+    # measury.run(logger=logger)
+    measury.run(file_path=script_dir/r"tests/test_data/test_file.msry", logger=logger)

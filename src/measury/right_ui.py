@@ -142,10 +142,7 @@ class RightUI(QWidget):
             scaling_factor = self.main_window.main_ui.scaling_factor
             self.vispy_intensity_plot.xaxis_label.text =  f"distance ({self.main_window.main_ui.units_dd.currentText()})"
             
-        selected_element = self.main_window.vispy_canvas.selected_object
-        # when clicked on control points, get the parent
-        if isinstance(selected_element, (LineControlPoints, ControlPoints)):
-            selected_element = selected_element.parent
+        selected_element = self.main_window.vispy_canvas.get_selected_object()
         if not isinstance(selected_element, (EditLineVisual, EditRectVisual)):
             
             self.reset_intensity_plot()
@@ -217,9 +214,7 @@ class RightUI(QWidget):
         if not file_path:
             return
 
-        selected_element = self.main_window.vispy_canvas.selected_object
-        if isinstance(selected_element, (LineControlPoints, ControlPoints)):
-            selected_element = selected_element.parent
+        selected_element = self.main_window.vispy_canvas.get_selected_object()
         if isinstance(selected_element, (EditLineVisual, EditRectVisual)):
             image = self.main_window.data_handler.img_data
             interpolation_factor = (
