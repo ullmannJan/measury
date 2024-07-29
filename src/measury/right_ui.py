@@ -107,10 +107,12 @@ class RightUI(QWidget):
 
         self.hide()
         self.main_window.open_right_ui_button.show()
+        self.main_window.vispy_canvas.hide_arrows()
 
     def show_ui(self):
         self.show()
         self.main_window.open_right_ui_button.hide()
+        # self.main_window.vispy_canvas.show_arrows()
 
         self.update_intensity_plot()
 
@@ -143,8 +145,13 @@ class RightUI(QWidget):
             self.vispy_intensity_plot.xaxis_label.text =  f"distance ({self.main_window.main_ui.units_dd.currentText()})"
             
         selected_element = self.main_window.vispy_canvas.get_selected_object()
+        
+        # show only the active arrow
+        self.main_window.vispy_canvas.hide_arrows()
+        if selected_element is not None and isinstance(selected_element, EditRectVisual):
+            selected_element.show_arrow()
+        
         if not isinstance(selected_element, (EditLineVisual, EditRectVisual)):
-            
             self.reset_intensity_plot()
             return 
         

@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.ndimage import map_coordinates
 
-from vispy.scene.visuals import Compound, Markers, Rectangle, Ellipse, Line
+from vispy.scene.visuals import Compound, Markers, Rectangle, Ellipse, Line, Arrow
 from vispy.visuals.transforms import MatrixTransform, linear
 
 
@@ -448,13 +448,13 @@ class EditVisual(Compound):
     def get_modifiable_properties(self):
         return None
 
-
 class EditRectVisual(EditVisual):
     def __init__(
         self,
         center=np.array([0, 0], dtype=np.float64),
         width=1e-6,
         height=1e-6,
+        border_width=2,
         *args,
         **kwargs,
     ):
@@ -466,22 +466,53 @@ class EditRectVisual(EditVisual):
             center=center,
             width=width,
             height=height,
-            border_width=2,
+            border_width=border_width,
             radius=0,
             parent=self,
         )
         self.form.interactive = True
+        
+        arrow_color = self.settings.value("graphics/object_border_color").getRgb()
+        border_color = tuple([value / 255 for value in arrow_color]),
+        self.arrow = Arrow(
+            pos=np.array([center - np.array([width / 3, 0]), center + np.array([width / 3, 0])]),
+            color=border_color,
+            arrow_size=10,
+            method='gl',
+            width=5,
+            antialias=True,
+            arrow_type='stealth',
+            arrows=np.array([[center[0] - width / 3, center[1] , center[0] + width / 3, center[1]]]),
+            arrow_color=border_color,
+        )
+        
+        self.arrow.visible = False
 
         color = self.settings.value("graphics/object_color").getRgb()
         self.form.color = tuple([value / 255 for value in color])
-        border_color = self.settings.value("graphics/object_border_color").getRgb()
-        self.form.border_color = tuple([value / 255 for value in border_color])
+        self.form.border_color = border_color
 
         self.freeze()
         self.add_subvisual(self.form)
+        self.add_subvisual(self.arrow)
         self.control_points.update_bounds()
         self.rotate(self.angle)
-
+        
+    def move(self, end, *args, **kwargs):
+        super().move(end, *args, **kwargs)
+        # arrow properties
+        self.update_arrow()
+        
+    def hide_arrow(self):
+        self.arrow.visible = False
+        
+    def show_arrow(self):
+        self.arrow.visible = True
+        
+    def update_arrow(self):
+        self.arrow.set_data(pos=np.array([self.center - np.array([self.width / 3, 0]), self.center + np.array([self.width / 3, 0])]),
+                            arrows=np.array([[self.center[0] - self.width / 3, self.center[1], self.center[0] + self.width / 3, self.center[1]]]))
+        
     def set_center(self, val):
         self.control_points.set_center(val[0:2])
         self.form.center = val[0:2]
@@ -504,6 +535,7 @@ class EditRectVisual(EditVisual):
             self.update_transform()
         except ValueError:
             None
+        self.update_arrow()
 
     def output_properties(self):
 
@@ -578,6 +610,8 @@ class EditRectVisual(EditVisual):
     def update_colors(self, color, border_color):
         self.form.color = color
         self.form.border_color = border_color
+        self.arrow.color = border_color
+        self.arrow.arrow_color = border_color
 
 
 class EditEllipseVisual(EditVisual):

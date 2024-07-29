@@ -415,6 +415,7 @@ class VispyCanvas(SceneCanvas):
                     obj.line_color = border_color
                     obj.update_from_controlpoints()
                 else:
+                    print("update colors")
                     obj.update_colors(color=color, border_color=border_color)
         self.scene.update()
 
@@ -606,6 +607,20 @@ class VispyCanvas(SceneCanvas):
                         dpos = tr.map(event.last_event.pos)[:2] - tr.map(event.pos)[:2]
                         # Pan the camera based on the mouse movement
                         self.view.camera.pan(dpos)
+                        
+    def hide_arrows(self):
+        for name in self.data_handler.drawing_data.keys():
+            for obj in self.data_handler.drawing_data[name]:
+                if isinstance(obj, EditRectVisual):
+                    obj.hide_arrow()
+        self.scene.update()
+        
+    def show_arrows(self):
+        for name in self.data_handler.drawing_data.keys():
+            for obj in self.data_handler.drawing_data[name]:
+                if isinstance(obj, EditRectVisual):
+                    obj.show_arrow()
+        self.scene.update()
 
     def move_object_w_undo(self, object):
         command = MoveObjectCommand(self, object)
