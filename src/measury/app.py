@@ -1,6 +1,7 @@
 # absolute imports
 from vispy.app import use_app
 import sys
+import warnings
 
 # relative imports
 from .main_window import MainWindow
@@ -29,6 +30,7 @@ class App:
             Defaults to True.
         """
         sys.excepthook = self.exception_hook
+        warnings.showwarning = self.warning_handler
 
         self.main_window.show()
         # update axis because when creating the qt application the
@@ -52,6 +54,21 @@ class App:
         # Display an error message box
         self.main_window.raise_error(exception_value)
         sys.__excepthook__(exception_type, exception_value, traceback)
+        
+    def warning_handler(self, message, category, filename, lineno, file=None, line=None):
+        """
+        Custom warning handler.
+
+        Args:
+            message (Warning): The warning message.
+            category (Warning): The category of the warning.
+            filename (str): The file name where the warning occurred.
+            lineno (int): The line number where the warning occurred.
+            file (file object, optional): The file object to write the warning to.
+            line (str, optional): The line of code where the warning occurred.
+        """
+        warning_message = f"{filename}:{lineno}: {category.__name__}: {message}"
+        print(warning_message)
 
     def close(self):
         """
