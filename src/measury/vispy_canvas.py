@@ -23,6 +23,7 @@ class VispyCanvas(SceneCanvas):
     main_window = None
     scale_bar_params = (None, True, 10) # seed point, relative, threshold
     text_color = "black"
+    current_move = None
 
     def __init__(self, main_window):
 
@@ -183,6 +184,14 @@ class VispyCanvas(SceneCanvas):
                 # when no image is selected open file opening
                 #  sequence by clicking
                 self.main_ui.select_file()
+            elif event.button == 1:
+                match self.main_ui.tools.checkedButton().text(): 
+                    case "line" | "circle" | "rectangle" | "angle" | "edit":
+                        # redo move object command to save current location
+                        if self.current_move is not None:
+                            # if object was moved, put it on undo stack
+                            if self.current_move.check_movement():
+                                self.main_window.undo_stack.push(self.current_move)
 
     def on_mouse_press(self, event):
         # transform so that coordinates start at 0 in self.view window
@@ -276,7 +285,8 @@ class VispyCanvas(SceneCanvas):
 
                                 self.selected_object.select(True, obj=selected)
                                 self.selected_object.start_move(pos)
-                                self.move_object_w_undo(self.selected_object)
+                                # self.move_object_w_undo(self.selected_object)
+                                self.current_move = MoveObjectCommand(self, self.selected_object)
 
                                 # update ui to display properties of selected object
                                 self.selection_update()
@@ -785,30 +795,24 @@ class MoveObjectCommand(QUndoCommand):
             self.coords = None
             self.old_coords = object.coords.copy()
         elif isinstance(self.object, (EditEllipseVisual, EditRectVisual)):
-
-            self.height = None
-            self.old_height = object.height
-            self.width = None
-            self.old_width = object.width
+            
             self.center = None
-            self.old_center = object.center
+            self.height = None
+            self.width = None
             self.angle = None
+            self.old_height = object.height
+            self.old_width = object.width
+            self.old_center = object.center
             self.old_angle = object.angle
         # for undoing
 
     def undo(self):
         self.vispy_instance.data_handler.logger.info("Undoing move object")
 
-        # save former state
+        # save state before undoing move
         if isinstance(self.object, EditLineVisual):
-            self.coords = self.object.coords
             self.object.coords = self.old_coords
         elif isinstance(self.object, (EditEllipseVisual, EditRectVisual)):
-
-            self.center = self.object.center
-            self.height = self.object.height
-            self.width = self.object.width
-            self.angle = self.object.angle
 
             self.object.set_center(self.old_center)
             self.object.width = self.old_width
@@ -824,8 +828,18 @@ class MoveObjectCommand(QUndoCommand):
         # Move the object
         self.vispy_instance.data_handler.logger.info("Redoing move object")
 
+        # in the first creation we don't need to set it as it is already set
+        # but we need to save the state
         if not self.redoing:
+            if isinstance(self.object, EditLineVisual):
+                self.coords = self.object.coords.copy()
+            elif isinstance(self.object, (EditEllipseVisual, EditRectVisual)):
+                self.center = self.object.center.copy()
+                self.height = self.object.height
+                self.width = self.object.width
+                self.angle = self.object.angle
             self.redoing = True
+        # move object on all redo operations except the first one
         else:
             if isinstance(self.object, EditLineVisual):
                 self.object.coords = self.coords
@@ -835,8 +849,19 @@ class MoveObjectCommand(QUndoCommand):
                 self.object.height = self.height
                 self.object.angle = self.angle
 
-            self.object.update_from_controlpoints()
-            self.vispy_instance.selection_update()
+        self.object.update_from_controlpoints()
+        self.vispy_instance.selection_update()
+        
+    def check_movement(self):
+        if isinstance(self.object, EditLineVisual):
+            return (self.old_coords != self.object.coords).any()
+        elif isinstance(self.object, (EditEllipseVisual, EditRectVisual)):
+            return (
+                self.old_width != self.object.width
+                or self.old_height != self.object.height
+                or (self.old_center != self.object.center).any()
+                or self.old_angle != self.object.angle
+            )
 
 
 class HideObjectCommand(QUndoCommand):

@@ -3,6 +3,7 @@ from scipy.ndimage import map_coordinates
 
 from vispy.scene.visuals import Compound, Markers, Rectangle, Ellipse, Line, Arrow
 from vispy.visuals.transforms import MatrixTransform, linear
+from vispy.visuals import ArrowVisual
 
 
 # Compound from vispy.scene.visuals
@@ -462,15 +463,6 @@ class EditRectVisual(EditVisual):
         EditVisual.__init__(self, *args, **kwargs)
         self.unfreeze()
 
-        self.form = Rectangle(
-            center=center,
-            width=width,
-            height=height,
-            border_width=border_width,
-            radius=0,
-            parent=self,
-        )
-        self.form.interactive = True
         
         arrow_color = self.settings.value("graphics/object_border_color").getRgb()
         border_color = tuple([value / 255 for value in arrow_color]),
@@ -484,7 +476,18 @@ class EditRectVisual(EditVisual):
             arrow_type='stealth',
             arrows=np.array([[center[0] - width / 3, center[1] , center[0] + width / 3, center[1]]]),
             arrow_color=border_color,
+            parent=self,
         )
+        
+        self.form = Rectangle(
+            center=center,
+            width=width,
+            height=height,
+            border_width=border_width,
+            radius=0,
+            parent=self,
+        )
+        self.form.interactive = True
         
         self.arrow.visible = False
 
@@ -612,9 +615,12 @@ class EditRectVisual(EditVisual):
         self.form.border_color = border_color
         self.arrow.color = border_color
         self.arrow.arrow_color = border_color
-
+        
 
 class EditEllipseVisual(EditVisual):
+    """ Visual representation of an ellipse object with control points.
+    """
+    
     def __init__(
         self,
         center=np.array([0, 0], dtype=np.float64),
