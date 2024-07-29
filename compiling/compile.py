@@ -7,14 +7,7 @@ from measury import __version__ as measury_version
 
 script_path = Path(__file__).parent.resolve()
 
-if __name__ == "__main__":
-    # set program name and method
-    program_name = "Measury" + "_" + measury_version
-    method = "onedir"
-    zipped = False
-    if len(sys.argv) > 1 and sys.argv[1] == "zipped":
-        zipped = True
-
+def compile(program_name, method="onedir", zipped=False):
     # run pyinstaller
     arguments = [
             str(script_path / "run_clean.py"),
@@ -78,3 +71,13 @@ if __name__ == "__main__":
             root_dir=output_path.parent, # the dist folder so that we can archive the full folder
             base_dir=f"{program_name}{extension}",
         )
+        
+if __name__ == "__main__":
+    # set program name and method
+    program_name = "Measury" + "_" + measury_version
+    method = "onedir"
+    zipped = False
+    if len(sys.argv) > 1 and sys.argv[1] == "zipped":
+        zipped = True
+        
+    compile(program_name, method, zipped)

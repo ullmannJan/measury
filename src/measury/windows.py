@@ -145,13 +145,16 @@ class SettingsWindow(MeasuryWindow):
         self.main_layout.addWidget(self.tab_widget)
 
         self.graphics = QWidget()
+        self.ui = QWidget()
         self.misc = QWidget()
 
         self.tab_widget.addTab(self.graphics, "Graphics")
+        self.tab_widget.addTab(self.ui, "User Interface")
         self.tab_widget.addTab(self.misc, "Misc")
         self.tab_widget.setMinimumSize(350, 200)
 
         self.create_graphics_ui()
+        self.create_ui_ui()
         self.create_misc_ui()
 
         # Resize the window to fit the contents of the tabs
@@ -175,15 +178,11 @@ class SettingsWindow(MeasuryWindow):
 
         self.layout.addLayout(self.main_layout)
         self.adjustSize()
-
-    def create_misc_ui(self):
-
-        self.misc_layout = QVBoxLayout()
-        self.misc.setLayout(self.misc_layout)
-
-        self.resetHistoryButton = QPushButton("Reset History", self)
-        self.resetHistoryButton.clicked.connect(self.parent.reset_undo_stack)
-        self.misc_layout.addWidget(self.resetHistoryButton)
+        
+    def create_ui_ui(self):
+        
+        self.ui_layout = QVBoxLayout()
+        self.ui.setLayout(self.ui_layout)
 
         self.default_microscope_layout = QHBoxLayout()
         self.default_microscope_label = QLabel("Default Microscope", self)
@@ -193,7 +192,27 @@ class SettingsWindow(MeasuryWindow):
         self.default_microscope_dd.setCurrentText(self.settings.value("ui/microscope"))
         self.default_microscope_dd.currentTextChanged.connect(self.update_window)
         self.default_microscope_layout.addWidget(self.default_microscope_dd)
-        self.misc_layout.addLayout(self.default_microscope_layout)
+        self.ui_layout.addLayout(self.default_microscope_layout)
+        
+        self.show_both_scaling_layout = QHBoxLayout()
+        self.show_both_scaling_label = QLabel("Show Scaling in px and unit", self)
+        self.show_both_scaling_layout.addWidget(self.show_both_scaling_label)
+        self.show_both_scaling_cb = QCheckBox(self)
+        self.show_both_scaling_cb.setChecked(self.settings.value("ui/show_both_scaling", type=bool))
+        self.show_both_scaling_cb.stateChanged.connect(self.update_window)
+        self.show_both_scaling_layout.addWidget(self.show_both_scaling_cb)
+        self.ui_layout.addLayout(self.show_both_scaling_layout)
+
+        self.ui_layout.addStretch()
+
+    def create_misc_ui(self):
+
+        self.misc_layout = QVBoxLayout()
+        self.misc.setLayout(self.misc_layout)
+
+        self.clearUndoHistButton = QPushButton("Clear Undo History", self)
+        self.clearUndoHistButton.clicked.connect(self.parent.reset_undo_stack)
+        self.misc_layout.addWidget(self.clearUndoHistButton)
 
         self.file_extensions_layout = QHBoxLayout()
         self.file_extensions_label = QLabel("File Extensions", self)
@@ -327,6 +346,8 @@ class SettingsWindow(MeasuryWindow):
         self.graphics_style_dd.setCurrentText(settings.get("graphics/style"))
 
         self.default_microscope_dd.setCurrentText(settings.get("ui/microscope"))
+        self.show_both_scaling_cb.setChecked(settings.get("ui/show_both_scaling"))
+        
         file_ext_string = ";".join(settings.get("misc/file_extensions"))
         self.file_extensions.setText(file_ext_string)
         self.update_window()
@@ -352,6 +373,7 @@ class SettingsWindow(MeasuryWindow):
             "graphics/scale_bar_color": self.scale_bar_color_picker.selectedColor,
             "graphics/style": self.graphics_style_dd.currentText(),
             "ui/microscope": self.default_microscope_dd.currentText(),
+            "ui/show_both_scaling": self.show_both_scaling_cb.isChecked(),
             "misc/file_extensions": self.file_extensions.text().split(";"),
         }
 
@@ -361,16 +383,19 @@ class SettingsWindow(MeasuryWindow):
                 value = self.current_selection.get(key)
                 self.settings.save(key, value)
 
-        self.parent.update_style()
         # update the window and the color palette
+        self.parent.update_style()
 
         self.update_window()
-        # update color of the scalebar
-        self.parent.vispy_canvas.find_scale_bar_width(
-            *self.parent.vispy_canvas.scale_bar_params
-        )
+        # update color of the scalebar if it has been drawn
+        if self.parent.vispy_canvas.scale_bar_params[0] is not None:
+            self.parent.vispy_canvas.find_scale_bar_width(
+                *self.parent.vispy_canvas.scale_bar_params
+            )
         self.parent.vispy_canvas.update_colors()
         self.parent.right_ui.update_colors()
+        self.parent.main_ui.set_selected_object_table_columns()
+        self.parent.main_ui.update_object_table()
 
     @property
     def changed(self):

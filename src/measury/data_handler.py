@@ -1,7 +1,7 @@
 # absolute imports
 from pathlib import Path
 from PyQt6.QtWidgets import QFileDialog, QMessageBox
-from PyQt6.QtGui import QGuiApplication, QUndoCommand
+from PyQt6.QtGui import QGuiApplication, QUndoCommand, QImage
 import pickle
 import os
 from subprocess import Popen
@@ -357,6 +357,12 @@ class DataHandler:
                 clipboard_data = clipboard.image()
                 width = clipboard_data.width()
                 height = clipboard_data.height()
+                
+                # # Check if the image is in the correct format
+                # if clipboard_data.format() != QImage.Format.Format_ARGB32:
+                #         clipboard_data = clipboard_data.convertToFormat(QImage.Format.Format_ARGB32)
+
+                
                 # Get the pointer to the pixel data
                 ptr = clipboard_data.constBits()
                 ptr.setsize(height * width * 4)
@@ -395,7 +401,7 @@ class DataHandler:
             for prop in props:
                 data = [obj.output_properties()[prop][0] for obj in object_list]
                 unit = object_list[0].output_properties()[prop][1]
-                if self.main_window.main_ui.scaling_factor != 1:
+                if self.main_window.main_ui.scaling_factor is not None:
                     if prop in [
                         "length",
                         "area",
