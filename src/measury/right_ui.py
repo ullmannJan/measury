@@ -134,6 +134,14 @@ class RightUI(QWidget):
         if self.isHidden():
             return
         
+        # scaling factor for the intensity plot
+        if self.main_window.main_ui.scaling_factor is None:
+            scaling_factor = 1
+            self.vispy_intensity_plot.xaxis_label.text = "distance (px)"
+        else:
+            scaling_factor = self.main_window.main_ui.scaling_factor
+            self.vispy_intensity_plot.xaxis_label.text =  f"distance ({self.main_window.main_ui.units_dd.currentText()})"
+            
         selected_element = self.main_window.vispy_canvas.selected_object
         # when clicked on control points, get the parent
         if isinstance(selected_element, (LineControlPoints, ControlPoints)):
@@ -150,10 +158,6 @@ class RightUI(QWidget):
         )
         spline_order = int(self.order_dd.currentText())
         
-        if self.main_window.main_ui.scaling_factor is None:
-            scaling_factor = 1
-        else:
-            scaling_factor = self.main_window.main_ui.scaling_factor
 
         # calculate intensity profile
         if isinstance(selected_element, EditLineVisual):
@@ -297,7 +301,7 @@ class IntensityPlot(SceneCanvas):
             tick_label_margin=15,
             text_color="black",
         )
-        self.xaxis_label = Label("px", color="black", font_size=8)
+        self.xaxis_label = Label("distance (px)", color="black", font_size=8)
         self.xaxis_label.height_max = 20
         grid.add_widget(self.xaxis_label, row=3, col=1)
         self.x_axis.height_max = 30

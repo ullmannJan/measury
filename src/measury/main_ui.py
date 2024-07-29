@@ -309,7 +309,7 @@ class MainUI(QWidget):
                 old_value=old_value
             )
           
-        if column == 1 and self.scaling_factor != 1:
+        if column == 1 and self.scaling_factor is not None:
             self.vispy_canvas.update_object_property_w_undo(
                 sel_object, obj_property, new_value, 
                 self.scaling_factor, 
@@ -383,6 +383,7 @@ class MainUI(QWidget):
             1, QTableWidgetItem(self.units_dd.currentText())
         )
         self.vispy_canvas.selection_update()
+        self.right_ui.update_intensity_plot()
 
     def update_structure_dd(self):
         self.structure_dd.clear()
