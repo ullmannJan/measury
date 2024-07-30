@@ -167,7 +167,6 @@ class ImageWindow(QDialog):
 
         # add buttons
         self.button_layout = QHBoxLayout()
-        layout.addLayout(self.button_layout)
 
         self.conversion_dd = QComboBox(self)
         self.conversion_dd.addItems(["RGB", "RBG", "GRB", "GBR", "BRG", "BGR"])
@@ -186,6 +185,7 @@ class ImageWindow(QDialog):
         self.save_button.setFocus()
 
         # Set the layout to the window
+        layout.addLayout(self.button_layout)
         self.setLayout(layout)
 
     def extract_img_arr(self, image:QImage) -> np.ndarray:
