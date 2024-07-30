@@ -1,5 +1,5 @@
 # absolute imports
-from PyQt6.QtWidgets import (
+from PySide6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QPushButton,
@@ -16,8 +16,8 @@ from PyQt6.QtWidgets import (
     QInputDialog,
     QHeaderView,
 )
-from PyQt6.QtGui import QDoubleValidator
-from PyQt6.QtCore import Qt
+from PySide6.QtGui import QDoubleValidator
+from PySide6.QtCore import Qt
 from pathlib import Path
 import numpy as np
 

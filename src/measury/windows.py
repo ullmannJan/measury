@@ -1,5 +1,5 @@
 # absolute imports
-from PyQt6.QtWidgets import (
+from PySide6.QtWidgets import (
     QVBoxLayout,
     QLabel,
     QWidget,
@@ -14,8 +14,8 @@ from PyQt6.QtWidgets import (
     QPlainTextEdit,
     QStyleFactory,
 )
-from PyQt6.QtGui import QIcon, QGuiApplication, QColor, QTextCursor, QImage, QPixmap
-from PyQt6.QtCore import Qt, pyqtSignal
+from PySide6.QtGui import QIcon, QGuiApplication, QColor, QTextCursor, QImage, QPixmap
+from PySide6.QtCore import Qt, Signal
 
 
 # relative imports
@@ -429,7 +429,7 @@ class SettingsWindow(MeasuryWindow):
 
 class ColorPicker(QPushButton):
 
-    color_updated = pyqtSignal(QColor)  # Define a custom signal
+    color_updated = Signal(QColor)  # Define a custom signal
 
     def __init__(self, color: QColor, *args, alpha_channel=True, **kwargs):
         super().__init__(*args, **kwargs)

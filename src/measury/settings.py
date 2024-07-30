@@ -1,5 +1,5 @@
-from PyQt6.QtGui import QColor
-from PyQt6.QtCore import QSettings
+from PySide6.QtGui import QColor
+from PySide6.QtCore import QSettings
 
 DEFAULT_SETTINGS = {
     "graphics/object_color": QColor(255, 0, 0, 26),

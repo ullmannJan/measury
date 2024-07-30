@@ -1,7 +1,7 @@
 # absolute imports
-from PyQt6.QtOpenGLWidgets import QOpenGLWidget
-from PyQt6.QtGui import QAction, QIcon, QUndoStack, QPalette
-from PyQt6.QtWidgets import (
+from PySide6.QtOpenGLWidgets import QOpenGLWidget
+from PySide6.QtGui import QAction, QIcon, QUndoStack, QPalette
+from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
     QWidget,
@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
     QStyle,
 )
-from PyQt6.QtCore import Qt
+from PySide6.QtCore import Qt
 from sys import modules as sys_modules
 
 

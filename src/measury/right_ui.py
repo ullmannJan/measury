@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import (
+from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QLabel,
@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QComboBox,
 )
-from PyQt6.QtGui import QIntValidator
+from PySide6.QtGui import QIntValidator
 
 import numpy as np
 from vispy.scene import LinePlot, InfiniteLine, Text, SceneCanvas

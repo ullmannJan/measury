@@ -2,8 +2,8 @@
 import numpy as np
 import cv2
 from vispy.scene import SceneCanvas, visuals, AxisWidget, Label
-from PyQt6.QtWidgets import QInputDialog
-from PyQt6.QtGui import QUndoCommand
+from PySide6.QtWidgets import QInputDialog
+from PySide6.QtGui import QUndoCommand
 
 # relative imports
 from .drawable_objects import (

@@ -1,7 +1,7 @@
 # absolute imports
 from pathlib import Path
-from PyQt6.QtWidgets import QFileDialog, QMessageBox
-from PyQt6.QtGui import QGuiApplication, QUndoCommand, QImage
+from PySide6.QtWidgets import QFileDialog, QMessageBox
+from PySide6.QtGui import QGuiApplication, QUndoCommand, QImage
 import pickle
 import os
 from subprocess import Popen
@@ -351,6 +351,7 @@ class DataHandler:
             if reply == QMessageBox.StandardButton.Yes:
 
                 clipboard = QGuiApplication.clipboard()
+
                 # if it is a file path, open it like a file
                 if clipboard.mimeData().hasUrls():
                     file_path = clipboard.mimeData().urls()[0].toLocalFile()
@@ -372,10 +373,10 @@ class DataHandler:
                 
                 # Get the pointer to the pixel data
                 ptr = clipboard_data.constBits()
-                ptr.setsize(height * width * 4)
+                # ptr.setsize(height * width * 4)
 
                 # Convert the pixel data to a byte stream
-                img_data = np.frombuffer(ptr, dtype=np.uint8).reshape(
+                img_data = np.array(ptr).reshape(
                     (height, width, 4)
                 )
 
