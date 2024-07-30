@@ -364,11 +364,11 @@ class DataHandler:
                 clipboard_data = clipboard.image()
                 width = clipboard_data.width()
                 height = clipboard_data.height()
-                
-                # Check if the image is in the correct format
-                if clipboard_data.format() != QImage.Format.Format_ARGB32:
-                        clipboard_data = clipboard_data.convertToFormat(QImage.Format.Format_ARGB32)
 
+                # Check if the image is in the correct format
+                # if clipboard_data.format() != QImage.Format.Format_ARGB32:
+                #     self.logger.info(f"Converting clipboard image from {clipboard_data.format()} to ARGB32 format")
+                #     clipboard_data = clipboard_data.convertToFormat(QImage.Format.Format_ARGB32)
                 
                 # Get the pointer to the pixel data
                 ptr = clipboard_data.constBits()
@@ -381,7 +381,7 @@ class DataHandler:
 
                 # Step 1: Encode the image data to a specific format (e.g., '.png')
                 success, encoded_image = cv2.imencode(
-                    ".png", img_data, [int(cv2.IMWRITE_PNG_COMPRESSION), 5]
+                    ".png", img_data#, [int(cv2.IMWRITE_PNG_COMPRESSION), 5]
                 )
 
                 if success:

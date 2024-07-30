@@ -14,7 +14,7 @@ from PyQt6.QtWidgets import (
     QPlainTextEdit,
     QStyleFactory,
 )
-from PyQt6.QtGui import QIcon, QGuiApplication, QColor, QTextCursor
+from PyQt6.QtGui import QIcon, QGuiApplication, QColor, QTextCursor, QImage, QPixmap
 from PyQt6.QtCore import Qt, pyqtSignal
 
 
@@ -130,6 +130,28 @@ class DataWindow(MeasuryWindow):
         cb = QGuiApplication.clipboard()
         cb.clear()
         cb.setText(self.parent.data_handler.calculate_results_string())
+
+class ImageWindow(MeasuryWindow):
+    """
+    The window displaying the image.
+    """
+
+    def __init__(self, image:QImage, title="Image", *args, **kwargs):
+        super().__init__(title=title, *args, **kwargs)
+
+            # Create a QVBoxLayout
+        layout = QVBoxLayout()
+
+        # Create a QLabel and set the QImage as its pixmap
+        label = QLabel()
+        pixmap = QPixmap.fromImage(image)
+        label.setPixmap(pixmap)
+
+        # Add the QLabel to the layout
+        layout.addWidget(label)
+
+        # Set the layout to the window
+        self.layout.addLayout(layout)
 
 
 class SettingsWindow(MeasuryWindow):
