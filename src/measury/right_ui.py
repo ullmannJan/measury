@@ -14,7 +14,6 @@ import numpy as np
 from vispy.scene import LinePlot, InfiniteLine, Text, SceneCanvas
 from vispy.scene.widgets import AxisWidget, Label
 
-
 # relative imports
 from .drawable_objects import (
     EditRectVisual,

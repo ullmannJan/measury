@@ -14,6 +14,7 @@ import cv2
 # you need this import as they are implicitly used
 from .drawable_objects import EditRectVisual, EditLineVisual, EditEllipseVisual
 from .data.microscopes import load_microscopes
+from .windows import ImageWindow
 
 
 class DataHandler:
@@ -335,6 +336,14 @@ class DataHandler:
             self.logger.error(f"Could not open file: {file_path}:\n{error}")
             self.main_window.raise_error(f"Could not open file: {file_path}: {error}")
 
+    def open_image_editor(self, image:QImage):
+        image_editor = ImageWindow(image, parent=self.main_window)
+        # image_editor.show()
+        # wait until the window is closed
+        image_editor.exec()
+        
+        return image_editor.image
+
     def open_image_from_clipboard(self, vispy_instance):
 
         reply = QMessageBox.StandardButton.Yes
@@ -366,24 +375,24 @@ class DataHandler:
                 width = clipboard_data.width()
                 height = clipboard_data.height()
 
+                # open image in another window to allow formating
+                clipboard_data = self.open_image_editor(clipboard_data)
+
                 # Check if the image is in the correct format
-                # if clipboard_data.format() != QImage.Format.Format_ARGB32:
-                #     self.logger.info(f"Converting clipboard image from {clipboard_data.format()} to ARGB32 format")
-                #     clipboard_data = clipboard_data.convertToFormat(QImage.Format.Format_ARGB32)
+                if clipboard_data.format() != QImage.Format.Format_RGB32:
+                    self.logger.info(f"Converting clipboard image from {clipboard_data.format()} to ARGB32 format")
+                    clipboard_data = clipboard_data.convertToFormat(QImage.Format.Format_RGB32)
                 
                 # Get the pointer to the pixel data
                 ptr = clipboard_data.constBits()
-                # ptr.setsize(height * width * 4)
 
                 # Convert the pixel data to a byte stream
-                img_data = np.array(ptr).reshape(
-                    (height, width, 4)
-                )
+                img_data = np.array(ptr).reshape((height, width, 4))
 
                 # Step 1: Encode the image data to a specific format (e.g., '.png')
-                success, encoded_image = cv2.imencode(
-                    ".png", img_data#, [int(cv2.IMWRITE_PNG_COMPRESSION), 5]
-                )
+                success, encoded_image = cv2.imencode(".png", img_data
+                                                      #, [int(cv2.IMWRITE_PNG_COMPRESSION), 5]
+                                                     )
 
                 if success:
                     # Step 2: Convert the encoded image to a byte stream
