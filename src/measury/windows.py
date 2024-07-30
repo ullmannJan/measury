@@ -1,5 +1,5 @@
 # absolute imports
-from PyQt6.QtWidgets import (
+from PySide6.QtWidgets import (
     QVBoxLayout,
     QLabel,
     QWidget,
@@ -13,9 +13,12 @@ from PyQt6.QtWidgets import (
     QTabWidget,
     QPlainTextEdit,
     QStyleFactory,
+    QDialog,
 )
-from PyQt6.QtGui import QIcon, QGuiApplication, QColor, QTextCursor
-from PyQt6.QtCore import Qt, pyqtSignal
+from PySide6.QtGui import QIcon, QGuiApplication, QColor, QTextCursor, QImage, QPixmap,\
+    qRed, qGreen, qBlue, qAlpha, qRgba
+from PySide6.QtCore import Qt, Signal
+import numpy as np
 
 
 # relative imports
@@ -130,6 +133,107 @@ class DataWindow(MeasuryWindow):
         cb = QGuiApplication.clipboard()
         cb.clear()
         cb.setText(self.parent.data_handler.calculate_results_string())
+
+class ImageWindow(QDialog):
+    """
+    The window displaying the image.
+    """
+    image = None
+
+    def __init__(self, image:QImage, title="Image Editor", *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        self.image = image
+        self.orig_image = self.extract_img_arr(image)[1]
+
+        self.setWindowTitle(title)
+        self.setWindowIcon(QIcon(str(measury_path / "data/tape_measure_128.ico")))
+        self.setMinimumSize(300, 200)
+        self.setMaximumSize(800, 600)
+
+        # force this window on top
+        self.setWindowModality(Qt.WindowModality.ApplicationModal)
+
+        # Create a QVBoxLayout
+        layout = QVBoxLayout()
+
+        # Create a QLabel and set the QImage as its pixmap
+        self.label = QLabel()
+        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.redraw_image()
+
+        # Add the QLabel to the layout
+        layout.addWidget(self.label)
+
+        # add buttons
+        self.button_layout = QHBoxLayout()
+
+        self.conversion_dd = QComboBox(self)
+        self.conversion_dd.addItems(["RGB", "RBG", "GRB", "GBR", "BRG", "BGR"])
+        self.conversion_dd.currentTextChanged.connect(self.swap_colors)
+        layout.addWidget(self.conversion_dd)
+
+        self.reset_button = QPushButton("Reset", self)
+        self.button_layout.addWidget(self.reset_button)
+        self.reset_button.clicked.connect(self.reset_image)
+
+        self.save_button = QPushButton("Save", self)
+        self.button_layout.addWidget(self.save_button)
+        self.save_button.clicked.connect(self.close)
+
+        # set focus on save so that enter directly closes the window
+        self.save_button.setFocus()
+
+        # Set the layout to the window
+        layout.addLayout(self.button_layout)
+        self.setLayout(layout)
+
+    def extract_img_arr(self, image:QImage) -> np.ndarray:
+        image = image.convertToFormat(QImage.Format.Format_RGBA8888)
+        width = image.width()
+        height = image.height()
+
+        # Get the pixel data as a NumPy array
+        ptr = image.bits()
+        return image, np.array(ptr).reshape((height, width, 4))  # 4 channels: R, G, B, A
+
+    def swap_colors(self):
+        # Convert QImage to a format that allows direct access to pixel data
+        color_order = self.conversion_dd.currentText()
+        image = self.image.convertToFormat(QImage.Format.Format_RGBA8888)
+        arr = self.orig_image.copy() 
+
+        # Define the channel order
+        channel_map = {
+            "RGB": [0, 1, 2],
+            "RBG": [0, 2, 1],
+            "GRB": [1, 0, 2],
+            "GBR": [1, 2, 0],
+            "BRG": [2, 0, 1],
+            "BGR": [2, 1, 0],
+        }
+
+        # Swap the color channels
+        arr[..., :3] = arr[..., channel_map[color_order]]
+
+        # Convert the NumPy array back to QImage
+        self.image = QImage(arr.data, arr.shape[1], arr.shape[0], image.bytesPerLine(), QImage.Format.Format_RGBA8888)
+        self.redraw_image()
+
+    def reset_image(self):
+        self.conversion_dd.setCurrentIndex(0)
+        self.redraw_image() 
+        
+    def redraw_image(self):
+        scaled_pixmap = QPixmap.fromImage(self.image).scaled(
+            self.label.size(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
+        )
+        self.label.setPixmap(scaled_pixmap)
+
+    def resizeEvent(self, event):
+        # Call the redraw_image method to scale the image when the window is resized
+        self.redraw_image()
+        super().resizeEvent(event)
 
 
 class SettingsWindow(MeasuryWindow):
@@ -392,6 +496,8 @@ class SettingsWindow(MeasuryWindow):
             self.parent.vispy_canvas.find_scale_bar_width(
                 *self.parent.vispy_canvas.scale_bar_params
             )
+        else:
+            self.parent.vispy_canvas.draw_image()
         self.parent.vispy_canvas.update_colors()
         self.parent.right_ui.update_colors()
         self.parent.main_ui.set_selected_object_table_columns()
@@ -405,7 +511,7 @@ class SettingsWindow(MeasuryWindow):
 
 class ColorPicker(QPushButton):
 
-    color_updated = pyqtSignal(QColor)  # Define a custom signal
+    color_updated = Signal(QColor)  # Define a custom signal
 
     def __init__(self, color: QColor, *args, alpha_channel=True, **kwargs):
         super().__init__(*args, **kwargs)

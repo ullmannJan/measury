@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import (
+from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QLabel,
@@ -8,19 +8,16 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QComboBox,
 )
-from PyQt6.QtGui import QIntValidator
+from PySide6.QtGui import QIntValidator
 
 import numpy as np
 from vispy.scene import LinePlot, InfiniteLine, Text, SceneCanvas
 from vispy.scene.widgets import AxisWidget, Label
 
-
 # relative imports
 from .drawable_objects import (
     EditRectVisual,
     EditLineVisual,
-    LineControlPoints,
-    ControlPoints,
 )
 
 
@@ -166,9 +163,8 @@ class RightUI(QWidget):
         # calculate intensity profile
         if isinstance(selected_element, EditLineVisual):
             length = selected_element.length
-            if int(length) <= 0:
-                self.reset_intensity_plot()
-                return
+            if not isinstance(length, float):
+                length = np.sum(length)
             intensity, _ = selected_element.intensity_profile(
                 image=image,
                 n=interpolation_factor * int(length),

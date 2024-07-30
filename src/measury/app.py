@@ -12,7 +12,7 @@ class App:
 
     def __init__(self, file_path=None, logger=None):
 
-        self.vispy_app = use_app("pyqt6")
+        self.vispy_app = use_app("pyside6")
         self.vispy_app.create()
         self.data_handler = DataHandler(logger)
         self.main_window = MainWindow(self.data_handler)
