@@ -349,18 +349,25 @@ class DataHandler:
                 )
 
             if reply == QMessageBox.StandardButton.Yes:
+
+                clipboard = QGuiApplication.clipboard()
+                # if it is a file path, open it like a file
+                if clipboard.mimeData().hasUrls():
+                    file_path = clipboard.mimeData().urls()[0].toLocalFile()
+                    self.open_file(file_path, vispy_instance)
+                    return
+
                 self.file_path = Path("clipboard")
                 self.delete_all_objects()
                 self.main_window.main_ui.reset_scaling()
-                clipboard = QGuiApplication.clipboard()
 
                 clipboard_data = clipboard.image()
                 width = clipboard_data.width()
                 height = clipboard_data.height()
                 
-                # # Check if the image is in the correct format
-                # if clipboard_data.format() != QImage.Format.Format_ARGB32:
-                #         clipboard_data = clipboard_data.convertToFormat(QImage.Format.Format_ARGB32)
+                # Check if the image is in the correct format
+                if clipboard_data.format() != QImage.Format.Format_ARGB32:
+                        clipboard_data = clipboard_data.convertToFormat(QImage.Format.Format_ARGB32)
 
                 
                 # Get the pointer to the pixel data

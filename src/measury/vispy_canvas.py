@@ -681,9 +681,12 @@ class VispyCanvas(SceneCanvas):
         """always returns the whole object instance,
         even if controlpoints are selected
         """
-        if isinstance(self.selected_object, (ControlPoints, LineControlPoints)):
-            return self.selected_object.parent
-        return self.selected_object
+        return self.get_full_object(self.selected_object)
+    
+    def get_full_object(self, obj):
+        if isinstance(obj, (ControlPoints, LineControlPoints)):
+            return obj.parent
+        return obj
 
     def delete_object(self, object=None):
         # delete selected object if no other is given
@@ -895,7 +898,7 @@ class ShowObjectCommand(QUndoCommand):
 class FindScalingBarWidthCommand(QUndoCommand):
     def __init__(self, vispy_canvas, seed_points, relative, threshold):
         super().__init__()
-        self.vispy_canvas = vispy_canvas
+        self.vispy_canvas:VispyCanvas = vispy_canvas
 
         self.seed_points = seed_points
         self.relative = relative

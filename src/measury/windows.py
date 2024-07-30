@@ -392,6 +392,8 @@ class SettingsWindow(MeasuryWindow):
             self.parent.vispy_canvas.find_scale_bar_width(
                 *self.parent.vispy_canvas.scale_bar_params
             )
+        else:
+            self.parent.vispy_canvas.draw_image()
         self.parent.vispy_canvas.update_colors()
         self.parent.right_ui.update_colors()
         self.parent.main_ui.set_selected_object_table_columns()
