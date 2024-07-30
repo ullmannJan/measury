@@ -751,8 +751,6 @@ class LineControlPoints(Compound):
         if len(self._length) == 1:
             self._length = self._length[0]
         return self._length
-        # deprecated
-        # self._length = abs(np.linalg.norm(self.start-self.end))
 
     def update_points(self):
 

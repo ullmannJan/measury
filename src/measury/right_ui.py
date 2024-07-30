@@ -19,8 +19,6 @@ from vispy.scene.widgets import AxisWidget, Label
 from .drawable_objects import (
     EditRectVisual,
     EditLineVisual,
-    LineControlPoints,
-    ControlPoints,
 )
 
 
@@ -166,9 +164,8 @@ class RightUI(QWidget):
         # calculate intensity profile
         if isinstance(selected_element, EditLineVisual):
             length = selected_element.length
-            if int(length) <= 0:
-                self.reset_intensity_plot()
-                return
+            if not isinstance(length, float):
+                length = np.sum(length)
             intensity, _ = selected_element.intensity_profile(
                 image=image,
                 n=interpolation_factor * int(length),

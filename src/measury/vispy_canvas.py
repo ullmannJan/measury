@@ -755,8 +755,7 @@ class DeleteObjectCommand(QUndoCommand):
         if object is None:
             object = self.vispy_canvas.selected_object
 
-        if isinstance(object, (ControlPoints, LineControlPoints)):
-            object = object.parent
+        object = self.vispy_canvas.get_full_object(object)
 
         self.object = object
         self.structure, self.index = data_handler.find_object(self.object)
@@ -788,9 +787,7 @@ class MoveObjectCommand(QUndoCommand):
         self.vispy_instance = vispy_instance
 
         # if object is a control point, get the whole object
-        if isinstance(object, (ControlPoints, LineControlPoints)):
-            object = object.parent
-        self.object = object
+        self.object = vispy_instance.get_full_object(object)
 
         # for redoing
         self.redoing = False
@@ -921,9 +918,7 @@ class CreateObjectCommand(QUndoCommand):
     def __init__(self, vispy_canvas, new_object, pos, selected, structure_name):
         super().__init__()
         self.vispy_canvas = vispy_canvas
-        if isinstance(new_object, (ControlPoints, LineControlPoints)):
-            new_object = new_object.parent
-        self.new_object = new_object
+        self.new_object = self.vispy_canvas.get_full_object(new_object)
         self.pos = pos
         self.selected = selected
         self.structure_name = structure_name
