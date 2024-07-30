@@ -248,8 +248,11 @@ class MainUI(QWidget):
             object = self.vispy_canvas.get_selected_object()
             
         # selection table
-        self.update_full_table = True # to prevent triggering cell_content_changed
         self.clear_object_table()
+        if object is None:
+            return
+        
+        self.update_full_table = True # to prevent triggering cell_content_changed
 
         props = object.output_properties()
         self.selected_object_table.setRowCount(len(props.keys()))
