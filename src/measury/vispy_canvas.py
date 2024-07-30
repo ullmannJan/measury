@@ -800,10 +800,10 @@ class MoveObjectCommand(QUndoCommand):
             self.height = None
             self.width = None
             self.angle = None
-            self.old_height = object.height
-            self.old_width = object.width
-            self.old_center = object.center
-            self.old_angle = object.angle
+            self.old_height = self.object.height
+            self.old_width = self.object.width
+            self.old_center = self.object.center
+            self.old_angle = self.object.angle
         # for undoing
 
     def undo(self):
