@@ -156,12 +156,15 @@ class DataHandler:
             return filename
 
     def save_storage_file(self, save_image=True, **kwargs):
+        
 
         filename = self.save_file_dialog(
             file_name=str(self.file_path.with_suffix(".msry"))
         )
         if filename is None:
             return
+        
+        self.logger.info(f"saving storage file: {filename}")
 
         structure_data = dict()
         for key, val in self.drawing_data.items():
@@ -172,6 +175,7 @@ class DataHandler:
                 self.main_window.main_ui.pixel_edit.text(),
                 self.main_window.main_ui.length_edit.text(),
                 self.main_window.main_ui.units_dd.currentText(),
+                self.main_window.vispy_canvas.scale_bar_params,
             )
             output = (self.img_byte_stream, structure_data, scaling)
         else:
@@ -211,13 +215,13 @@ class DataHandler:
         """load .msry data from a file and update the view"""
 
         loaded_data = self.load_from_pickle(file_path)
-        scaling = (None, None, None)
+        scaling = (None, None, None) # pixel, length, unit
         if len(loaded_data) == 2:
             img_byte_stream, structure_data = loaded_data
         elif len(loaded_data) == 3:
             img_byte_stream, structure_data, scaling = loaded_data
 
-        reply = QMessageBox.StandardButton.Yes
+        
         question = None
 
         if self.img_data is None and img_byte_stream is None:
@@ -242,6 +246,7 @@ class DataHandler:
                 else:
                     question = "Do you want to load a new image?\n\nThis will replace the current image and remove the measurements."
 
+        reply = QMessageBox.StandardButton.Yes
         if question is not None:
             reply = QMessageBox.warning(
                 self.main_window.main_ui,
@@ -251,7 +256,7 @@ class DataHandler:
                 QMessageBox.StandardButton.No,
             )
 
-        if reply is QMessageBox.StandardButton.Yes:
+        if reply == QMessageBox.StandardButton.Yes:
 
             self.delete_all_objects()
             self.file_path = file_path
@@ -296,6 +301,9 @@ class DataHandler:
                     )
                 else:
                     self.main_window.main_ui.units_dd.setCurrentIndex(index)
+                if len(scaling) > 3:
+                    self.main_window.vispy_canvas.find_scale_bar_width(*scaling[3])
+                    
                 self.main_window.main_ui.units_changed()
 
             self.main_window.main_ui.update_structure_dd()

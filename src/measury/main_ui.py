@@ -390,7 +390,8 @@ class MainUI(QWidget):
                 # only actually try to find scaling bar, when data is given by database
                 if seed_points is not None:
                     self.vispy_canvas.find_scale_bar_width_w_undo(
-                        seed_point_percentage=seed_points, threshold=self.get_threshold()
+                        seed_point_percentage=seed_points, threshold=self.get_threshold(),
+                        direction=self.scaling_direction_dd.currentText()
                     )
             except Exception as e:
                 self.main_window.raise_error(
