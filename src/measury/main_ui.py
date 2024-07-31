@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
     QInputDialog,
     QHeaderView,
 )
-from PySide6.QtGui import QDoubleValidator
+from PySide6.QtGui import QDoubleValidator, QIntValidator, QFontMetrics
 from PySide6.QtCore import Qt
 from pathlib import Path
 import numpy as np
@@ -30,6 +30,7 @@ class MainUI(QWidget):
 
     main_window = None
     update_full_table = False
+    DEFAULT_THRESHOLD = 10
 
     def __init__(self, main_window, parent=None):
 
@@ -113,6 +114,7 @@ class MainUI(QWidget):
         self.dd_select_micop.setCurrentText(
             self.main_window.settings.value("ui/microscope")
         )
+        self.dd_select_micop.currentTextChanged.connect(self.microscope_changed)
         select_micop_layout.addWidget(self.dd_select_micop)
         self.tools_scaling_layout.addLayout(select_micop_layout)
 
@@ -120,6 +122,21 @@ class MainUI(QWidget):
         self.scaling_direction_dd = QComboBox(self)
         self.scaling_direction_dd.addItems(["horizontal", "vertical"])
         scaling_vertical_layout.addWidget(self.scaling_direction_dd)
+        
+        threshold_label = "Threshold: "
+        self.scaling_label = QLabel(threshold_label, self)
+        self.scaling_label.setFixedWidth(QFontMetrics(self.scaling_label.font()).horizontalAdvance(threshold_label))
+        scaling_vertical_layout.addWidget(self.scaling_label)
+        
+        self.scaling_threshold_edit = QLineEdit(self, placeholderText=str(self.DEFAULT_THRESHOLD))
+        self.scaling_threshold_edit.setValidator(QIntValidator(0, 255, self))
+        
+        # Calculate the width required to display "255"
+        font_metrics = QFontMetrics(self.scaling_threshold_edit.font())
+        width = font_metrics.horizontalAdvance("255")*2  # Adding some padding
+        self.scaling_threshold_edit.setFixedWidth(width)
+        scaling_vertical_layout.addWidget(self.scaling_threshold_edit)
+        
         scaling_vertical_layout.addWidget(tools_scaling["scale"])
         self.tools_scaling_layout.addLayout(scaling_vertical_layout)
 
@@ -323,16 +340,17 @@ class MainUI(QWidget):
             new_value = old_type(new_value)
 
         # only allow changes in the data value columns
+        # this is only the case if the setting for showing both scaling is enabled
         if column == 3:
             self.vispy_canvas.update_object_property_w_undo(
                 sel_object, obj_property, new_value, 
                 old_value=old_value
             )
-          
-        if column == 1 and self.scaling_factor is not None:
+        
+        if column == 1:
             self.vispy_canvas.update_object_property_w_undo(
                 sel_object, obj_property, new_value, 
-                self.scaling_factor, 
+                self.scaling_factor if self.scaling_factor is not None else 1, 
                 old_value=old_value
             )
             
@@ -371,9 +389,9 @@ class MainUI(QWidget):
                     self.scaling_direction_dd.setCurrentText(orientation)
                 # only actually try to find scaling bar, when data is given by database
                 if seed_points is not None:
-                    threshold = self.get_microscope().threshold
                     self.vispy_canvas.find_scale_bar_width_w_undo(
-                        seed_point_percentage=seed_points, threshold=threshold
+                        seed_point_percentage=seed_points, threshold=self.get_threshold(),
+                        direction=self.scaling_direction_dd.currentText()
                     )
             except Exception as e:
                 self.main_window.raise_error(
@@ -397,6 +415,20 @@ class MainUI(QWidget):
         self.pixel_edit.setText("")
         self.length_edit.setText("")
         self.units_changed()
+        
+    def microscope_changed(self):
+        threshold = self.get_microscope().threshold
+        self.set_threshold(threshold)
+        
+    def set_threshold(self, threshold):
+        if threshold is None:
+            self.scaling_threshold_edit.setText("")
+        else:
+            self.scaling_threshold_edit.setText(str(threshold))
+        
+    def get_threshold(self):
+        threshold = self.scaling_threshold_edit.text()
+        return int(threshold) if threshold else self.DEFAULT_THRESHOLD
 
     def units_changed(self):
         self.selected_object_table.setHorizontalHeaderItem(

@@ -49,8 +49,8 @@ class Microscope(ABC):
 
 class Generic_Microscope(Microscope):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Zeiss_Orion_Nanofab(Microscope):

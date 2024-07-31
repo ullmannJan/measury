@@ -14,14 +14,13 @@ from .drawable_objects import (
     LineControlPoints,
 )
 
-
 class VispyCanvas(SceneCanvas):
     """Canvas for displaying the vispy instance"""
 
     CANVAS_SHAPE = (800, 600)
     main_ui = None
     main_window = None
-    scale_bar_params = (None, True, 10) # seed point, relative, threshold
+    scale_bar_params = (None, True, None, None) # seed point, relative, threshold, direction
     text_color = "black"
     current_move = None
 
@@ -357,7 +356,10 @@ class VispyCanvas(SceneCanvas):
 
                             # get width of scaling bar and show it in image
                             self.find_scale_bar_width_w_undo(
-                                (m_i_x, m_i_y), relative=False
+                                (m_i_x, m_i_y), 
+                                relative=False, 
+                                threshold=self.main_ui.get_threshold(),
+                                direction=self.main_ui.scaling_direction_dd.currentText()
                             )
 
                         # right click to delete scaling identification
@@ -425,7 +427,6 @@ class VispyCanvas(SceneCanvas):
                     obj.line_color = border_color
                     obj.update_from_controlpoints()
                 else:
-                    print("update colors")
                     obj.update_colors(color=color, border_color=border_color)
         self.scene.update()
 
@@ -496,14 +497,20 @@ class VispyCanvas(SceneCanvas):
                 self.main_ui.structure_dd.setCurrentText(text)
             return False
 
-    def find_scale_bar_width(self, seed_points, relative=True, threshold=10):
+    def find_scale_bar_width(self, seed_points, relative=True, threshold=None, direction=None):
         # get width of scaling bar by floodFilling an area of similar pixels.
         # The start point needs to be given
 
         if self.start_state:
             return
-
-        self.scale_bar_params = (seed_points, relative, threshold)
+        if threshold is None:
+            threshold = self.main_ui.DEFAULT_THRESHOLD
+        if direction is None:
+            direction = 'horizontal'
+        
+        self.scale_bar_params = (seed_points, relative, threshold, direction)
+        self.main_ui.set_threshold(threshold)
+        self.main_ui.scaling_direction_dd.setCurrentText(direction)
 
         if seed_points is None:
             self.draw_image()
@@ -538,7 +545,7 @@ class VispyCanvas(SceneCanvas):
             )
 
             # plus one to account for the start pixel
-            if self.main_ui.scaling_direction_dd.currentText() == "horizontal":
+            if direction == "horizontal":
                 scale_px = np.max(non_zero_indices[1]) - np.min(non_zero_indices[1]) + 1
             else:
                 scale_px = np.max(non_zero_indices[0]) - np.min(non_zero_indices[0]) + 1
@@ -546,11 +553,9 @@ class VispyCanvas(SceneCanvas):
         self.main_ui.pixel_edit.setText(str(scale_px))
         self.scene.update()
 
-    def find_scale_bar_width_w_undo(
-        self, seed_point_percentage, relative=True, threshold=10
-    ):
+    def find_scale_bar_width_w_undo(self, seed_point_percentage, relative=True, threshold=None, direction=None):
         command = FindScalingBarWidthCommand(
-            self, seed_point_percentage, relative, threshold
+            self, seed_point_percentage, relative, threshold, direction
         )
         self.main_window.undo_stack.push(command)
 
@@ -893,13 +898,14 @@ class ShowObjectCommand(QUndoCommand):
 
 
 class FindScalingBarWidthCommand(QUndoCommand):
-    def __init__(self, vispy_canvas, seed_points, relative, threshold):
+    def __init__(self, vispy_canvas, seed_points, relative, threshold, direction):
         super().__init__()
         self.vispy_canvas:VispyCanvas = vispy_canvas
 
         self.seed_points = seed_points
         self.relative = relative
         self.threshold = threshold
+        self.direction = direction
 
         self.old_scale_bar_params = self.vispy_canvas.scale_bar_params
 
@@ -910,7 +916,7 @@ class FindScalingBarWidthCommand(QUndoCommand):
     def redo(self):
         # Find the scaling bar width
         self.vispy_canvas.find_scale_bar_width(
-            self.seed_points, self.relative, self.threshold
+            self.seed_points, self.relative, self.threshold, self.direction
         )
 
 
