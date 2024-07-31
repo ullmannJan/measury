@@ -14,14 +14,13 @@ from .drawable_objects import (
     LineControlPoints,
 )
 
-
 class VispyCanvas(SceneCanvas):
     """Canvas for displaying the vispy instance"""
 
     CANVAS_SHAPE = (800, 600)
     main_ui = None
     main_window = None
-    scale_bar_params = (None, True, 10) # seed point, relative, threshold
+    scale_bar_params = (None, True, None) # seed point, relative, threshold
     text_color = "black"
     current_move = None
 
@@ -357,7 +356,9 @@ class VispyCanvas(SceneCanvas):
 
                             # get width of scaling bar and show it in image
                             self.find_scale_bar_width_w_undo(
-                                (m_i_x, m_i_y), relative=False
+                                (m_i_x, m_i_y), 
+                                relative=False, 
+                                threshold=self.main_ui.get_threshold(),
                             )
 
                         # right click to delete scaling identification
@@ -496,14 +497,17 @@ class VispyCanvas(SceneCanvas):
                 self.main_ui.structure_dd.setCurrentText(text)
             return False
 
-    def find_scale_bar_width(self, seed_points, relative=True, threshold=10):
+    def find_scale_bar_width(self, seed_points, relative=True, threshold=None):
         # get width of scaling bar by floodFilling an area of similar pixels.
         # The start point needs to be given
 
         if self.start_state:
             return
-
+        if threshold is None:
+            threshold = self.main_ui.DEFAULT_THRESHOLD
+        
         self.scale_bar_params = (seed_points, relative, threshold)
+        self.main_ui.set_threshold(threshold)
 
         if seed_points is None:
             self.draw_image()
@@ -546,9 +550,7 @@ class VispyCanvas(SceneCanvas):
         self.main_ui.pixel_edit.setText(str(scale_px))
         self.scene.update()
 
-    def find_scale_bar_width_w_undo(
-        self, seed_point_percentage, relative=True, threshold=10
-    ):
+    def find_scale_bar_width_w_undo(self, seed_point_percentage, relative=True, threshold=None):
         command = FindScalingBarWidthCommand(
             self, seed_point_percentage, relative, threshold
         )
