@@ -323,16 +323,17 @@ class MainUI(QWidget):
             new_value = old_type(new_value)
 
         # only allow changes in the data value columns
+        # this is only the case if the setting for showing both scaling is enabled
         if column == 3:
             self.vispy_canvas.update_object_property_w_undo(
                 sel_object, obj_property, new_value, 
                 old_value=old_value
             )
-          
-        if column == 1 and self.scaling_factor is not None:
+        
+        if column == 1:
             self.vispy_canvas.update_object_property_w_undo(
                 sel_object, obj_property, new_value, 
-                self.scaling_factor, 
+                self.scaling_factor if self.scaling_factor is not None else 1, 
                 old_value=old_value
             )
             
