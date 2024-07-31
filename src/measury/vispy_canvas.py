@@ -427,7 +427,6 @@ class VispyCanvas(SceneCanvas):
                     obj.line_color = border_color
                     obj.update_from_controlpoints()
                 else:
-                    print("update colors")
                     obj.update_colors(color=color, border_color=border_color)
         self.scene.update()
 
