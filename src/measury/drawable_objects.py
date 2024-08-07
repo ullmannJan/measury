@@ -274,6 +274,9 @@ class ControlPoints(Compound):
         self.parent.delete()
         del self
 
+    def get_coords(self):
+        return self.coords[:, 0, :].copy()
+
 
 # from vispy.scene.visuals
 class EditVisual(Compound):
@@ -796,6 +799,9 @@ class LineControlPoints(Compound):
         self.coords = coords
         self.update_points()
 
+    def get_coords(self):
+        return self.coords.copy()
+    
     def get_center(self):
         return np.array(self.coords[0]) + 0.5 * (
             np.array(self.coords[-1]) - np.array(self.coords[0])
