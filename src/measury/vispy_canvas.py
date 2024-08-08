@@ -606,7 +606,7 @@ class VispyCanvas(SceneCanvas):
                     self.selected_object.remove_point()
                     self.selected_object.continue_adding_points = False
                 else:
-                    self.remove_point_w_undo(self.selected_object)
+                    self.remove_point_w_undo()
             if event.key.name == "A":
                 if (self.selected_object.num_points == 0 
                 or len(self.selected_object.coords) < self.selected_object.num_points):
@@ -616,10 +616,15 @@ class VispyCanvas(SceneCanvas):
                     # get mouse position in image coordinates
                     index = self.selected_object.get_selected_index()
                     pos = self.selected_object.coords[index]
-                    self.selected_object.add_point(pos)
+                    # undo gets called, when the released event is called
+                    self.add_point_w_undo(self.selected_object, pos)
 
 
     def on_mouse_move(self, event):
+
+        if isinstance(self.selected_object, LineControlPoints):
+            print(self.selected_object.continue_adding_points)
+                
         # transform so that coordinates start at 0 in self.view window
         tr = self.scene.node_transform(self.view)
         # only activate when over self.view by looking
@@ -713,13 +718,20 @@ class VispyCanvas(SceneCanvas):
         command = MoveObjectCommand(self, object)
         self.main_window.undo_stack.push(command)
 
-    def remove_point_w_undo(self, object):
-        command = RemovePointCommand(self, object)
-        self.main_window.undo_stack.push(command)
+    def remove_point_w_undo(self):
+        # we dont want to undo the last 2 points
+        if len(self.selected_object.coords) < 3:
+            self.selected_object.remove_point()
+        else:
+            command = RemovePointCommand(self, self.selected_object)
+            self.main_window.undo_stack.push(command)
 
     def add_point_w_undo(self, object, point):
-        command = AddPointCommand(self, object, point)
-        self.main_window.undo_stack.push(command)
+        if len(self.selected_object.coords) < 3:
+            self.selected_object.add_point(point)
+        else:
+            command = AddPointCommand(self, object, point)
+            self.main_window.undo_stack.push(command)
 
     def selection_update(self, object=None):
 
@@ -790,8 +802,9 @@ class VispyCanvas(SceneCanvas):
         self.main_window.right_ui.update_intensity_plot()
 
     def delete_object_w_undo(self, object=None):
-        command = DeleteObjectCommand(self.data_handler, object)
-        self.main_window.undo_stack.push(command)
+        if object is not None or self.selected_object is not None:
+            command = DeleteObjectCommand(self.data_handler, object)
+            self.main_window.undo_stack.push(command)
 
     def select(self, obj):
         self.unselect()
@@ -1109,13 +1122,14 @@ class AddPointCommand(QUndoCommand):
     def __init__(self, vispy_canvas, object, point):
         super().__init__()
         self.object = object
-        self.add_index = object.control_points.index(object.selected_cp)
+        self.continue_adding_points = object.continue_adding_points
+        self.add_index = object.get_selected_index() + 1
         self.point = point
         self.vispy_canvas = vispy_canvas
-        self.continue_adding_points = object.continue_adding_points
 
     def undo(self):
         # Hide the object
+        self.object.continue_adding_points = False
         self.vispy_canvas.data_handler.logger.debug(
             f"Undoing adding point at index {self.add_index}"
         )

@@ -755,12 +755,15 @@ class LineControlPoints(Compound):
         return self._length
     
     def add_point(self, point: np.ndarray, index=None):
+        """Adds a new control point to the list of control points at index, 
+        or after selected_cp if no index is given."""
         if self.continue_adding_points:
             if (len(self.control_points) < self.num_points 
                 or self.num_points == 0):
                 # index of current cp to insert new point after it
                 if index is None:
-                    index = self.control_points.index(self.selected_cp)
+                    index = self.get_selected_index()+1
+                print(f"adding point at index {index}")
                 self.coords = np.vstack((self.coords[:index], point, self.coords[index:]))
                 c_point = Markers(parent=self,
                                   pos=np.array([point], dtype=np.float32),
@@ -769,7 +772,7 @@ class LineControlPoints(Compound):
                                   size=self.marker_size,
                 )
                 c_point.interactive = True
-                self.control_points.insert(index + 1, c_point)
+                self.control_points.insert(index, c_point)
                 
                 # make the new marker the selected 
                 self.select(True, c_point)
@@ -782,22 +785,25 @@ class LineControlPoints(Compound):
         self.parent.update_from_controlpoints()
 
     def remove_point(self, index=None):
-        """Removes the selected control point from the list of control points.
+        """Removes point at index from the list of control points
+        or the selected point if no index is given.
         """
+        print("remove", len(self.control_points), len(self.coords))
         # select the proper control point by index
         if index is not None:
             self.selected_cp = self.control_points[index]
         # check if there are more than 2 control points
         if self.selected_cp is not None and len(self.control_points) > 2:
-            index = self.control_points.index(self.selected_cp)
+            index = self.get_selected_index()
             self.selected_cp.parent = None
             self.selected_cp = self.control_points[index - 1]
+            # remove control point and corresponding coordinate
             del self.control_points[index]
-            # remove the corresponding coordinate
             self.coords = np.delete(self.coords, index, axis=0)
         
         self.update_points()
         self.parent.update_from_controlpoints()
+        print("remove end", len(self.control_points), len(self.coords))
 
     def get_selected_index(self):
         return self.control_points.index(self.selected_cp)
