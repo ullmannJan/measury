@@ -1,9 +1,8 @@
 import numpy as np
 from scipy.ndimage import map_coordinates
 
-from vispy.scene.visuals import Compound, Markers, Rectangle, Ellipse, Line, Arrow
+from vispy.scene.visuals import Compound, Markers, Rectangle, Ellipse, Line, Arrow, Polygon
 from vispy.visuals.transforms import MatrixTransform, linear
-from vispy.visuals import ArrowVisual
 
 
 # Compound from vispy.scene.visuals
@@ -20,7 +19,7 @@ class ControlPoints(Compound):
         self.opposed_cp = None
 
         self.edge_color = "black"
-        self.face_color = (1, 1, 1, 0.5)
+        self.face_color = (1, 1, 1, 0.2)
         self.marker_size = 8
 
         # Markers from vispy.scene.visuals
@@ -243,7 +242,6 @@ class ControlPoints(Compound):
             # if self.control_points.index(self.selected_cp)%2 == 0:
             self._angle = angle - self.parent.drag_reference_angle
             self.update_points()
-            self.parent.update_from_controlpoints()
             self.parent.update_transform()
 
     def visible(self, v):
@@ -308,6 +306,11 @@ class EditVisual(Compound):
             case ("LineControlPoints", int()):
                 _, num_points = control_points
                 self.control_points = LineControlPoints(
+                    parent=self, num_points=num_points
+                )
+            case ("PolygonControlPoints", int()):
+                _, num_points = control_points
+                self.control_points = PolygonControlPoints(
                     parent=self, num_points=num_points
                 )
             case _:
@@ -618,7 +621,7 @@ class EditRectVisual(EditVisual):
         self.form.border_color = border_color
         self.arrow.color = border_color
         self.arrow.arrow_color = border_color
-        
+
 
 class EditEllipseVisual(EditVisual):
     """ Visual representation of an ellipse object with control points.
@@ -997,3 +1000,211 @@ class EditLineVisual(EditVisual):
             count += m
 
         return intensity_profiles, evaluation_coords
+
+
+class PolygonControlPoints(Compound):
+
+    def __init__(self, parent, num_points, angle=0.0, *args, **kwargs):
+        Compound.__init__(self, [], *args, **kwargs)
+        self.unfreeze()
+        self.parent = parent
+        self.num_points = num_points
+        self._angle = angle  # in radians
+
+        self.coords = np.zeros((self.num_points, 2), dtype=np.float64)
+        self.coords[1] = [0, 50]
+        self.coords[2] = [50, 0]
+        self.selected_cp = None
+
+        self.edge_color = "black"
+        self.face_color = (1, 1, 1, 0.2)
+        self.marker_size = 8
+
+        self.control_points = [Markers(parent=self) for i in range(0, self.num_points)]
+        for cpoint, coord in zip(self.control_points, self.coords):
+            cpoint.set_data(
+                pos=np.array([coord], dtype=np.float32),
+                edge_color=self.edge_color,
+                face_color=self.face_color,
+                size=self.marker_size,
+            )
+            cpoint.interactive = True
+
+        self.transform = linear.STTransform(translate=(0, 0, -2))
+
+        self.freeze()
+
+    def update_points(self):
+        print(self._angle)
+
+        # rotate control points based on _angle
+        # for i, coord in enumerate(self.coords):
+        #     self.coords[i] = rotate(coord, self._angle)
+
+        for cpoint, coord in zip(self.control_points, self.coords):
+            cpoint.set_data(
+                pos=np.array([coord]),
+                edge_color=self.edge_color,
+                face_color=self.face_color,
+                size=self.marker_size,
+            )
+
+    def select(self, val, obj=None):
+        self.visible(val)
+        self.selected_cp = None
+
+        if obj is not None:
+            for c in self.control_points:
+                if c == obj:
+                    self.selected_cp = c
+
+    def start_move(self, start):
+        self.parent.start_move(start)
+
+    def move(self, end, *args, **kwargs):
+        if not self.parent.editable:
+            return
+        if self.selected_cp is not None:
+            index = self.control_points.index(self.selected_cp)
+            self.coords[index] = end[0:2]
+
+            self.update_points()
+            self.parent.update_from_controlpoints()
+
+    def rotate(self, angle):
+        if self.parent.editable:
+            # if self.control_points.index(self.selected_cp)%2 == 0:
+            self._angle = angle - self.parent.drag_reference_angle
+            self.parent.update_transform()
+            
+            self.update_points()
+
+    @property
+    def angle(self):
+        return self._angle
+
+    @angle.setter
+    def angle(self, val):
+        self._angle = val
+        self.update_points()
+
+    def visible(self, v):
+        for c in self.control_points:
+            c.visible = v
+
+    def set_coords(self, coords):
+        self.coords = coords
+        self.update_points()
+
+    def get_coords(self):
+        return self.coords.copy()
+    
+    def get_center(self):
+        return np.mean(self.coords, axis=0)
+
+    def set_center(self, val):
+        shift = val - self.get_center()
+        self.coords += shift
+
+        self.update_points()
+
+    @property
+    def center(self):
+        return self.get_center()
+    
+    def delete(self):
+        self.parent.delete()
+        del self
+
+
+class EditPolygonVisual(EditVisual):
+    def __init__(self, num_points=3, coords=None, *args, **kwargs):
+
+        
+        # if num_points < 3:
+        #     raise ValueError("Polygon needs at least 3 points.")
+
+        EditVisual.__init__(self, 
+                            control_points=("PolygonControlPoints", num_points), 
+                            *args, **kwargs)
+        self.unfreeze()
+
+        # just in case one wants to parse the coords directly
+        if coords is not None:
+            self.coords = coords
+
+        self.num_points = num_points
+        self.form = Polygon(
+            pos=self.coords,
+            border_method='gl',
+            border_width=2,
+            parent=self,
+        )
+        
+        self.form.interactive = True
+
+        color = self.settings.value("graphics/object_color").getRgb()
+        self.form.color = tuple([value / 255 for value in color])
+        border_color = self.settings.value("graphics/object_border_color").getRgb()
+        self.form.border_color = tuple([value / 255 for value in border_color])
+
+        self.freeze()
+        self.add_subvisual(self.form)
+        self.rotate(self.angle)
+
+    def set_center(self, val):
+        self.control_points.set_center(val)
+        self.form.pos = self.control_points.get_coords()
+
+    def update_from_controlpoints(self):
+        try:
+            self.form.pos = self.control_points.get_coords()
+        except ValueError:
+            None
+        try:
+            self.angle = self.control_points.angle
+            self.update_transform()
+        except ValueError:
+            None
+
+    def output_properties(self):
+
+        return dict(
+            center=(self.control_points.get_center(), "px"),
+            angle=(np.rad2deg(self.control_points._angle), "°"),
+        )
+
+    def update_property(self, prop, val, scaling_factor=None):
+        if scaling_factor is None:
+            scaling_factor = 1
+        match prop:
+            case "center":
+                self.set_center(val / scaling_factor)
+            case "angle":
+                self.angle = np.deg2rad(val)
+                self.update_transform()
+    
+    def get_modifiable_properties(self):
+        return ["center", "angle"]
+
+    def save(self):
+        return dict(coords=self.control_points.get_coords(), angle=self.angle)
+
+    def update_colors(self, color, border_color):
+        self.form.color = color
+        self.form.border_color = border_color
+
+    @property
+    def coords(self):
+        return self.control_points.coords
+
+    @coords.setter
+    def coords(self, coords):
+        self.control_points.set_coords(coords)
+
+    def move(self, end, *args, **kwargs):
+        if self.editable:
+            new_center = end[0:2] - self.drag_reference
+            self.set_center(new_center)
+            self.update_from_controlpoints()
+        

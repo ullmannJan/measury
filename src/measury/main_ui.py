@@ -43,7 +43,7 @@ class MainUI(QWidget):
         self.right_ui = main_window.right_ui
 
         self.layout = QVBoxLayout(self)
-        self.setMinimumWidth(175)
+        self.setMinimumWidth(250)
 
         # image settings
         self.image_box = QGroupBox("Image Settings", self)
@@ -67,7 +67,7 @@ class MainUI(QWidget):
         self.tools_edit_box = QGroupBox("Edit", self)
         self.tools_edit_layout = QHBoxLayout()
         self.tools_create_box = QGroupBox("Create", self)
-        self.tools_create_layout = QHBoxLayout()
+        self.tools_create_layout = QVBoxLayout()
         self.tools_scaling_box = QGroupBox("Scaling", self)
         self.tools_scaling_layout = QVBoxLayout()
 
@@ -80,27 +80,33 @@ class MainUI(QWidget):
         tools_create["angle"] = QPushButton("angle", self)
         tools_create["rectangle"] = QPushButton("rectangle", self)
         tools_create["circle"] = QPushButton("circle", self)
+        tools_create["polygon"] = QPushButton("polygon", self)
         tools_scaling = dict()
         tools_scaling["scale"] = QPushButton("identify scaling", self)
         tools_scaling["scale"].clicked.connect(self.automatic_scaling)
 
         # merge dicts
-        tools = tools_edit | tools_create | tools_scaling
+        self.tools = tools_edit | tools_create | tools_scaling
 
-        self.tools = QButtonGroup(self)
+        self.tools_buttons = QButtonGroup(self)
 
-        for i, tool in enumerate(tools.values()):
+        for i, tool in enumerate(self.tools.values()):
             tool.setCheckable(True)
-            self.tools.addButton(tool, id=i)
-        self.tools.button(0).setChecked(True)
+            self.tools_buttons.addButton(tool, id=i)
+        self.tools_buttons.button(0).setChecked(True)
 
         for tool in tools_edit.values():
             self.tools_edit_layout.addWidget(tool)
         self.tools_edit_box.setLayout(self.tools_edit_layout)
         self.layout.addWidget(self.tools_edit_box)
 
-        for tool in tools_create.values():
-            self.tools_create_layout.addWidget(tool)
+        tools_create_list = tools_create.values()
+        # create 3 columns for the create tools
+        for i, t in enumerate(tools_create_list):
+            if i % 3 == 0:
+                tools_create_layout = QHBoxLayout()
+                self.tools_create_layout.addLayout(tools_create_layout)
+            tools_create_layout.addWidget(t)
         self.tools_create_box.setLayout(self.tools_create_layout)
         self.layout.addWidget(self.tools_create_box)
 

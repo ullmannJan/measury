@@ -12,6 +12,8 @@ from .drawable_objects import (
     ControlPoints,
     EditLineVisual,
     LineControlPoints,
+    EditPolygonVisual,
+    PolygonControlPoints,
 )
 
 class VispyCanvas(SceneCanvas):
@@ -184,8 +186,8 @@ class VispyCanvas(SceneCanvas):
                 #  sequence by clicking
                 self.main_ui.select_file()
             elif event.button == 1:
-                match self.main_ui.tools.checkedButton().text(): 
-                    case "line" | "circle" | "rectangle" | "angle" | "edit":
+                match self.main_ui.tools_buttons.checkedButton().text(): 
+                    case "line" | "circle" | "rectangle" | "angle" | "polygon" | "edit":
                         # redo move object command to save current location
                         if self.current_move is not None:
                             # if object was moved, put it on undo stack
@@ -215,7 +217,7 @@ class VispyCanvas(SceneCanvas):
                 )
 
             else:
-                match self.main_ui.tools.checkedButton().text():
+                match self.main_ui.tools_buttons.checkedButton().text():
 
                     case "move":
                         # enable panning
@@ -258,7 +260,7 @@ class VispyCanvas(SceneCanvas):
                                 # update ui to display properties of selected object
                                 self.selection_update()
 
-                    case "line" | "circle" | "rectangle" | "angle" | "edit":
+                    case "line" | "circle" | "rectangle" | "angle" | "polygon" | "edit":
                         # disable panning
                         self.view.camera._viewbox.events.mouse_move.disconnect(
                             self.view.camera.viewbox_mouse_event
@@ -293,7 +295,7 @@ class VispyCanvas(SceneCanvas):
                             # create new object:
                             if self.selected_object is None:
 
-                                match self.main_ui.tools.checkedButton().text():
+                                match self.main_ui.tools_buttons.checkedButton().text():
                                     case "line":
                                         new_object = EditLineVisual(
                                             parent=self.view.scene,
@@ -315,6 +317,11 @@ class VispyCanvas(SceneCanvas):
                                             parent=self.view.scene,
                                             num_points=3,
                                         )
+                                    case "polygon":
+                                        new_object = EditPolygonVisual(
+                                            # coords=[[0, 0], [0, 100], [300, 123]],
+                                            settings=self.main_window.settings,
+                                            parent=self.view.scene)
                                     case "edit":
                                         return
                                 # dont show object before it is added to drawing_data
@@ -585,8 +592,8 @@ class VispyCanvas(SceneCanvas):
                         tr = self.scene.node_transform(self.selected_object)
                         pos = tr.map(event.pos)
 
-                        if self.main_ui.tools.checkedButton().text() in (
-                            "line", "circle", "rectangle", "angle", "edit"
+                        if self.main_ui.tools_buttons.checkedButton().text() in (
+                            "line", "circle", "rectangle", "angle", "edit", "polygon"
                         ):
 
                             if "Shift" in modifiers and not isinstance(
@@ -689,7 +696,7 @@ class VispyCanvas(SceneCanvas):
         return self.get_full_object(self.selected_object)
     
     def get_full_object(self, obj):
-        if isinstance(obj, (ControlPoints, LineControlPoints)):
+        if isinstance(obj, (ControlPoints, LineControlPoints, PolygonControlPoints)):
             return obj.parent
         return obj
 
@@ -796,7 +803,7 @@ class MoveObjectCommand(QUndoCommand):
 
         # for redoing
         self.redoing = False
-        if isinstance(self.object, EditLineVisual):
+        if isinstance(self.object, (EditLineVisual, EditPolygonVisual)):
             self.coords = None
             self.old_coords = object.coords.copy()
         elif isinstance(self.object, (EditEllipseVisual, EditRectVisual)):
@@ -815,7 +822,7 @@ class MoveObjectCommand(QUndoCommand):
         self.vispy_instance.data_handler.logger.info("Undoing move object")
 
         # save state before undoing move
-        if isinstance(self.object, EditLineVisual):
+        if isinstance(self.object, (EditLineVisual, EditPolygonVisual)):
             self.object.coords = self.old_coords
         elif isinstance(self.object, (EditEllipseVisual, EditRectVisual)):
 
@@ -836,7 +843,7 @@ class MoveObjectCommand(QUndoCommand):
         # in the first creation we don't need to set it as it is already set
         # but we need to save the state
         if not self.redoing:
-            if isinstance(self.object, EditLineVisual):
+            if isinstance(self.object, (EditLineVisual, EditPolygonVisual)):
                 self.coords = self.object.coords.copy()
             elif isinstance(self.object, (EditEllipseVisual, EditRectVisual)):
                 self.center = self.object.center.copy()
@@ -846,7 +853,7 @@ class MoveObjectCommand(QUndoCommand):
             self.redoing = True
         # move object on all redo operations except the first one
         else:
-            if isinstance(self.object, EditLineVisual):
+            if isinstance(self.object, (EditLineVisual, EditPolygonVisual)):
                 self.object.coords = self.coords
             elif isinstance(self.object, (EditEllipseVisual, EditRectVisual)):
                 self.object.set_center(self.center)
@@ -858,7 +865,7 @@ class MoveObjectCommand(QUndoCommand):
         self.vispy_instance.selection_update()
         
     def check_movement(self):
-        if isinstance(self.object, EditLineVisual):
+        if isinstance(self.object, (EditLineVisual, EditPolygonVisual)):
             return (self.old_coords != self.object.coords).any()
         elif isinstance(self.object, (EditEllipseVisual, EditRectVisual)):
             return (
