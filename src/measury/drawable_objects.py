@@ -308,11 +308,6 @@ class EditVisual(Compound):
                 self.control_points = LineControlPoints(
                     parent=self, num_points=num_points
                 )
-            case ("PolygonControlPoints", int()):
-                _, num_points = control_points
-                self.control_points = PolygonControlPoints(
-                    parent=self, num_points=num_points
-                )
             case _:
                 self.control_points = ControlPoints(parent=self)
                 self.angle = angle
@@ -720,23 +715,24 @@ class EditEllipseVisual(EditVisual):
 
 class LineControlPoints(Compound):
 
+    continue_adding_points: bool = True
+    edge_color:str = "black"
+    face_color:tuple = (1, 1, 1, 0.2)
+    marker_size:int = 8
+    _length:float = 0.0
+
     def __init__(self, parent, num_points=2, *args, **kwargs):
         Compound.__init__(self, [], *args, **kwargs)
         self.unfreeze()
         self.parent = parent
-        self.num_points = num_points
-        self._length = 0.0
-        self.coords = np.zeros((self.num_points, 2), dtype=np.float64)
-        if self.num_points > 2:
-            self.coords[1:-2] = [0, 50]
-            self.coords[-1] = [50, 0]
+        self.num_points:int = num_points
+        
+        # if numpoints = 0 we can attach points but start with a simple line
+        self.coords = np.zeros((1, 2), dtype=np.float64)
+            
         self.selected_cp = None
 
-        self.edge_color = "black"
-        self.face_color = (1, 1, 1, 0.2)
-        self.marker_size = 8
-
-        self.control_points = [Markers(parent=self) for i in range(0, self.num_points)]
+        self.control_points = [Markers(parent=self) for i in range(0, len(self.coords))]
         for cpoint, coord in zip(self.control_points, self.coords):
             cpoint.set_data(
                 pos=np.array([coord], dtype=np.float32),
@@ -745,7 +741,7 @@ class LineControlPoints(Compound):
                 size=self.marker_size,
             )
             cpoint.interactive = True
-
+        
         self.transform = linear.STTransform(translate=(0, 0, -2))
 
         self.freeze()
@@ -757,6 +753,54 @@ class LineControlPoints(Compound):
         if len(self._length) == 1:
             self._length = self._length[0]
         return self._length
+    
+    def add_point(self, point: np.ndarray, index=None):
+        if self.continue_adding_points:
+            if (len(self.control_points) < self.num_points 
+                or self.num_points == 0):
+                # index of current cp to insert new point after it
+                if index is None:
+                    index = self.control_points.index(self.selected_cp)
+                self.coords = np.vstack((self.coords[:index], point, self.coords[index:]))
+                c_point = Markers(parent=self,
+                                  pos=np.array([point], dtype=np.float32),
+                                  edge_color=self.edge_color,
+                                  face_color=self.face_color,
+                                  size=self.marker_size,
+                )
+                c_point.interactive = True
+                self.control_points.insert(index + 1, c_point)
+                
+                # make the new marker the selected 
+                self.select(True, c_point)
+
+            else:
+                # self.coords[-1] = point
+                self.continue_adding_points = False   
+        
+        self.update_points()
+        self.parent.update_from_controlpoints()
+
+    def remove_point(self, index=None):
+        """Removes the selected control point from the list of control points.
+        """
+        # select the proper control point by index
+        if index is not None:
+            self.selected_cp = self.control_points[index]
+        # check if there are more than 2 control points
+        if self.selected_cp is not None and len(self.control_points) > 2:
+            index = self.control_points.index(self.selected_cp)
+            self.selected_cp.parent = None
+            self.selected_cp = self.control_points[index - 1]
+            del self.control_points[index]
+            # remove the corresponding coordinate
+            self.coords = np.delete(self.coords, index, axis=0)
+        
+        self.update_points()
+        self.parent.update_from_controlpoints()
+
+    def get_selected_index(self):
+        return self.control_points.index(self.selected_cp)
 
     def update_points(self):
 
@@ -773,23 +817,20 @@ class LineControlPoints(Compound):
         self.selected_cp = None
 
         if obj is not None:
-            for c in self.control_points:
-                if c == obj:
-                    self.selected_cp = c
+            index = self.control_points.index(obj)
+            if index != -1:
+                self.selected_cp = self.control_points[index]
 
     def start_move(self, start):
         self.parent.start_move(start)
 
     def move(self, end, *args, **kwargs):
+
         if not self.parent.editable:
             return
         if self.selected_cp is not None:
             index = self.control_points.index(self.selected_cp)
             self.coords[index] = end[0:2]
-            # if self.selected_cp == self.control_points[0]:
-            #     self.start = end
-            # elif self.selected_cp == self.control_points[1]:
-            #     self.end = end
 
             self.update_points()
             self.parent.update_from_controlpoints()
@@ -813,8 +854,7 @@ class LineControlPoints(Compound):
     def set_center(self, val):
         shift = val - self.get_center()
         self.coords += shift
-        # self.start += shift
-        # self.end += shift
+
         self.update_points()
 
     def delete(self):
@@ -908,20 +948,21 @@ class EditLineVisual(EditVisual):
         self._selectable = val
 
     def select_creation_controlpoint(self):
-        self.control_points.select(True, self.control_points.control_points[1])
+        self.control_points.select(True, self.control_points.control_points[0])
 
     def set_center(self, val):
         self.control_points.set_center(val[0:2])
 
     def output_properties(self):
-
-        if self.control_points.num_points == 2:
+        if len(self.control_points.control_points) < 2:
+            return dict()
+        if len(self.control_points.control_points) == 2:
             angle = self.angles
         else:
-            angle = abs(np.diff(self.angles))
-
-            if angle > 180:
-                angle = 360 - angle
+            angle = np.abs(np.diff(self.angles))
+            for i, a in enumerate(angle):
+                if a > 180:
+                    angle[i] = 360 - a
 
         return dict(length=[self.length, "px"], angle=[angle[0], "°"])
 
@@ -1001,131 +1042,15 @@ class EditLineVisual(EditVisual):
 
         return intensity_profiles, evaluation_coords
 
-
-class PolygonControlPoints(Compound):
-
-    def __init__(self, parent, num_points, angle=0.0, *args, **kwargs):
-        Compound.__init__(self, [], *args, **kwargs)
-        self.unfreeze()
-        self.parent = parent
-        self.num_points = num_points
-        self._angle = angle  # in radians
-
-        self.coords = np.zeros((self.num_points, 2), dtype=np.float64)
-        self.coords[1] = [0, 50]
-        self.coords[2] = [50, 0]
-        self.selected_cp = None
-
-        self.edge_color = "black"
-        self.face_color = (1, 1, 1, 0.2)
-        self.marker_size = 8
-
-        self.control_points = [Markers(parent=self) for i in range(0, self.num_points)]
-        for cpoint, coord in zip(self.control_points, self.coords):
-            cpoint.set_data(
-                pos=np.array([coord], dtype=np.float32),
-                edge_color=self.edge_color,
-                face_color=self.face_color,
-                size=self.marker_size,
-            )
-            cpoint.interactive = True
-
-        self.transform = linear.STTransform(translate=(0, 0, -2))
-
-        self.freeze()
-
-    def update_points(self):
-        print(self._angle)
-
-        # rotate control points based on _angle
-        # for i, coord in enumerate(self.coords):
-        #     self.coords[i] = rotate(coord, self._angle)
-
-        for cpoint, coord in zip(self.control_points, self.coords):
-            cpoint.set_data(
-                pos=np.array([coord]),
-                edge_color=self.edge_color,
-                face_color=self.face_color,
-                size=self.marker_size,
-            )
-
-    def select(self, val, obj=None):
-        self.visible(val)
-        self.selected_cp = None
-
-        if obj is not None:
-            for c in self.control_points:
-                if c == obj:
-                    self.selected_cp = c
-
-    def start_move(self, start):
-        self.parent.start_move(start)
-
-    def move(self, end, *args, **kwargs):
-        if not self.parent.editable:
-            return
-        if self.selected_cp is not None:
-            index = self.control_points.index(self.selected_cp)
-            self.coords[index] = end[0:2]
-
-            self.update_points()
-            self.parent.update_from_controlpoints()
-
-    def rotate(self, angle):
-        if self.parent.editable:
-            # if self.control_points.index(self.selected_cp)%2 == 0:
-            self._angle = angle - self.parent.drag_reference_angle
-            self.parent.update_transform()
-            
-            self.update_points()
-
-    @property
-    def angle(self):
-        return self._angle
-
-    @angle.setter
-    def angle(self, val):
-        self._angle = val
-        self.update_points()
-
-    def visible(self, v):
-        for c in self.control_points:
-            c.visible = v
-
-    def set_coords(self, coords):
-        self.coords = coords
-        self.update_points()
-
-    def get_coords(self):
-        return self.coords.copy()
-    
-    def get_center(self):
-        return np.mean(self.coords, axis=0)
-
-    def set_center(self, val):
-        shift = val - self.get_center()
-        self.coords += shift
-
-        self.update_points()
-
-    @property
-    def center(self):
-        return self.get_center()
-    
-    def delete(self):
-        self.parent.delete()
-        del self
-
-
-class EditPolygonVisual(EditVisual):
-    def __init__(self, num_points=3, coords=None, *args, **kwargs):
+class EditPolygonVisual(EditLineVisual):
+    def __init__(self, num_points=0, coords=None, *args, **kwargs):
 
         
         # if num_points < 3:
         #     raise ValueError("Polygon needs at least 3 points.")
 
         EditVisual.__init__(self, 
-                            control_points=("PolygonControlPoints", num_points), 
+                            control_points=("LineControlPoints", num_points), 
                             *args, **kwargs)
         self.unfreeze()
 
@@ -1133,7 +1058,6 @@ class EditPolygonVisual(EditVisual):
         if coords is not None:
             self.coords = coords
 
-        self.num_points = num_points
         self.form = Polygon(
             pos=self.coords,
             border_method='gl',
@@ -1150,7 +1074,6 @@ class EditPolygonVisual(EditVisual):
 
         self.freeze()
         self.add_subvisual(self.form)
-        self.rotate(self.angle)
 
     def set_center(self, val):
         self.control_points.set_center(val)
