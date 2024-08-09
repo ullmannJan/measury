@@ -185,6 +185,8 @@ class DataHandler:
         with open(filename, "wb") as save_file:
             pickle.dump(output, save_file, pickle.HIGHEST_PROTOCOL, **kwargs)
 
+        self.main_window.main_ui.save_window.close()
+        
     def load_into_view(self, drawing_data, vispy_instance):
         """
         Loads the drawing data into the view and the drawing_data dictionary.
@@ -282,7 +284,6 @@ class DataHandler:
             if structure_data:
                 for key, val in structure_data.items():
                     for obj_type, obj_data in val:
-                        print(obj_type, obj_data)
                         new_object = obj_type(
                             settings=self.main_window.settings,
                             **obj_data,

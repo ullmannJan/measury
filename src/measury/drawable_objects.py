@@ -439,7 +439,6 @@ class EditVisual(Compound):
 
     def delete(self):
         self.parent = None
-        del self
 
     def update_colors(self, color, border_color):
         pass
@@ -869,7 +868,6 @@ class LineControlPoints(Compound):
 
     def delete(self):
         self.parent.delete()
-        del self
 
 
 class EditLineVisual(EditVisual):
@@ -1052,93 +1050,64 @@ class EditLineVisual(EditVisual):
             count += m
 
         return intensity_profiles, evaluation_coords
-
+    
 class EditPolygonVisual(EditLineVisual):
     def __init__(self, num_points=0, coords=None, *args, **kwargs):
 
-        
-        # if num_points < 3:
-        #     raise ValueError("Polygon needs at least 3 points.")
-
-        EditVisual.__init__(self, 
-                            control_points=("LineControlPoints", num_points), 
+        EditLineVisual.__init__(self, 
+                            num_points=num_points,
+                            coords=coords,
                             *args, **kwargs)
-        self.unfreeze()
-
-        # just in case one wants to parse the coords directly
-        if coords is not None:
-            self.coords = coords
-
-        self.form = Polygon(
-            pos=self.coords,
-            border_method='gl',
-            border_width=2,
-            parent=self,
-        )
+        
+    def swap_form(self):
+        self.remove_subvisual(self.form)
+        self.form.parent = None
+        if len(self.coords) < 3 and isinstance(self.form, Polygon):
+            print("swap to line")
+            
+            self.form = Line(
+                pos=self.coords,
+                width=self.line_width,
+                color=self.line_color,
+                method="gl",
+                antialias=True,
+                parent=self,
+            )        
+                    
+        elif len(self.coords) >= 3 and isinstance(self.form, Line):
+            print("swap to polygon")
+            self.form = Polygon(
+                pos=self.corrected_coords(),
+                border_method='gl',
+                border_width=2,
+                parent=self,
+            )
+            
+            color = self.settings.value("graphics/object_color").getRgb()
+            self.form.color = tuple([value / 255 for value in color])
+            border_color = self.settings.value("graphics/object_border_color").getRgb()
+            self.form.border_color = tuple([value / 255 for value in border_color])
+        
+        self.form.parent=self
+        self.add_subvisual(self.form)  
         
         self.form.interactive = True
-
-        color = self.settings.value("graphics/object_color").getRgb()
-        self.form.color = tuple([value / 255 for value in color])
-        border_color = self.settings.value("graphics/object_border_color").getRgb()
-        self.form.border_color = tuple([value / 255 for value in border_color])
-
-        self.freeze()
-        self.add_subvisual(self.form)
-
-    def set_center(self, val):
-        self.control_points.set_center(val)
-        self.form.pos = self.control_points.get_coords()
-
-    def update_from_controlpoints(self):
-        try:
-            self.form.pos = self.control_points.get_coords()
-        except ValueError:
-            None
-        try:
-            self.angle = self.control_points.angle
-            self.update_transform()
-        except ValueError:
-            None
-
-    def output_properties(self):
-
-        return dict(
-            center=(self.control_points.get_center(), "px"),
-            angle=(np.rad2deg(self.control_points._angle), "°"),
-        )
-
-    def update_property(self, prop, val, scaling_factor=None):
-        if scaling_factor is None:
-            scaling_factor = 1
-        match prop:
-            case "center":
-                self.set_center(val / scaling_factor)
-            case "angle":
-                self.angle = np.deg2rad(val)
-                self.update_transform()
+        
+    def corrected_coords(self):
+        """check if two consecutive points are the same and return a view without them"""
+        mask = np.any(self.coords[1:] != self.coords[:-1], axis=1)
+        corrected = self.coords[np.insert(mask, 0, True)]
+        if len(corrected) > 2:
+            return corrected
+        return self.coords
     
-    def get_modifiable_properties(self):
-        return ["center", "angle"]
-
-    def save(self):
-        return dict(coords=self.control_points.get_coords(), angle=self.angle)
-
-    def update_colors(self, color, border_color):
-        self.form.color = color
-        self.form.border_color = border_color
-
-    @property
-    def coords(self):
-        return self.control_points.coords
-
-    @coords.setter
-    def coords(self, coords):
-        self.control_points.set_coords(coords)
-
-    def move(self, end, *args, **kwargs):
-        if self.editable:
-            new_center = end[0:2] - self.drag_reference
-            self.set_center(new_center)
-            self.update_from_controlpoints()
+    def update_from_controlpoints(self):
+        self.swap_form()
+        if len(self.coords) < 3:
+            super().update_from_controlpoints()
+        else:
+            self.form.pos = self.corrected_coords()
+                                    
+    def intensity_profile(self, image, n=100, **kwargs):
+        pass
         

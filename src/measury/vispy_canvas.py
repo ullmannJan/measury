@@ -186,7 +186,7 @@ class VispyCanvas(SceneCanvas):
                 self.main_ui.select_file()
             elif event.button == 1:
                 match self.main_ui.tools_buttons.checkedButton().text(): 
-                    case "line" | "circle" | "rectangle" | "angle" | "multi-line" | "polygon" | "edit":
+                    case "line" | "ellipse" | "rectangle" | "angle" | "multi-line" | "polygon" | "edit":
                         
                         # multi-line is not finished yet
                         if isinstance(self.selected_object, LineControlPoints):
@@ -203,6 +203,7 @@ class VispyCanvas(SceneCanvas):
                             # if object was moved, put it on undo stack
                             if self.current_move.check_movement():
                                 self.main_window.undo_stack.push(self.current_move)
+                        
 
     def on_mouse_press(self, event):
         # transform so that coordinates start at 0 in self.view window
@@ -266,16 +267,11 @@ class VispyCanvas(SceneCanvas):
 
                                 self.selected_object.select(True, obj=selected)
                                 self.selected_object.start_move(pos)
-                                
-                                if isinstance(self.selected_object, EditLineVisual):
-                                    print(self.selected_object.control_points.control_points)
-                                    print(self.selected_object.control_points.coords)
-                                    
-
+                        
                                 # update ui to display properties of selected object
                                 self.selection_update()
 
-                    case "line" | "circle" | "rectangle" | "angle" | "multi-line" | "polygon" | "edit":
+                    case "line" | "ellipse" | "rectangle" | "angle" | "multi-line" | "polygon" | "edit":
                         # disable panning
                         self.view.camera._viewbox.events.mouse_move.disconnect(
                             self.view.camera.viewbox_mouse_event
@@ -327,7 +323,7 @@ class VispyCanvas(SceneCanvas):
                                             settings=self.main_window.settings,
                                             num_points=2,
                                         )
-                                    case "circle":
+                                    case "ellipse":
                                         new_object = EditEllipseVisual(
                                             parent=self.view.scene,
                                             settings=self.main_window.settings,
@@ -351,7 +347,6 @@ class VispyCanvas(SceneCanvas):
                                         )
                                     case "polygon":
                                         new_object = EditPolygonVisual(
-                                            # coords=[[0, 0], [0, 100], [300, 123]],
                                             settings=self.main_window.settings,
                                             parent=self.view.scene)
                                     case "edit":
@@ -631,7 +626,7 @@ class VispyCanvas(SceneCanvas):
 
 
     def on_mouse_move(self, event):
-                
+        
         # transform so that coordinates start at 0 in self.view window
         tr = self.scene.node_transform(self.view)
         # only activate when over self.view by looking
@@ -656,7 +651,7 @@ class VispyCanvas(SceneCanvas):
                         pos = tr.map(event.pos)
 
                         if self.main_ui.tools_buttons.checkedButton().text() in (
-                            "line", "circle", "rectangle", "angle", "edit", "polygon", "multi-line"
+                            "line", "ellipse", "rectangle", "angle", "edit", "polygon", "multi-line"
                         ):
 
                             if "Shift" in modifiers and not isinstance(
