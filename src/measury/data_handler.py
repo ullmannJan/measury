@@ -282,6 +282,7 @@ class DataHandler:
             if structure_data:
                 for key, val in structure_data.items():
                     for obj_type, obj_data in val:
+                        print(obj_type, obj_data)
                         new_object = obj_type(
                             settings=self.main_window.settings,
                             **obj_data,

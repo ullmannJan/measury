@@ -266,6 +266,11 @@ class VispyCanvas(SceneCanvas):
 
                                 self.selected_object.select(True, obj=selected)
                                 self.selected_object.start_move(pos)
+                                
+                                if isinstance(self.selected_object, EditLineVisual):
+                                    print(self.selected_object.control_points.control_points)
+                                    print(self.selected_object.control_points.coords)
+                                    
 
                                 # update ui to display properties of selected object
                                 self.selection_update()
@@ -626,9 +631,6 @@ class VispyCanvas(SceneCanvas):
 
 
     def on_mouse_move(self, event):
-
-        # if isinstance(self.selected_object, LineControlPoints):
-        #     print(len(self.selected_object.coords))
                 
         # transform so that coordinates start at 0 in self.view window
         tr = self.scene.node_transform(self.view)

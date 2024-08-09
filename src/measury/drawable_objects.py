@@ -303,10 +303,10 @@ class EditVisual(Compound):
         self.settings = settings
 
         match control_points:
-            case ("LineControlPoints", int()):
-                _, num_points = control_points
+            case ("LineControlPoints", int(), _):
+                _, num_points, coords = control_points
                 self.control_points = LineControlPoints(
-                    parent=self, num_points=num_points
+                    parent=self, num_points=num_points, coords=coords
                 )
             case _:
                 self.control_points = ControlPoints(parent=self)
@@ -721,14 +721,18 @@ class LineControlPoints(Compound):
     marker_size:int = 8
     _length:float = 0.0
 
-    def __init__(self, parent, num_points=2, *args, **kwargs):
+    def __init__(self, parent, num_points=2, coords=None, *args, **kwargs):
         Compound.__init__(self, [], *args, **kwargs)
         self.unfreeze()
         self.parent = parent
         self.num_points:int = num_points
         
         # if numpoints = 0 we can attach points but start with a simple line
-        self.coords = np.zeros((1, 2), dtype=np.float64)
+        if coords is not None:
+            self.coords = coords
+            self.continue_adding_points = False
+        else:
+            self.coords = np.zeros((1, 2), dtype=np.float64)
             
         self.selected_cp = None
 
@@ -763,7 +767,6 @@ class LineControlPoints(Compound):
             # index of current cp to insert new point after it
             if index is None:
                 index = self.get_selected_index()+1
-            print(f"adding point at index {index}")
             self.coords = np.vstack((self.coords[:index], point, self.coords[index:]))
             c_point = Markers(parent=self,
                                 pos=np.array([point], dtype=np.float32),
@@ -794,7 +797,6 @@ class LineControlPoints(Compound):
         # select the proper control point by index
         if index is not None:
             self.selected_cp = self.control_points[index]
-        print(f"removing point at index {index}")
         # check if there are more than 2 control points
         if self.selected_cp is not None and len(self.control_points) > 2:
             index = self.get_selected_index()
@@ -875,7 +877,7 @@ class EditLineVisual(EditVisual):
     def __init__(self, num_points=2, coords=None, *args, **kwargs):
 
         EditVisual.__init__(
-            self, control_points=("LineControlPoints", num_points), *args, **kwargs
+            self, control_points=("LineControlPoints", num_points, coords), *args, **kwargs
         )
         self.unfreeze()
 
@@ -884,6 +886,7 @@ class EditLineVisual(EditVisual):
         self.line_color = tuple([value / 255 for value in border_color])
         self.line_width = 3
 
+        # this is to allow loading of structures
         if coords is not None:
             self.coords = coords
 
