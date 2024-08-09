@@ -732,7 +732,7 @@ class VispyCanvas(SceneCanvas):
             self.main_window.undo_stack.push(command)
 
     def add_point_w_undo(self, object, point):
-        # we dont want to remember creating the first 2 points 
+        # we dont want to remember creating the first 2 (3 for angle) points 
         # as this is basically the creation of the object
         if (len(self.selected_object.coords) < 2 
         or (self.selected_object.num_points != 0 
