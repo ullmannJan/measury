@@ -60,6 +60,10 @@ class MainUI(QWidget):
         self.image_layout.addWidget(self.center_image_button)
         self.center_image_button.clicked.connect(self.vispy_canvas.center_image)
 
+        image_tools = dict()
+        image_tools["set_origin"] = QPushButton("Set Origin", self)
+        self.image_layout.addWidget(image_tools["set_origin"])
+
         self.image_box.setLayout(self.image_layout)
         self.layout.addWidget(self.image_box)
 
@@ -72,30 +76,31 @@ class MainUI(QWidget):
         self.tools_scaling_layout = QVBoxLayout()
 
         tools_edit = dict()
-        tools_edit["move"] = QPushButton("move", self)
-        tools_edit["select"] = QPushButton("select", self)
-        tools_edit["edit"] = QPushButton("edit", self)
+        tools_edit["move"] = QPushButton("Move", self)
+        tools_edit["select"] = QPushButton("Select", self)
+        tools_edit["edit"] = QPushButton("Edit", self)
         tools_create = dict()
-        tools_create["line"] = QPushButton("line", self)
-        tools_create["angle"] = QPushButton("angle", self)
-        tools_create["multi-line"] = QPushButton("multi-line", self)
-        tools_create["rectangle"] = QPushButton("rectangle", self)
-        tools_create["ellipse"] = QPushButton("ellipse", self)
-        tools_create["polygon"] = QPushButton("polygon", self)
+        tools_create["line"] = QPushButton("Line", self)
+        tools_create["angle"] = QPushButton("Angle", self)
+        tools_create["multi-line"] = QPushButton("Multi-Line", self)
+        tools_create["rectangle"] = QPushButton("Rectangle", self)
+        tools_create["ellipse"] = QPushButton("Ellipse", self)
+        tools_create["polygon"] = QPushButton("Polygon", self)
         tools_scaling = dict()
-        tools_scaling["scale"] = QPushButton("identify scaling", self)
+        tools_scaling["scale"] = QPushButton("Identify Scaling", self)
         tools_scaling["scale"].clicked.connect(self.automatic_scaling)
 
         # merge dicts
-        self.tools = tools_edit | tools_create | tools_scaling
+        self.tools = tools_edit | tools_create | tools_scaling | image_tools
 
+        # create button group
         self.tools_buttons = QButtonGroup(self)
-
         for i, tool in enumerate(self.tools.values()):
             tool.setCheckable(True)
             self.tools_buttons.addButton(tool, id=i)
         self.tools_buttons.button(0).setChecked(True)
 
+        # create edit layout
         for tool in tools_edit.values():
             self.tools_edit_layout.addWidget(tool)
         self.tools_edit_box.setLayout(self.tools_edit_layout)
