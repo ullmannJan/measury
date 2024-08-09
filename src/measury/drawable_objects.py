@@ -918,7 +918,7 @@ class EditLineVisual(EditVisual):
         return self.angles[0]
 
     def start_move(self, start):
-        self.drag_reference = start[0:2] - self.control_points.get_center()
+        self.drag_reference = start[:2] - self.control_points.get_center()
 
     @property
     def coords(self):
@@ -958,9 +958,6 @@ class EditLineVisual(EditVisual):
 
     def select_creation_controlpoint(self):
         self.control_points.select(True, self.control_points.control_points[0])
-
-    def set_center(self, val):
-        self.control_points.set_center(val[0:2])
 
     def output_properties(self):
         if len(self.control_points.control_points) < 2:

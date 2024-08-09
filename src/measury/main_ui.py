@@ -47,14 +47,13 @@ class MainUI(QWidget):
 
         # image settings
         self.image_box = QGroupBox("Image Settings", self)
-        self.image_layout = QVBoxLayout()
+        self.image_layout = QHBoxLayout()
 
-        self.select_image_button = QPushButton("Select File", self)
-        self.image_layout.addWidget(self.select_image_button)
-
-        self.select_image_button.clicked.connect(
-            lambda: self.select_file(file_path=None)
-        )
+        # self.select_image_button = QPushButton("Select File", self)
+        # self.image_layout.addWidget(self.select_image_button)
+        # self.select_image_button.clicked.connect(
+        #     lambda: self.select_file(file_path=None)
+        # )
 
         self.center_image_button = QPushButton("Center Image", self)
         self.image_layout.addWidget(self.center_image_button)

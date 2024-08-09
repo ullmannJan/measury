@@ -256,7 +256,6 @@ class VispyCanvas(SceneCanvas):
 
                         tr = self.scene.node_transform(self.view.scene)
                         pos = tr.map(event.pos)[:2]
-                        print(pos)
                         self.set_origin_w_undo(pos+self.origin)
 
                     case "Select":
@@ -831,21 +830,24 @@ class VispyCanvas(SceneCanvas):
             self.main_window.undo_stack.push(command)
 
     def set_origin(self, point:np.ndarray):
+        """Set the origin of the image to a given point"""
         self.data_handler.logger.debug(f"set origin to {point}")
 
+        self.move_all_objects(-(point-self.origin))
         self.origin = point 
         self.image.transform = linear.STTransform(translate=-self.origin)
-        # self.move_all_objects(-self.origin)
         self.center_image()
         # self.scene.update()
 
     def move_all_objects(self, vector:np.ndarray):
+        """Move all objects by a relative vector"""
         self.data_handler.logger.debug("move all objects")
         for structure in self.data_handler.drawing_data.keys():
             for obj in self.data_handler.drawing_data[structure]:
                 # show object
                 obj.set_center(obj.center + vector)
-        
+                obj.transform = obj.transform
+        self.scene.update()        
 
     def set_origin_w_undo(self, pos):
         command = SetOriginCommand(self, pos)
