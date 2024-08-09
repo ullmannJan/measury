@@ -734,7 +734,9 @@ class VispyCanvas(SceneCanvas):
     def add_point_w_undo(self, object, point):
         # we dont want to remember creating the first 2 points 
         # as this is basically the creation of the object
-        if len(self.selected_object.coords) < 3:
+        if (len(self.selected_object.coords) < 2 
+        or (self.selected_object.num_points != 0 
+            and len(self.selected_object.coords) < self.selected_object.num_points+1)):
             self.selected_object.add_point(point)
         else:
             command = AddPointCommand(self, object, point)
@@ -1140,8 +1142,9 @@ class AddPointCommand(QUndoCommand):
         self.vispy_canvas.data_handler.logger.debug(
             f"Undoing adding point at index {self.add_index}"
         )
-        self.point = self.object.coords[self.add_index]
-        self.object.remove_point(self.add_index)
+        if self.add_index < len(self.object.coords):
+            self.point = self.object.coords[self.add_index]
+            self.object.remove_point(self.add_index)
 
     def redo(self):
         self.vispy_canvas.data_handler.logger.debug(
