@@ -1060,10 +1060,14 @@ class EditPolygonVisual(EditLineVisual):
                             *args, **kwargs)
         
     def swap_form(self):
+        # self.form.parent = None
         self.remove_subvisual(self.form)
-        self.form.parent = None
+        # self.form.parent = None
         if len(self.coords) < 3 and isinstance(self.form, Polygon):
-            print("swap to line")
+            # remove old self.form
+            # TODO: this is ugly as hell, as it is still floating around
+            self.form.visible = False
+            # but I dont know how to remove it properly
             
             self.form = Line(
                 pos=self.coords,
@@ -1075,7 +1079,10 @@ class EditPolygonVisual(EditLineVisual):
             )        
                     
         elif len(self.coords) >= 3 and isinstance(self.form, Line):
-            print("swap to polygon")
+            # remove old self.form
+            # TODO: this is ugly as hell, as it is still floating around
+            self.form.visible = False
+            # but I dont know how to remove it properly
             self.form = Polygon(
                 pos=self.corrected_coords(),
                 border_method='gl',
@@ -1087,9 +1094,11 @@ class EditPolygonVisual(EditLineVisual):
             self.form.color = tuple([value / 255 for value in color])
             border_color = self.settings.value("graphics/object_border_color").getRgb()
             self.form.border_color = tuple([value / 255 for value in border_color])
-        
+        else:
+            self.form.parent = None
+            
         self.form.parent=self
-        self.add_subvisual(self.form)  
+        self.add_subvisual(self.form) 
         
         self.form.interactive = True
         
