@@ -81,7 +81,7 @@ class MainUI(QWidget):
         tools_create["rectangle"] = QPushButton("rectangle", self)
         tools_create["circle"] = QPushButton("circle", self)
         tools_create["multi-line"] = QPushButton("multi-line", self)
-        tools_create["polygon"] = QPushButton("polygon", self)
+        # tools_create["polygon"] = QPushButton("polygon", self)
         tools_scaling = dict()
         tools_scaling["scale"] = QPushButton("identify scaling", self)
         tools_scaling["scale"].clicked.connect(self.automatic_scaling)

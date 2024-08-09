@@ -187,11 +187,6 @@ class VispyCanvas(SceneCanvas):
             elif event.button == 1:
                 match self.main_ui.tools_buttons.checkedButton().text(): 
                     case "line" | "circle" | "rectangle" | "angle" | "multi-line" | "polygon" | "edit":
-                        # redo move object command to save current location
-                        if self.current_move is not None:
-                            # if object was moved, put it on undo stack
-                            if self.current_move.check_movement():
-                                self.main_window.undo_stack.push(self.current_move)
                         
                         # multi-line is not finished yet
                         if isinstance(self.selected_object, LineControlPoints):
@@ -199,6 +194,15 @@ class VispyCanvas(SceneCanvas):
                                 tr = self.scene.node_transform(self.selected_object)
                                 pos = tr.map(event.pos)
                                 self.add_point_w_undo(self.selected_object, pos[:2])
+                            elif self.current_move.check_movement():
+                                self.main_window.undo_stack.push(self.current_move)
+                                
+                                
+                        # redo move object command to save current location
+                        elif self.current_move is not None:
+                            # if object was moved, put it on undo stack
+                            if self.current_move.check_movement():
+                                self.main_window.undo_stack.push(self.current_move)
 
     def on_mouse_press(self, event):
         # transform so that coordinates start at 0 in self.view window
@@ -603,7 +607,8 @@ class VispyCanvas(SceneCanvas):
         if isinstance(self.selected_object, LineControlPoints):
             if event.key.name == "Escape":
                 if self.selected_object.continue_adding_points:
-                    self.selected_object.remove_point()
+                    # self.selected_object.remove_point()
+                    self.remove_point_w_undo()
                     self.selected_object.continue_adding_points = False
                 else:
                     self.remove_point_w_undo()
@@ -622,8 +627,8 @@ class VispyCanvas(SceneCanvas):
 
     def on_mouse_move(self, event):
 
-        if isinstance(self.selected_object, LineControlPoints):
-            print(self.selected_object.continue_adding_points)
+        # if isinstance(self.selected_object, LineControlPoints):
+        #     print(len(self.selected_object.coords))
                 
         # transform so that coordinates start at 0 in self.view window
         tr = self.scene.node_transform(self.view)
@@ -727,6 +732,8 @@ class VispyCanvas(SceneCanvas):
             self.main_window.undo_stack.push(command)
 
     def add_point_w_undo(self, object, point):
+        # we dont want to remember creating the first 2 points 
+        # as this is basically the creation of the object
         if len(self.selected_object.coords) < 3:
             self.selected_object.add_point(point)
         else:
@@ -1122,25 +1129,35 @@ class AddPointCommand(QUndoCommand):
     def __init__(self, vispy_canvas, object, point):
         super().__init__()
         self.object = object
-        self.continue_adding_points = object.continue_adding_points
         self.add_index = object.get_selected_index() + 1
         self.point = point
         self.vispy_canvas = vispy_canvas
+        self.redoing = False
 
     def undo(self):
-        # Hide the object
+        # remove movable point on undo
         self.object.continue_adding_points = False
         self.vispy_canvas.data_handler.logger.debug(
             f"Undoing adding point at index {self.add_index}"
         )
+        self.point = self.object.coords[self.add_index]
         self.object.remove_point(self.add_index)
 
     def redo(self):
-        # Show the object
         self.vispy_canvas.data_handler.logger.debug(
             f"Redoing adding point at index {self.add_index}"
         )
-        self.object.continue_adding_points = True
-        self.object.add_point(self.point, index=self.add_index)
-        self.object.continue_adding_points = self.continue_adding_points
+        
+        show=False
+        if self.object is self.vispy_canvas.selected_object:
+            self.object.select(True)
+            show = True
+
+        # when redoing, we need to add the point at the index 
+        # before the one we added because that one is the currently moving one 
+        if self.redoing:
+            self.object.add_point(self.point, index=self.add_index, select=False, show=show)
+        else:
+            self.object.add_point(self.point, index=self.add_index)
+        self.redoing = True
 

@@ -754,32 +754,35 @@ class LineControlPoints(Compound):
             self._length = self._length[0]
         return self._length
     
-    def add_point(self, point: np.ndarray, index=None):
+    def add_point(self, point: np.ndarray, index=None, select=True, show=True):
         """Adds a new control point to the list of control points at index, 
         or after selected_cp if no index is given."""
-        if self.continue_adding_points:
-            if (len(self.control_points) < self.num_points 
-                or self.num_points == 0):
-                # index of current cp to insert new point after it
-                if index is None:
-                    index = self.get_selected_index()+1
-                print(f"adding point at index {index}")
-                self.coords = np.vstack((self.coords[:index], point, self.coords[index:]))
-                c_point = Markers(parent=self,
-                                  pos=np.array([point], dtype=np.float32),
-                                  edge_color=self.edge_color,
-                                  face_color=self.face_color,
-                                  size=self.marker_size,
-                )
-                c_point.interactive = True
-                self.control_points.insert(index, c_point)
-                
-                # make the new marker the selected 
+        
+        if (len(self.control_points) < self.num_points 
+            or self.num_points == 0):
+            # index of current cp to insert new point after it
+            if index is None:
+                index = self.get_selected_index()+1
+            print(f"adding point at index {index}")
+            self.coords = np.vstack((self.coords[:index], point, self.coords[index:]))
+            c_point = Markers(parent=self,
+                                pos=np.array([point], dtype=np.float32),
+                                edge_color=self.edge_color,
+                                face_color=self.face_color,
+                                size=self.marker_size,
+            )
+            c_point.interactive = True
+            self.control_points.insert(index, c_point)
+            
+            # make the new marker the selected
+            if select:
                 self.select(True, c_point)
-
             else:
-                # self.coords[-1] = point
-                self.continue_adding_points = False   
+                c_point.visible = show
+
+        else:
+            # self.coords[-1] = point
+            self.continue_adding_points = False   
         
         self.update_points()
         self.parent.update_from_controlpoints()
@@ -788,10 +791,10 @@ class LineControlPoints(Compound):
         """Removes point at index from the list of control points
         or the selected point if no index is given.
         """
-        print("remove", len(self.control_points), len(self.coords))
         # select the proper control point by index
         if index is not None:
             self.selected_cp = self.control_points[index]
+        print(f"removing point at index {index}")
         # check if there are more than 2 control points
         if self.selected_cp is not None and len(self.control_points) > 2:
             index = self.get_selected_index()
@@ -803,7 +806,6 @@ class LineControlPoints(Compound):
         
         self.update_points()
         self.parent.update_from_controlpoints()
-        print("remove end", len(self.control_points), len(self.coords))
 
     def get_selected_index(self):
         return self.control_points.index(self.selected_cp)
