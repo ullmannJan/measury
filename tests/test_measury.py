@@ -6,7 +6,7 @@ from numpy import __version__ as np_version
 if np_version[0] == "2":
     test_files = ["test_image.tif", "test_file.msry", "test_file_2.msry"]
 else:
-    test_files = ["test_image.tif", "test_file.msry"]
+    test_files = ["test_image.tif", "test_file.msry", "test_file_3.msry", "test_file_4.msry"]
 
 def test_main_program():
     

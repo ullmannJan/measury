@@ -1056,6 +1056,8 @@ class EditPolygonVisual(EditLineVisual):
                             coords=coords,
                             *args, **kwargs)
         
+        self.swap_form()
+        
     def swap_form(self):
         # self.form.parent = None
         self.remove_subvisual(self.form)
@@ -1096,7 +1098,6 @@ class EditPolygonVisual(EditLineVisual):
             
         self.form.parent=self
         self.add_subvisual(self.form) 
-        
         self.form.interactive = True
         
     def corrected_coords(self):
