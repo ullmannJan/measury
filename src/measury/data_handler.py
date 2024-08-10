@@ -130,21 +130,21 @@ class DataHandler:
     def open_file_location(self, path: Path):
         try:
             if path is not None:
-
+                # check if file exists
+                if not path.exists():
+                    raise FileNotFoundError(f"File not found: {path}")
+                
                 if platform == "win32":
                     # For Windows
-                    os.startfile(path.parent)
+                    Popen(["explorer", "/select,", str(path)])
                 elif platform == "darwin":
                     # For MacOS
-                    Popen(["open", str(path.parent)])
+                    Popen(["open", "-R", str(path)])
                 else:
                     # For Linux
-                    Popen(["xdg-open", str(path.parent)])
+                    Popen(["xdg-open", str(path)])
         except Exception as error:
-            self.logger.warning(
-                f"Could not open file location: {path.parent}:\n{error}"
-            )
-            self.main_window.raise_error(f"Could not open file location: {path.parent}")
+            self.main_window.raise_error(f"Could not open file location: {path.parent}:\n\n{error}")
 
     def save_file_dialog(
         self, file_name="measury.msry", extensions="Measury Files (*.measury *.msry)"
@@ -164,6 +164,8 @@ class DataHandler:
         if filename is None:
             return
         
+        self.file_path = Path(filename)
+        
         self.logger.info(f"saving storage file: {filename}")
 
         structure_data = dict()
@@ -177,7 +179,7 @@ class DataHandler:
                 self.main_window.main_ui.units_dd.currentText(),
                 self.main_window.vispy_canvas.scale_bar_params,
             )
-            output = (self.img_byte_stream, structure_data, scaling)
+            output = (self.img_byte_stream, structure_data, scaling, self.main_window.vispy_canvas.origin)
         else:
             output = (None, structure_data, None)
 
@@ -186,6 +188,8 @@ class DataHandler:
             pickle.dump(output, save_file, pickle.HIGHEST_PROTOCOL, **kwargs)
 
         self.main_window.main_ui.save_window.close()
+        self.main_window.vispy_canvas.update_image()
+
         
     def load_into_view(self, drawing_data, vispy_instance):
         """
@@ -213,15 +217,19 @@ class DataHandler:
             obj = unpickler.load()
         return obj
 
-    def load_storage_file(self, file_path, vispy_instance):
+    def load_storage_file(self, file_path:Path):
         """load .msry data from a file and update the view"""
 
         loaded_data = self.load_from_pickle(file_path)
+        # only 3 elements are default, as it becomes 4 when loaded from file 
         scaling = (None, None, None) # pixel, length, unit
+        origin = np.zeros(2)
         if len(loaded_data) == 2:
             img_byte_stream, structure_data = loaded_data
         elif len(loaded_data) == 3:
             img_byte_stream, structure_data, scaling = loaded_data
+        elif len(loaded_data) == 4:
+            img_byte_stream, structure_data, scaling, origin = loaded_data
 
         
         question = None
@@ -279,7 +287,6 @@ class DataHandler:
                 self.logger.debug(
                     "set data_handler.img_byte_stream to loaded file data"
                 )
-                vispy_instance.update_image()
 
             if structure_data:
                 for key, val in structure_data.items():
@@ -287,9 +294,9 @@ class DataHandler:
                         new_object = obj_type(
                             settings=self.main_window.settings,
                             **obj_data,
-                            parent=vispy_instance.view.scene,
+                            parent=self.main_window.vispy_canvas.view.scene,
                         )
-                        vispy_instance.create_new_object(new_object, structure_name=key)
+                        self.main_window.vispy_canvas.create_new_object(new_object, structure_name=key)
 
             if scaling[0] is not None:
                 self.main_window.main_ui.pixel_edit.setText(str(scaling[0]))
@@ -307,10 +314,13 @@ class DataHandler:
                     self.main_window.vispy_canvas.find_scale_bar_width(*scaling[3])
                     
                 self.main_window.main_ui.units_changed()
+            
+            self.main_window.vispy_canvas.set_origin(origin, move_objects=False)
 
             self.main_window.main_ui.update_structure_dd()
+            self.main_window.vispy_canvas.update_image()
 
-    def open_file(self, file_path: str | Path | None, vispy_instance):
+    def open_file(self, file_path: str | Path | None):
 
         try:
             if file_path:
@@ -320,7 +330,7 @@ class DataHandler:
                 if file_path.suffix in self.main_window.settings.value(
                     "misc/file_extensions"
                 ):
-                    self.load_storage_file(file_path, vispy_instance=vispy_instance)
+                    self.load_storage_file(file_path)
 
                 # just assume it is an image file
                 else:
@@ -340,10 +350,9 @@ class DataHandler:
                         self.img_byte_stream = file_path.read_bytes()
                         self.delete_all_objects()
                         self.main_window.main_ui.reset_scaling()
-                        vispy_instance.update_image()
+                        self.main_window.vispy_canvas.update_image()
 
         except Exception as error:
-            self.logger.error(f"Could not open file: {file_path}:\n{error}")
             self.main_window.raise_error(f"Could not open file: {file_path}: {error}")
 
     def open_image_editor(self, image:QImage):
@@ -354,7 +363,7 @@ class DataHandler:
         
         return image_editor.image
 
-    def open_image_from_clipboard(self, vispy_instance):
+    def open_image_from_clipboard(self):
 
         reply = QMessageBox.StandardButton.Yes
         try:
@@ -374,7 +383,7 @@ class DataHandler:
                 # if it is a file path, open it like a file
                 if clipboard.mimeData().hasUrls():
                     file_path = clipboard.mimeData().urls()[0].toLocalFile()
-                    self.open_file(file_path, vispy_instance)
+                    self.open_file(file_path)
                     return
 
                 self.file_path = Path("clipboard")
@@ -408,7 +417,7 @@ class DataHandler:
                     # Step 2: Convert the encoded image to a byte stream
                     self.img_byte_stream = encoded_image.tobytes()
 
-                    vispy_instance.update_image()
+                    self.main_window.vispy_canvas.update_image()
                 else:
                     raise Exception("Could not encode image data")
 

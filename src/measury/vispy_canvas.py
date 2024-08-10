@@ -107,7 +107,7 @@ class VispyCanvas(SceneCanvas):
         self.freeze()
 
     def update_image(self):
-        """Update the image in the vispy canvas"""
+        """Update the image in the vispy canvas and also the file path shown above the image"""
 
         # if there is no image loaded, do nothing
         if self.data_handler.file_path is not None:
@@ -205,6 +205,18 @@ class VispyCanvas(SceneCanvas):
                             # if object was moved, put it on undo stack
                             if self.current_move.check_movement():
                                 self.main_window.undo_stack.push(self.current_move)
+
+        # if click is above box
+        elif (
+            tr.map(event.pos)[1] < 0 # above box
+            and event.pos[1] > 0 # but still in vispy canvas
+            and tr.map(event.pos)[0] > 0 # right of start of scene
+            and tr.map(event.pos)[0] < self.view.size[0] # left of end of scene
+        ):
+            if not self.data_handler.file_path:
+                self.main_ui.select_file()
+            elif self.data_handler.file_path.name != "clipboard":
+                self.data_handler.open_file_location(self.data_handler.file_path)
                         
 
     def on_mouse_press(self, event):
@@ -244,18 +256,17 @@ class VispyCanvas(SceneCanvas):
                         self.unselect()
 
                     case "Set Origin":
-                        # enable panning
-                        self.view.camera._viewbox.events.mouse_move.connect(
+                        # disable panning
+                        self.view.camera._viewbox.events.mouse_move.disconnect(
                             self.view.camera.viewbox_mouse_event
                         )
 
-                        # QApplication.setOverrideCursor(QCursor(Qt.CursorShape.SizeAllCursor))
+                        tr = self.scene.node_transform(self.view.scene)
+                        pos = tr.map(event.pos)[:2]
 
                         # unselect object
                         self.unselect()
 
-                        tr = self.scene.node_transform(self.view.scene)
-                        pos = tr.map(event.pos)[:2]
                         self.set_origin_w_undo(pos+self.origin)
 
                     case "Select":
@@ -423,17 +434,6 @@ class VispyCanvas(SceneCanvas):
                         if event.button == 2:
                             self.draw_image(self.data_handler.img_data)
                             self.main_ui.pixel_edit.setText(None)
-
-        # if click is above box
-        elif (
-            tr.map(event.pos)[1] < 0
-            and tr.map(event.pos)[0] > 0
-            and tr.map(event.pos)[0] < self.view.size[0]
-        ):
-            if not self.data_handler.file_path:
-                self.main_ui.select_file()
-            elif self.data_handler.file_path.name != "clipboard":
-                self.data_handler.open_file_location(self.data_handler.file_path)
 
     def create_new_object(
         self, new_object, pos=None, selected=False, structure_name=None
@@ -829,15 +829,15 @@ class VispyCanvas(SceneCanvas):
             command = DeleteObjectCommand(self.data_handler, object)
             self.main_window.undo_stack.push(command)
 
-    def set_origin(self, point:np.ndarray):
+    def set_origin(self, point:np.ndarray, move_objects=True):
         """Set the origin of the image to a given point"""
         self.data_handler.logger.debug(f"set origin to {point}")
 
-        self.move_all_objects(-(point-self.origin))
+        if move_objects:
+            self.move_all_objects(-(point-self.origin))
         self.origin = point 
         self.image.transform = linear.STTransform(translate=-self.origin)
         self.center_image()
-        # self.scene.update()
 
     def move_all_objects(self, vector:np.ndarray):
         """Move all objects by a relative vector"""
@@ -846,7 +846,7 @@ class VispyCanvas(SceneCanvas):
             for obj in self.data_handler.drawing_data[structure]:
                 # show object
                 obj.set_center(obj.center + vector)
-                obj.transform = obj.transform
+                obj.update_from_controlpoints()
         self.scene.update()        
 
     def set_origin_w_undo(self, pos):

@@ -372,7 +372,7 @@ class MainUI(QWidget):
         if file_path:
             file_path = Path(file_path)
 
-            self.data_handler.open_file(file_path, self.vispy_canvas)
+            self.data_handler.open_file(file_path)
 
     def openFileNameDialog(self):
         file_name, _ = QFileDialog.getOpenFileName(

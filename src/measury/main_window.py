@@ -285,7 +285,7 @@ class MainWindow(QMainWindow):
         QApplication.closeAllWindows()
 
     def raise_error(self, error):
-        self.data_handler.logger.error(error)
+        self.data_handler.logger.error(error.replace("\n", " "))
         if "pytest" in sys_modules:
             raise Exception(error)
         else:
@@ -377,4 +377,4 @@ class DropEnabledQOpenGLWidget(QOpenGLWidget):
     def dropEvent(self, event):
         if len(event.mimeData().urls()) == 1:
             img_path = event.mimeData().urls()[0].toLocalFile()
-            self.vispy_canvas.data_handler.open_file(img_path, self.vispy_canvas)
+            self.vispy_canvas.data_handler.open_file(img_path)

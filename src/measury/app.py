@@ -18,7 +18,7 @@ class App:
         self.main_window = MainWindow(self.data_handler)
         self.data_handler.main_window = self.main_window
         self.data_handler.open_file(
-            file_path=file_path, vispy_instance=self.main_window.vispy_canvas
+            file_path=file_path
         )
 
     def run(self, run_vispy=True):
