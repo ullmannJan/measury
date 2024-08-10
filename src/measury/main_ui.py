@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
     QInputDialog,
     QHeaderView,
 )
-from PySide6.QtGui import QDoubleValidator, QIntValidator, QFontMetrics
+from PySide6.QtGui import QDoubleValidator, QIntValidator, QFontMetrics, QUndoCommand
 from PySide6.QtCore import Qt
 from pathlib import Path
 import numpy as np
@@ -43,22 +43,25 @@ class MainUI(QWidget):
         self.right_ui = main_window.right_ui
 
         self.layout = QVBoxLayout(self)
-        self.setMinimumWidth(175)
+        self.setMinimumWidth(250)
 
         # image settings
         self.image_box = QGroupBox("Image Settings", self)
-        self.image_layout = QVBoxLayout()
+        self.image_layout = QHBoxLayout()
 
-        self.select_image_button = QPushButton("Select File", self)
-        self.image_layout.addWidget(self.select_image_button)
-
-        self.select_image_button.clicked.connect(
-            lambda: self.select_file(file_path=None)
-        )
+        # self.select_image_button = QPushButton("Select File", self)
+        # self.image_layout.addWidget(self.select_image_button)
+        # self.select_image_button.clicked.connect(
+        #     lambda: self.select_file(file_path=None)
+        # )
 
         self.center_image_button = QPushButton("Center Image", self)
         self.image_layout.addWidget(self.center_image_button)
         self.center_image_button.clicked.connect(self.vispy_canvas.center_image)
+
+        image_tools = dict()
+        image_tools["set_origin"] = QPushButton("Set Origin", self)
+        self.image_layout.addWidget(image_tools["set_origin"])
 
         self.image_box.setLayout(self.image_layout)
         self.layout.addWidget(self.image_box)
@@ -67,40 +70,48 @@ class MainUI(QWidget):
         self.tools_edit_box = QGroupBox("Edit", self)
         self.tools_edit_layout = QHBoxLayout()
         self.tools_create_box = QGroupBox("Create", self)
-        self.tools_create_layout = QHBoxLayout()
+        self.tools_create_layout = QVBoxLayout()
         self.tools_scaling_box = QGroupBox("Scaling", self)
         self.tools_scaling_layout = QVBoxLayout()
 
         tools_edit = dict()
-        tools_edit["move"] = QPushButton("move", self)
-        tools_edit["select"] = QPushButton("select", self)
-        tools_edit["edit"] = QPushButton("edit", self)
+        tools_edit["move"] = QPushButton("Move", self)
+        tools_edit["select"] = QPushButton("Select", self)
+        tools_edit["edit"] = QPushButton("Edit", self)
         tools_create = dict()
-        tools_create["line"] = QPushButton("line", self)
-        tools_create["angle"] = QPushButton("angle", self)
-        tools_create["rectangle"] = QPushButton("rectangle", self)
-        tools_create["circle"] = QPushButton("circle", self)
+        tools_create["line"] = QPushButton("Line", self)
+        tools_create["angle"] = QPushButton("Angle", self)
+        tools_create["multi-line"] = QPushButton("Multi-Line", self)
+        tools_create["rectangle"] = QPushButton("Rectangle", self)
+        tools_create["ellipse"] = QPushButton("Ellipse", self)
+        tools_create["polygon"] = QPushButton("Polygon", self)
         tools_scaling = dict()
-        tools_scaling["scale"] = QPushButton("identify scaling", self)
+        tools_scaling["scale"] = QPushButton("Identify Scaling", self)
         tools_scaling["scale"].clicked.connect(self.automatic_scaling)
 
         # merge dicts
-        tools = tools_edit | tools_create | tools_scaling
+        self.tools = tools_edit | tools_create | tools_scaling | image_tools
 
-        self.tools = QButtonGroup(self)
-
-        for i, tool in enumerate(tools.values()):
+        # create button group
+        self.tools_buttons = QButtonGroup(self)
+        for i, tool in enumerate(self.tools.values()):
             tool.setCheckable(True)
-            self.tools.addButton(tool, id=i)
-        self.tools.button(0).setChecked(True)
+            self.tools_buttons.addButton(tool, id=i)
+        self.tools_buttons.button(0).setChecked(True)
 
+        # create edit layout
         for tool in tools_edit.values():
             self.tools_edit_layout.addWidget(tool)
         self.tools_edit_box.setLayout(self.tools_edit_layout)
         self.layout.addWidget(self.tools_edit_box)
 
-        for tool in tools_create.values():
-            self.tools_create_layout.addWidget(tool)
+        tools_create_list = tools_create.values()
+        # create 3 columns for the create tools
+        for i, t in enumerate(tools_create_list):
+            if i % 3 == 0:
+                tools_create_layout = QHBoxLayout()
+                self.tools_create_layout.addLayout(tools_create_layout)
+            tools_create_layout.addWidget(t)
         self.tools_create_box.setLayout(self.tools_create_layout)
         self.layout.addWidget(self.tools_create_box)
 
@@ -204,7 +215,7 @@ class MainUI(QWidget):
 
         # rename button
         self.rename_button = QPushButton("Rename Structure")
-        self.rename_button.clicked.connect(self.rename_structure)
+        self.rename_button.clicked.connect(self.rename_structure_ask)
         self.selected_structure_layout.addWidget(self.rename_button)
         self.selected_object_layout.addLayout(self.selected_structure_layout)
 
@@ -361,7 +372,7 @@ class MainUI(QWidget):
         if file_path:
             file_path = Path(file_path)
 
-            self.data_handler.open_file(file_path, self.vispy_canvas)
+            self.data_handler.open_file(file_path)
 
     def openFileNameDialog(self):
         file_name, _ = QFileDialog.getOpenFileName(
@@ -486,7 +497,7 @@ class MainUI(QWidget):
         object = self.data_handler.drawing_data[structure][index]
         self.vispy_canvas.select(object)
 
-    def rename_structure(self):
+    def rename_structure_ask(self):
         structure = self.structure_dd.currentText()
 
         if structure:
@@ -499,8 +510,32 @@ class MainUI(QWidget):
             )
             if ok:
                 # After the user closes the QInputDialog, you can get the text from the QLineEdit
-                status = self.data_handler.rename_structure(structure, new_structure)
-                if status:
-                    self.update_structure_dd()
-                    self.structure_dd.setCurrentText(new_structure)
-                    self.structure_dd_changed()
+                self.rename_structure_w_undo(structure, new_structure)
+                    
+    def rename_structure(self, structure, new_structure):
+        status = self.data_handler.rename_structure(structure, new_structure)
+        if status:
+            self.update_structure_dd()
+            if self.structure_dd.currentText() == structure:
+                self.structure_dd.setCurrentText(new_structure)
+            self.structure_dd_changed()
+            
+    def rename_structure_w_undo(self, structure_name, new_structure_name):
+        command = RenameStructureCommand(self,
+                                         structure_name, new_structure_name)
+        self.main_window.undo_stack.push(command)       
+
+class RenameStructureCommand(QUndoCommand):
+    def __init__(self, main_ui, structure_name, new_structure_name):
+        super().__init__()
+        self.main_ui = main_ui
+        self.structure_name = new_structure_name
+        self.old_structure_name = structure_name
+        
+    def undo(self):
+        self.main_ui.data_handler.logger.debug(f"Undo rename structure: {self.structure_name} -> {self.old_structure_name}")
+        self.main_ui.rename_structure(self.structure_name, self.old_structure_name)
+
+    def redo(self):
+        self.main_ui.data_handler.logger.debug(f"Redo rename structure: {self.old_structure_name} -> {self.structure_name}")
+        self.main_ui.rename_structure(self.old_structure_name, self.structure_name)

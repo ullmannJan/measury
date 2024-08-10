@@ -18,6 +18,7 @@ from vispy.scene.widgets import AxisWidget, Label
 from .drawable_objects import (
     EditRectVisual,
     EditLineVisual,
+    EditPolygonVisual,
 )
 
 
@@ -148,7 +149,8 @@ class RightUI(QWidget):
         if selected_element is not None and isinstance(selected_element, EditRectVisual):
             selected_element.show_arrow()
         
-        if not isinstance(selected_element, (EditLineVisual, EditRectVisual)):
+        if (not isinstance(selected_element, EditRectVisual) 
+        and not type(selected_element) is EditLineVisual):
             self.reset_intensity_plot()
             return 
         

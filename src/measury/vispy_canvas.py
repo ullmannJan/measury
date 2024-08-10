@@ -2,6 +2,7 @@
 import numpy as np
 import cv2
 from vispy.scene import SceneCanvas, visuals, AxisWidget, Label
+from vispy.visuals.transforms import linear
 from PySide6.QtWidgets import QInputDialog
 from PySide6.QtGui import QUndoCommand
 
@@ -12,6 +13,7 @@ from .drawable_objects import (
     ControlPoints,
     EditLineVisual,
     LineControlPoints,
+    EditPolygonVisual,
 )
 
 class VispyCanvas(SceneCanvas):
@@ -23,6 +25,7 @@ class VispyCanvas(SceneCanvas):
     scale_bar_params = (None, True, None, None) # seed point, relative, threshold, direction
     text_color = "black"
     current_move = None
+    origin = np.zeros(2)
 
     def __init__(self, main_window):
 
@@ -104,7 +107,7 @@ class VispyCanvas(SceneCanvas):
         self.freeze()
 
     def update_image(self):
-        """Update the image in the vispy canvas"""
+        """Update the image in the vispy canvas and also the file path shown above the image"""
 
         # if there is no image loaded, do nothing
         if self.data_handler.file_path is not None:
@@ -154,8 +157,8 @@ class VispyCanvas(SceneCanvas):
         try:
             if self.data_handler.img_data is not None:
                 self.view.camera.set_range(
-                    x=(0, self.data_handler.img_data.shape[1]),
-                    y=(0, self.data_handler.img_data.shape[0]),
+                    x=(0-self.origin[0], self.data_handler.img_data.shape[1]-self.origin[0]),
+                    y=(0-self.origin[1], self.data_handler.img_data.shape[0]-self.origin[1]),
                     margin=0,
                 )
         except Exception as error:
@@ -184,13 +187,37 @@ class VispyCanvas(SceneCanvas):
                 #  sequence by clicking
                 self.main_ui.select_file()
             elif event.button == 1:
-                match self.main_ui.tools.checkedButton().text(): 
-                    case "line" | "circle" | "rectangle" | "angle" | "edit":
+                match self.main_ui.tools_buttons.checkedButton().text(): 
+                    case "Line" | "Ellipse" | "Rectangle" | "Angle" | "Multi-Line" | "Polygon" | "Edit":
+                        
+                        # multi-line is not finished yet
+                        if isinstance(self.selected_object, LineControlPoints):
+                            if self.selected_object.continue_adding_points:
+                                tr = self.scene.node_transform(self.selected_object)
+                                pos = tr.map(event.pos)
+                                self.add_point_w_undo(self.selected_object, pos[:2])
+                            elif self.current_move.check_movement():
+                                self.main_window.undo_stack.push(self.current_move)
+                                
+                                
                         # redo move object command to save current location
-                        if self.current_move is not None:
+                        elif self.current_move is not None:
                             # if object was moved, put it on undo stack
                             if self.current_move.check_movement():
                                 self.main_window.undo_stack.push(self.current_move)
+
+        # if click is above box
+        elif (
+            tr.map(event.pos)[1] < 0 # above box
+            and event.pos[1] > 0 # but still in vispy canvas
+            and tr.map(event.pos)[0] > 0 # right of start of scene
+            and tr.map(event.pos)[0] < self.view.size[0] # left of end of scene
+        ):
+            if not self.data_handler.file_path:
+                self.main_ui.select_file()
+            elif self.data_handler.file_path.name != "clipboard":
+                self.data_handler.open_file_location(self.data_handler.file_path)
+                        
 
     def on_mouse_press(self, event):
         # transform so that coordinates start at 0 in self.view window
@@ -215,9 +242,9 @@ class VispyCanvas(SceneCanvas):
                 )
 
             else:
-                match self.main_ui.tools.checkedButton().text():
+                match self.main_ui.tools_buttons.checkedButton().text():
 
-                    case "move":
+                    case "Move":
                         # enable panning
                         self.view.camera._viewbox.events.mouse_move.connect(
                             self.view.camera.viewbox_mouse_event
@@ -228,7 +255,21 @@ class VispyCanvas(SceneCanvas):
                         # unselect object
                         self.unselect()
 
-                    case "select":
+                    case "Set Origin":
+                        # disable panning
+                        self.view.camera._viewbox.events.mouse_move.disconnect(
+                            self.view.camera.viewbox_mouse_event
+                        )
+
+                        tr = self.scene.node_transform(self.view.scene)
+                        pos = tr.map(event.pos)[:2]
+
+                        # unselect object
+                        self.unselect()
+
+                        self.set_origin_w_undo(pos+self.origin)
+
+                    case "Select":
                         # disable panning
                         self.view.camera._viewbox.events.mouse_move.disconnect(
                             self.view.camera.viewbox_mouse_event
@@ -254,11 +295,11 @@ class VispyCanvas(SceneCanvas):
 
                                 self.selected_object.select(True, obj=selected)
                                 self.selected_object.start_move(pos)
-
+                        
                                 # update ui to display properties of selected object
                                 self.selection_update()
 
-                    case "line" | "circle" | "rectangle" | "angle" | "edit":
+                    case "Line" | "Ellipse" | "Rectangle" | "Angle" | "Multi-Line" | "Polygon" | "Edit":
                         # disable panning
                         self.view.camera._viewbox.events.mouse_move.disconnect(
                             self.view.camera.viewbox_mouse_event
@@ -271,6 +312,7 @@ class VispyCanvas(SceneCanvas):
                         self.view.interactive = True
                         # unselect object to create room of new one
                         self.unselect()
+                                
 
                         if event.button == 1:
                             # QApplication.setOverrideCursor(QCursor(Qt.CursorShape.SizeAllCursor))
@@ -285,26 +327,36 @@ class VispyCanvas(SceneCanvas):
                                 self.selected_object.select(True, obj=selected)
                                 self.selected_object.start_move(pos)
                                 # self.move_object_w_undo(self.selected_object)
-                                self.current_move = MoveObjectCommand(self, self.selected_object)
+                                
+                                if not isinstance(self.selected_object, LineControlPoints):    
+                                    self.current_move = MoveObjectCommand(self, self.selected_object)
+                                    self.data_handler.logger.debug("start moving object")
+                                
+                                elif not self.selected_object.continue_adding_points:
+                                    self.current_move = MoveObjectCommand(self, self.selected_object)
+                                    self.data_handler.logger.debug("start moving object")
 
                                 # update ui to display properties of selected object
                                 self.selection_update()
-
+                            else:
+                                self.current_move = None
+                            
                             # create new object:
                             if self.selected_object is None:
 
-                                match self.main_ui.tools.checkedButton().text():
-                                    case "line":
+                                match self.main_ui.tools_buttons.checkedButton().text():
+                                    case "Line":
                                         new_object = EditLineVisual(
                                             parent=self.view.scene,
                                             settings=self.main_window.settings,
+                                            num_points=2,
                                         )
-                                    case "circle":
+                                    case "Ellipse":
                                         new_object = EditEllipseVisual(
                                             parent=self.view.scene,
                                             settings=self.main_window.settings,
                                         )
-                                    case "rectangle":
+                                    case "Rectangle":
                                         new_object = EditRectVisual(
                                             parent=self.view.scene,
                                             settings=self.main_window.settings,
@@ -315,7 +367,17 @@ class VispyCanvas(SceneCanvas):
                                             parent=self.view.scene,
                                             num_points=3,
                                         )
-                                    case "edit":
+                                    case "Multi-Line":
+                                        new_object = EditLineVisual(
+                                            settings=self.main_window.settings,
+                                            parent=self.view.scene,
+                                            num_points=0,
+                                        )
+                                    case "Polygon":
+                                        new_object = EditPolygonVisual(
+                                            settings=self.main_window.settings,
+                                            parent=self.view.scene)
+                                    case "Edit":
                                         return
                                 # dont show object before it is added to drawing_data
                                 new_object.select(False)
@@ -327,8 +389,14 @@ class VispyCanvas(SceneCanvas):
 
                                     # update ui where data is shown
                                     self.selection_update(object=new_object)
+                                    # if linecontrolpoint to get automatic line creation without draggin
+                                    if isinstance(self.selected_object, LineControlPoints):
+                                        last_cp = self.selected_object.control_points[-1]
+                                        self.selected_object.select(True, last_cp)
                                 else:
                                     new_object.delete()
+
+                                
 
                         # delete object
                         if event.button == 2:  # right button deletes object
@@ -340,7 +408,7 @@ class VispyCanvas(SceneCanvas):
                                 # Needs change
                                 # self.main_ui.update_save_window()
 
-                    case "identify scaling":
+                    case "Identify Scaling":
                         # disable panning
                         self.view.camera._viewbox.events.mouse_move.disconnect(
                             self.view.camera.viewbox_mouse_event
@@ -366,17 +434,6 @@ class VispyCanvas(SceneCanvas):
                         if event.button == 2:
                             self.draw_image(self.data_handler.img_data)
                             self.main_ui.pixel_edit.setText(None)
-
-        # if click is above box
-        elif (
-            tr.map(event.pos)[1] < 0
-            and tr.map(event.pos)[0] > 0
-            and tr.map(event.pos)[0] < self.view.size[0]
-        ):
-            if not self.data_handler.file_path:
-                self.main_ui.select_file()
-            elif self.data_handler.file_path.name != "clipboard":
-                self.data_handler.open_file_location(self.data_handler.file_path)
 
     def create_new_object(
         self, new_object, pos=None, selected=False, structure_name=None
@@ -559,8 +616,34 @@ class VispyCanvas(SceneCanvas):
         )
         self.main_window.undo_stack.push(command)
 
-    def on_mouse_move(self, event):
+    def on_key_press(self, event):
 
+        if self.start_state:
+            return
+
+        if isinstance(self.selected_object, LineControlPoints):
+            if event.key.name == "Escape":
+                if self.selected_object.continue_adding_points:
+                    # self.selected_object.remove_point()
+                    self.remove_point_w_undo()
+                    self.selected_object.continue_adding_points = False
+                else:
+                    self.remove_point_w_undo()
+            if event.key.name == "A":
+                if (self.selected_object.num_points == 0 
+                or len(self.selected_object.coords) < self.selected_object.num_points):
+
+                    self.selected_object.continue_adding_points = True
+                    
+                    # get mouse position in image coordinates
+                    index = self.selected_object.get_selected_index()
+                    pos = self.selected_object.coords[index]
+                    # undo gets called, when the released event is called
+                    self.add_point_w_undo(self.selected_object, pos)
+
+
+    def on_mouse_move(self, event):
+        
         # transform so that coordinates start at 0 in self.view window
         tr = self.scene.node_transform(self.view)
         # only activate when over self.view by looking
@@ -572,7 +655,6 @@ class VispyCanvas(SceneCanvas):
 
             if self.start_state:
                 return
-
             match event.button:
                 case 1:
                     # Check if the left mouse button is being dragged
@@ -585,8 +667,8 @@ class VispyCanvas(SceneCanvas):
                         tr = self.scene.node_transform(self.selected_object)
                         pos = tr.map(event.pos)
 
-                        if self.main_ui.tools.checkedButton().text() in (
-                            "line", "circle", "rectangle", "angle", "edit"
+                        if self.main_ui.tools_buttons.checkedButton().text() in (
+                            "Line", "Ellipse", "Rectangle", "Angle", "Edit", "Polygon", "Multi-Line"
                         ):
 
                             if "Shift" in modifiers and not isinstance(
@@ -609,6 +691,7 @@ class VispyCanvas(SceneCanvas):
                                 self.selected_object.rotate(angle)
 
                             else:
+
                                 self.selected_object.move(pos[0:2], modifiers=modifiers)
 
                             # update ui to display properties of selected object
@@ -622,6 +705,19 @@ class VispyCanvas(SceneCanvas):
                         dpos = tr.map(event.last_event.pos)[:2] - tr.map(event.pos)[:2]
                         # Pan the camera based on the mouse movement
                         self.view.camera.pan(dpos)
+                
+                case _:
+                    # if it is a line that is still being drawn
+                    if isinstance(self.selected_object, LineControlPoints):
+
+                        if self.selected_object.continue_adding_points:
+                            modifiers = [key.name for key in event.modifiers]
+                            tr = self.scene.node_transform(self.selected_object)
+                            pos = tr.map(event.pos)
+
+                            self.selected_object.move(pos[:2], modifiers=modifiers)
+                            self.selection_update()
+                            self.main_window.right_ui.update_intensity_plot()
                         
     def hide_arrows(self):
         for name in self.data_handler.drawing_data.keys():
@@ -640,6 +736,25 @@ class VispyCanvas(SceneCanvas):
     def move_object_w_undo(self, object):
         command = MoveObjectCommand(self, object)
         self.main_window.undo_stack.push(command)
+
+    def remove_point_w_undo(self):
+        # we dont want to undo the last 2 points
+        if len(self.selected_object.coords) < 3:
+            self.selected_object.remove_point()
+        else:
+            command = RemovePointCommand(self, self.selected_object)
+            self.main_window.undo_stack.push(command)
+
+    def add_point_w_undo(self, object, point):
+        # we dont want to remember creating the first 2 (3 for angle) points 
+        # as this is basically the creation of the object
+        if (len(self.selected_object.coords) < 2 
+        or (self.selected_object.num_points != 0 
+            and len(self.selected_object.coords) < self.selected_object.num_points+1)):
+            self.selected_object.add_point(point)
+        else:
+            command = AddPointCommand(self, object, point)
+            self.main_window.undo_stack.push(command)
 
     def selection_update(self, object=None):
 
@@ -710,7 +825,32 @@ class VispyCanvas(SceneCanvas):
         self.main_window.right_ui.update_intensity_plot()
 
     def delete_object_w_undo(self, object=None):
-        command = DeleteObjectCommand(self.data_handler, object)
+        if object is not None or self.selected_object is not None:
+            command = DeleteObjectCommand(self.data_handler, object)
+            self.main_window.undo_stack.push(command)
+
+    def set_origin(self, point:np.ndarray, move_objects=True):
+        """Set the origin of the image to a given point"""
+        self.data_handler.logger.debug(f"set origin to {point}")
+
+        if move_objects:
+            self.move_all_objects(-(point-self.origin))
+        self.origin = point 
+        self.image.transform = linear.STTransform(translate=-self.origin)
+        self.center_image()
+
+    def move_all_objects(self, vector:np.ndarray):
+        """Move all objects by a relative vector"""
+        self.data_handler.logger.debug("move all objects")
+        for structure in self.data_handler.drawing_data.keys():
+            for obj in self.data_handler.drawing_data[structure]:
+                # show object
+                obj.set_center(obj.center + vector)
+                obj.update_from_controlpoints()
+        self.scene.update()        
+
+    def set_origin_w_undo(self, pos):
+        command = SetOriginCommand(self, pos)
         self.main_window.undo_stack.push(command)
 
     def select(self, obj):
@@ -796,7 +936,7 @@ class MoveObjectCommand(QUndoCommand):
 
         # for redoing
         self.redoing = False
-        if isinstance(self.object, EditLineVisual):
+        if isinstance(self.object, (EditLineVisual, EditPolygonVisual)):
             self.coords = None
             self.old_coords = object.coords.copy()
         elif isinstance(self.object, (EditEllipseVisual, EditRectVisual)):
@@ -815,7 +955,7 @@ class MoveObjectCommand(QUndoCommand):
         self.vispy_instance.data_handler.logger.info("Undoing move object")
 
         # save state before undoing move
-        if isinstance(self.object, EditLineVisual):
+        if isinstance(self.object, (EditLineVisual, EditPolygonVisual)):
             self.object.coords = self.old_coords
         elif isinstance(self.object, (EditEllipseVisual, EditRectVisual)):
 
@@ -836,7 +976,7 @@ class MoveObjectCommand(QUndoCommand):
         # in the first creation we don't need to set it as it is already set
         # but we need to save the state
         if not self.redoing:
-            if isinstance(self.object, EditLineVisual):
+            if isinstance(self.object, (EditLineVisual, EditPolygonVisual)):
                 self.coords = self.object.coords.copy()
             elif isinstance(self.object, (EditEllipseVisual, EditRectVisual)):
                 self.center = self.object.center.copy()
@@ -846,7 +986,7 @@ class MoveObjectCommand(QUndoCommand):
             self.redoing = True
         # move object on all redo operations except the first one
         else:
-            if isinstance(self.object, EditLineVisual):
+            if isinstance(self.object, (EditLineVisual, EditPolygonVisual)):
                 self.object.coords = self.coords
             elif isinstance(self.object, (EditEllipseVisual, EditRectVisual)):
                 self.object.set_center(self.center)
@@ -858,8 +998,10 @@ class MoveObjectCommand(QUndoCommand):
         self.vispy_instance.selection_update()
         
     def check_movement(self):
-        if isinstance(self.object, EditLineVisual):
-            return (self.old_coords != self.object.coords).any()
+        if isinstance(self.object, (EditLineVisual, EditPolygonVisual)):
+            if len(self.old_coords) == len(self.object.coords):
+                return (self.old_coords != self.object.coords).any()
+            return True
         elif isinstance(self.object, (EditEllipseVisual, EditRectVisual)):
             return (
                 self.old_width != self.object.width
@@ -970,7 +1112,7 @@ class UpdateObjectCommand(QUndoCommand):
             scaling = 1
         else:
             scaling = self.scaling_factor
-        self.vispy_canvas.data_handler.logger.info(
+        self.vispy_canvas.data_handler.logger.debug(
             f"Undoing Change {self.prop} from {self.old_value*scaling} to {self.value}"
         )
 
@@ -986,7 +1128,7 @@ class UpdateObjectCommand(QUndoCommand):
             scaling = 1
         else:
             scaling = self.scaling_factor
-        self.vispy_canvas.data_handler.logger.info(
+        self.vispy_canvas.data_handler.logger.debug(
             f"Change {self.prop} from {self.old_value*scaling} to {self.value}"
         )
 
@@ -995,4 +1137,82 @@ class UpdateObjectCommand(QUndoCommand):
             self.obj, self.prop, self.value, self.scaling_factor
         )
         
+class RemovePointCommand(QUndoCommand):
 
+    def __init__(self, vispy_canvas, object):
+        super().__init__()
+        self.object = object
+        self.delete_index = object.control_points.index(object.selected_cp)
+        self.old_point = None
+        self.vispy_canvas = vispy_canvas
+        self.continue_adding_points = object.continue_adding_points
+
+    def undo(self):
+        # Show the object
+        self.vispy_canvas.data_handler.logger.debug(
+            f"Undoing remove point at index {self.delete_index}"
+        )
+        self.object.continue_adding_points = True
+        self.object.add_point(self.old_point, index=self.delete_index)
+        self.object.continue_adding_points = self.continue_adding_points
+
+    def redo(self):
+        # Hide the object
+        self.vispy_canvas.data_handler.logger.debug(
+            f"Redoing remove point at index {self.delete_index}"
+        )
+        self.old_point = self.object.coords[self.delete_index]
+        self.object.remove_point(self.delete_index)
+
+class AddPointCommand(QUndoCommand):
+
+    def __init__(self, vispy_canvas, object, point):
+        super().__init__()
+        self.object = object
+        self.add_index = object.get_selected_index() + 1
+        self.point = point
+        self.vispy_canvas = vispy_canvas
+        self.redoing = False
+
+    def undo(self):
+        # remove movable point on undo
+        self.object.continue_adding_points = False
+        self.vispy_canvas.data_handler.logger.debug(
+            f"Undoing adding point at index {self.add_index}"
+        )
+        if self.add_index < len(self.object.coords):
+            self.point = self.object.coords[self.add_index]
+            self.object.remove_point(self.add_index)
+
+    def redo(self):
+        self.vispy_canvas.data_handler.logger.debug(
+            f"Redoing adding point at index {self.add_index}"
+        )
+        
+        show=False
+        if self.object is self.vispy_canvas.selected_object:
+            self.object.select(True)
+            show = True
+
+        # when redoing, we need to add the point at the index 
+        # before the one we added because that one is the currently moving one 
+        if self.redoing:
+            self.object.add_point(self.point, index=self.add_index, select=False, show=show)
+        else:
+            self.object.add_point(self.point, index=self.add_index)
+        self.redoing = True
+
+class SetOriginCommand(QUndoCommand):
+    def __init__(self, vispy_canvas, pos):
+        super().__init__()
+        self.vispy_canvas = vispy_canvas
+        self.old_origin = self.vispy_canvas.origin
+        self.new_origin = pos
+
+    def undo(self):
+        # Show the object
+        self.vispy_canvas.set_origin(self.old_origin)
+
+    def redo(self):
+        # Hide the object
+        self.vispy_canvas.set_origin(self.new_origin)

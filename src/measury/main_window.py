@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from sys import modules as sys_modules
+import numpy as np
 
 
 # relative imports
@@ -175,6 +176,8 @@ class MainWindow(QMainWindow):
         aboutAction.setStatusTip("Show information about Measury")
         aboutAction.triggered.connect(self.open_about_page)
 
+        # Data Overview
+
         measurementAction = QAction(
             self.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogDetailedView),
             "Data Overview",
@@ -183,6 +186,18 @@ class MainWindow(QMainWindow):
         measurementAction.setShortcut("Ctrl+D")
         measurementAction.setStatusTip("Show an overview of all measured data")
         measurementAction.triggered.connect(self.open_data_page)
+
+        # export coordinates action
+
+        exportCoordsAction = QAction(
+            self.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogListView),
+            "Export Coordinates",
+            self,
+        )
+        exportCoordsAction.setShortcut("Ctrl+Shift+E")
+        exportCoordsAction.setStatusTip("Export coordinates of selected object")
+        exportCoordsAction.triggered.connect(self.export_object_coords)
+
 
         delete_all_objects_action = QAction(
             self.style().standardIcon(QStyle.StandardPixmap.SP_DialogDiscardButton),
@@ -211,6 +226,7 @@ class MainWindow(QMainWindow):
         settingsMenu.addAction(resetSettingsAction)
         measurementsMenu = menuBar.addMenu("&Measurements")
         measurementsMenu.addAction(measurementAction)
+        measurementsMenu.addAction(exportCoordsAction)
         viewMenu = menuBar.addMenu("&View")
         viewMenu.addAction(centerAction)
         viewMenu.addAction(hideAction)
@@ -269,7 +285,7 @@ class MainWindow(QMainWindow):
         QApplication.closeAllWindows()
 
     def raise_error(self, error):
-        self.data_handler.logger.error(error)
+        self.data_handler.logger.error(error.replace("\n", " "))
         if "pytest" in sys_modules:
             raise Exception(error)
         else:
@@ -315,6 +331,32 @@ class MainWindow(QMainWindow):
         QApplication.processEvents()
         color = self.palette().color(QPalette.ColorRole.Window)
         return color
+    
+    def export_object_coords(self):
+        
+        object = self.vispy_canvas.get_selected_object()
+        if object is None:
+            self.raise_error("No object selected")
+            return
+        else:
+            coords = object.control_points.get_coords()
+            # open file dialog
+            file_path = self.data_handler.save_file_dialog(
+                file_name="coords.txt",
+                extensions="Measurement File (*.txt);;All Files (*)",
+            )
+            if file_path is None:
+                return
+
+            with open(file_path, "wb") as save_file:
+                # write to text file
+                self.data_handler.logger.info(f"Saving coordinates to {file_path}")
+                if self.main_ui.scaling_factor is not None:
+                    coords = coords * self.main_ui.scaling_factor
+                    header = f"Coordinates in {self.main_ui.units_dd.currentText()}, scaled by {self.main_ui.scaling_factor} {self.main_ui.units_dd.currentText()}/px"
+                else:
+                    header = f"Coordinates in px"
+                np.savetxt(save_file, coords, delimiter=",", header=header)
 
 
 class DropEnabledQOpenGLWidget(QOpenGLWidget):
@@ -335,4 +377,4 @@ class DropEnabledQOpenGLWidget(QOpenGLWidget):
     def dropEvent(self, event):
         if len(event.mimeData().urls()) == 1:
             img_path = event.mimeData().urls()[0].toLocalFile()
-            self.vispy_canvas.data_handler.open_file(img_path, self.vispy_canvas)
+            self.vispy_canvas.data_handler.open_file(img_path)

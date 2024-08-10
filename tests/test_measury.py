@@ -6,7 +6,7 @@ from numpy import __version__ as np_version
 if np_version[0] == "2":
     test_files = ["test_image.tif", "test_file.msry", "test_file_2.msry"]
 else:
-    test_files = ["test_image.tif", "test_file.msry"]
+    test_files = ["test_image.tif", "test_file.msry", "test_file_3.msry", "test_file_4.msry"]
 
 def test_main_program():
     
@@ -33,8 +33,7 @@ def test_open_file(file):
     app = App()
     app.run(run_vispy=False)
     app.vispy_app.process_events()
-    app.data_handler.open_file(Path(__file__).parent/"test_data"/file, 
-                                vispy_instance=app.main_window.vispy_canvas)
+    app.data_handler.open_file(Path(__file__).parent/"test_data"/file)
     app.close()
 
 def test_identify_scaling():
@@ -42,8 +41,7 @@ def test_identify_scaling():
     app = App()
     app.run(run_vispy=False)
     app.vispy_app.process_events()
-    app.data_handler.open_file(Path(__file__).parent/Path("test_data/test_image.tif"), 
-                                       vispy_instance=app.main_window.vispy_canvas)
+    app.data_handler.open_file(Path(__file__).parent/Path("test_data/test_image.tif"))
     app.main_window.main_ui.automatic_scaling()
     app.close()
 
