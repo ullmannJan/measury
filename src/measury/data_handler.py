@@ -436,10 +436,11 @@ class DataHandler:
             
             # test if it is a multiline
             if isinstance(object_list[0], EditLineVisual):
-                num_points = [obj.num_points for obj in object_list]
+                num_points = [len(obj.coords) for obj in object_list]
+                print(num_points)
                 # check if all are the same
                 if not all(n == num_points[0] for n in num_points):
-                    results[structure_name]["lines have different lengths: "] = (np.mean(num_points), np.std(num_points), "")
+                    results[structure_name]["lines have different number of points: "] = (np.mean(num_points), np.std(num_points), "")
                     continue
                 # elif num_points[0] == 0 or num_points[0] > 3:
                 #     results[structure_name][""] = (num_points[0], None, "")
