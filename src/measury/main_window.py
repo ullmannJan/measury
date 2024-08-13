@@ -285,7 +285,7 @@ class MainWindow(QMainWindow):
         QApplication.closeAllWindows()
 
     def raise_error(self, error):
-        self.data_handler.logger.error(error.replace("\n", " "))
+        self.data_handler.logger.error(str(error).replace("\n", " "))
         if "pytest" in sys_modules:
             raise Exception(error)
         else:

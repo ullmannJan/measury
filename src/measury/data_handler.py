@@ -433,10 +433,23 @@ class DataHandler:
         results = dict()
         for structure_name, object_list in self.drawing_data.items():
             results[structure_name] = dict()
-            props = object_list[0].output_properties().keys()
-            for prop in props:
+            
+            # test if it is a multiline
+            if isinstance(object_list[0], EditLineVisual):
+                num_points = [len(obj.coords) for obj in object_list]
+                print(num_points)
+                # check if all are the same
+                if not all(n == num_points[0] for n in num_points):
+                    results[structure_name]["lines have different number of points: "] = (np.mean(num_points), np.std(num_points), "")
+                    continue
+                # elif num_points[0] == 0 or num_points[0] > 3:
+                #     results[structure_name][""] = (num_points[0], None, "")
+                #     continue
+                
+            props = object_list[0].output_properties()
+            for prop, value in props.items():
                 data = [obj.output_properties()[prop][0] for obj in object_list]
-                unit = object_list[0].output_properties()[prop][1]
+                unit = value[1]
                 if self.main_window.main_ui.scaling_factor is not None:
                     if prop in [
                         "length",
