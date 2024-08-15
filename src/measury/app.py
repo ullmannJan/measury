@@ -6,6 +6,7 @@ import warnings
 # relative imports
 from .main_window import MainWindow
 from .data_handler import DataHandler
+from . import __version__
 
 
 class App:
@@ -29,6 +30,12 @@ class App:
             run_vispy (bool, optional): Whether to run the VisPy application.
             Defaults to True.
         """
+        # bug fix for windows where icon is not displayed
+        if "win" in sys.platform:
+            import ctypes
+            myappid = f'pit.spectran.app.{__version__}' # arbitrary string
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+
         sys.excepthook = self.exception_hook
         warnings.showwarning = self.warning_handler
 
