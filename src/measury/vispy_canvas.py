@@ -523,6 +523,10 @@ class VispyCanvas(SceneCanvas):
         # title color
         self.title_label._text_visual.color = color
 
+    def background_color_changed(self):
+        self.update_background_color()
+        self.update_axis_color()
+
     def update_colors(self):
         self.update_background_color()
         self.update_axis_color()
