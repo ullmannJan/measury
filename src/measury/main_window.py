@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QStyle,
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from sys import modules as sys_modules
 import numpy as np
 
@@ -47,6 +47,11 @@ class MainWindow(QMainWindow):
 
         # set style
         QApplication.setStyle(self.settings.value("graphics/style"))
+         # Set up a timer to check for theme changes
+        self.color = self.get_bg_color()
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.check_for_theme_change)
+        self.timer.start(2000)  # Check every second
 
         self.setAcceptDrops(True)
 
@@ -69,7 +74,6 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Measury")
         self.setWindowIcon(QIcon(str(measury_path / "data/tape_measure_128.ico")))
         self.setMinimumSize(700, 700)
-        # self.setStyleSheet("background-color: white")
 
         # Create actions for menu bar
         openAction = QAction(
@@ -329,8 +333,13 @@ class MainWindow(QMainWindow):
 
     def get_bg_color(self):
         QApplication.processEvents()
-        color = self.palette().color(QPalette.ColorRole.Window)
-        return color
+        return self.palette().color(QPalette.ColorRole.Window)
+    
+    def check_for_theme_change(self):
+        if self.color != self.get_bg_color():
+            self.color = self.get_bg_color()
+            self.vispy_canvas.background_color_changed()
+            self.right_ui.update_colors()
     
     def export_object_coords(self):
         

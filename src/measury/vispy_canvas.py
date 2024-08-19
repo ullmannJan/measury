@@ -147,8 +147,9 @@ class VispyCanvas(SceneCanvas):
     def draw_image(self, img_data=None):
         if img_data is None:
             img_data = self.data_handler.img_data
-        self.data_handler.logger.debug("set vispy image data")
-        self.image.set_data(img_data)
+        self.data_handler.logger.debug("setting vispy image data")
+        if img_data is not None:
+            self.image.set_data(img_data)
         self.image.interpolation = self.main_window.settings.value(
             "graphics/image_rendering"
         )
@@ -521,6 +522,10 @@ class VispyCanvas(SceneCanvas):
 
         # title color
         self.title_label._text_visual.color = color
+
+    def background_color_changed(self):
+        self.update_background_color()
+        self.update_axis_color()
 
     def update_colors(self):
         self.update_background_color()
