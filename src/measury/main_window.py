@@ -93,9 +93,7 @@ class MainWindow(QMainWindow):
         )
         imageFromClipboardAction.setShortcut("Ctrl+V")
         imageFromClipboardAction.setStatusTip("Open image from clipboard")
-        imageFromClipboardAction.triggered.connect(
-            lambda: self.data_handler.open_image_from_clipboard(self.vispy_canvas)
-        )
+        imageFromClipboardAction.triggered.connect(self.data_handler.open_image_from_clipboard)
 
         saveAction = QAction(
             self.style().standardIcon(QStyle.StandardPixmap.SP_DialogSaveButton),
