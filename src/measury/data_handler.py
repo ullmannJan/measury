@@ -147,7 +147,7 @@ class DataHandler:
             self.main_window.raise_error(f"Could not open file location: {path.parent}:\n\n{error}")
 
     def save_file_dialog(
-        self, file_name="measury.msry", extensions="Measury Files (*.measury *.msry)"
+        self, file_name="measury.msry", extensions="Measury Files (*.measury *.msry);;All Files (*)"
     ):
         filename, _ = QFileDialog.getSaveFileName(
             self.main_window.main_ui, "Save", file_name, extensions
@@ -298,7 +298,7 @@ class DataHandler:
                         )
                         self.main_window.vispy_canvas.create_new_object(new_object, structure_name=key)
 
-            if scaling[0] is not None:
+            if scaling is not None and scaling[0] is not None:
                 self.main_window.main_ui.pixel_edit.setText(str(scaling[0]))
                 self.main_window.main_ui.length_edit.setText(str(scaling[1]))
                 # find the index of the unit in the dropdown and set it
