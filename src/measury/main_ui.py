@@ -16,10 +16,16 @@ from PySide6.QtWidgets import (
     QInputDialog,
     QHeaderView,
 )
-from PySide6.QtGui import QDoubleValidator, QIntValidator, QFontMetrics, QUndoCommand
-from PySide6.QtCore import Qt
+from PySide6.QtGui import (QIntValidator, 
+                           QDoubleValidator,
+                           QRegularExpressionValidator,
+                           QFontMetrics, 
+                           QUndoCommand,
+                           )
+from PySide6.QtCore import Qt, QLocale
 from pathlib import Path
 import numpy as np
+import re
 
 # relative imports
 from .windows import SaveWindow
@@ -158,15 +164,15 @@ class MainUI(QWidget):
         # scaling
 
         self.scaling_factor = None
-
-        posDouble = QDoubleValidator()
-        posDouble.setBottom(0)
+        posDouble_validator = QRegularExpressionValidator(r"^\+?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?")
 
         self.pixel_edit = QLineEdit(self, placeholderText="Enter value")
-        self.pixel_edit.setValidator(posDouble)
+        self.pixel_edit.setLocale(QLocale(QLocale.Language.English, QLocale.Country.UnitedStates))
+        self.pixel_edit.setValidator(posDouble_validator)
         self.pixel_edit.textChanged.connect(self.update_scaling)
         self.length_edit = QLineEdit(self, placeholderText="Enter value")
-        self.length_edit.setValidator(posDouble)
+        self.length_edit.setLocale(QLocale(QLocale.Language.English, QLocale.Country.UnitedStates))
+        self.length_edit.setValidator(posDouble_validator)
         self.length_edit.textChanged.connect(self.update_scaling)
 
         scaling = QHBoxLayout()
@@ -413,10 +419,25 @@ class MainUI(QWidget):
     def update_scaling(self):
         length = self.length_edit.text()
         pixels = self.pixel_edit.text()
+        # add a zero to the end if the user enters 
+        # "e" for scientific notation so that it still is a valid number
+        # Regular expression to check if the number ends with 'e', 'e-', or 'e+'
+        scientific_notation_pattern = re.compile(r'e[+-]?$')
+        
+        # Add a zero to the end if the user enters "e", "e-" or "e+" for scientific notation
+        if scientific_notation_pattern.search(length.lower()):
+            length += "0"
+        if scientific_notation_pattern.search(pixels.lower()):
+            pixels += "0"
+    
+        
         if length != "" and pixels != "":
-            self.scaling_factor = float(length.replace(",", "")) / float(
-                pixels.replace(",", "")
-            )
+            # American
+            am_locale = QLocale(QLocale.Language.English, QLocale.Country.UnitedStates)
+            length, _ = am_locale.toDouble(length)
+            pixels, _ = am_locale.toDouble(pixels)
+        
+            self.scaling_factor = length / pixels            
         else:
             self.scaling_factor = None
         self.units_changed()
