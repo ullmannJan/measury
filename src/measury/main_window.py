@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QTimer
 from sys import modules as sys_modules
 import numpy as np
+import traceback
 
 
 # relative imports
@@ -92,9 +93,7 @@ class MainWindow(QMainWindow):
         )
         imageFromClipboardAction.setShortcut("Ctrl+V")
         imageFromClipboardAction.setStatusTip("Open image from clipboard")
-        imageFromClipboardAction.triggered.connect(
-            lambda: self.data_handler.open_image_from_clipboard(self.vispy_canvas)
-        )
+        imageFromClipboardAction.triggered.connect(self.data_handler.open_image_from_clipboard)
 
         saveAction = QAction(
             self.style().standardIcon(QStyle.StandardPixmap.SP_DialogSaveButton),
@@ -288,11 +287,12 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         QApplication.closeAllWindows()
 
-    def raise_error(self, error):
+    def raise_error(self, error:Exception):
         self.data_handler.logger.error(str(error).replace("\n", " "))
         if "pytest" in sys_modules:
             raise Exception(error)
         else:
+            self.data_handler.logger.debug("Error-Traceback: " + traceback.format_exc())
             QMessageBox.critical(self, "Error", str(error))
 
     def reset_undo_stack(self):
