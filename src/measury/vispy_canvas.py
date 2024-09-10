@@ -14,6 +14,7 @@ from .drawable_objects import (
     EditLineVisual,
     LineControlPoints,
     EditPolygonVisual,
+    Markers,
 )
 
 class VispyCanvas(SceneCanvas):
@@ -309,105 +310,124 @@ class VispyCanvas(SceneCanvas):
                         tr = self.scene.node_transform(self.view.scene)
                         pos = tr.map(event.pos)
                         self.view.interactive = False
-                        selected = self.visual_at(event.pos)
-                        self.view.interactive = True
-                        # unselect object to create room of new one
-                        self.unselect()
-                                
-
-                        if event.button == 1:
-                            # QApplication.setOverrideCursor(QCursor(Qt.CursorShape.SizeAllCursor))
-
-                            # edit object
-                            if selected is not None:
-                                self.selected_object = selected.parent
-                                # update transform to selected object
-                                tr = self.scene.node_transform(self.selected_object)
-                                pos = tr.map(event.pos)
-
-                                self.selected_object.select(True, obj=selected)
-                                self.selected_object.start_move(pos)
-                                # self.move_object_w_undo(self.selected_object)
-                                
-                                if not isinstance(self.selected_object, LineControlPoints):    
-                                    self.current_move = MoveObjectCommand(self, self.selected_object)
-                                    self.data_handler.logger.debug("start moving object")
-                                
-                                elif not self.selected_object.continue_adding_points:
-                                    self.current_move = MoveObjectCommand(self, self.selected_object)
-                                    self.data_handler.logger.debug("start moving object")
-
-                                # update ui to display properties of selected object
-                                self.selection_update()
+                        # selected is what we clicked on 
+                        # 6 as the markers are 8 wide and have a 1 pixel border 8+2*1=10 < 13=2*6+1 
+                        selected_list = self.visuals_at(event.pos, 6)
+                        selected = None
+                        if selected_list:
+                            # check if a marker is in the list, we want the last one, 
+                            # so we iterate from the back
+                            for selected in reversed(selected_list):
+                                if isinstance(selected, Markers):
+                                    break
                             else:
-                                self.current_move = None
-                            
-                            # create new object:
-                            if self.selected_object is None:
+                                selected = selected_list[0]
+                        
+                        self.view.interactive = True
 
-                                match self.main_ui.tools_buttons.checkedButton().text():
-                                    case "Line":
-                                        new_object = EditLineVisual(
-                                            parent=self.view.scene,
-                                            settings=self.main_window.settings,
-                                            num_points=2,
-                                        )
-                                    case "Ellipse":
-                                        new_object = EditEllipseVisual(
-                                            parent=self.view.scene,
-                                            settings=self.main_window.settings,
-                                        )
-                                    case "Rectangle":
-                                        new_object = EditRectVisual(
-                                            parent=self.view.scene,
-                                            settings=self.main_window.settings,
-                                        )
-                                    case "angle":
-                                        new_object = EditLineVisual(
-                                            settings=self.main_window.settings,
-                                            parent=self.view.scene,
-                                            num_points=3,
-                                        )
-                                    case "Multi-Line":
-                                        new_object = EditLineVisual(
-                                            settings=self.main_window.settings,
-                                            parent=self.view.scene,
-                                            num_points=0,
-                                        )
-                                    case "Polygon":
-                                        new_object = EditPolygonVisual(
-                                            settings=self.main_window.settings,
-                                            parent=self.view.scene)
-                                    case "Edit":
-                                        return
-                                # dont show object before it is added to drawing_data
-                                new_object.select(False)
-                                if self.check_creation_allowed(new_object):
+                        match event.button:
+                            case 1:
 
-                                    self.create_new_object_w_undo(
-                                        new_object, pos=pos, selected=True
-                                    )
-
-                                    # update ui where data is shown
-                                    self.selection_update(object=new_object)
-                                    # if linecontrolpoint to get automatic line creation without draggin
-                                    if isinstance(self.selected_object, LineControlPoints):
-                                        last_cp = self.selected_object.control_points[-1]
-                                        self.selected_object.select(True, last_cp)
-                                else:
-                                    new_object.delete()
-
+                                # unselect object to create room for new one
+                                self.unselect()                                
                                 
+                                # edit object
+                                if selected is not None:    
 
-                        # delete object
-                        if event.button == 2:  # right button deletes object
-                            # not self.selected_object because we want to
-                            # delete it on hover too
-                            if selected is not None:
-                                self.delete_object_w_undo(object=selected.parent)
+                                    self.selected_object = selected.parent
+                                    # update transform to selected object
+                                    tr = self.scene.node_transform(self.selected_object)
+                                    pos = tr.map(event.pos)
 
-                                # Needs change
-                                # self.main_ui.update_save_window()
+                                    self.selected_object.select(True, obj=selected)
+                                    self.selected_object.start_move(pos)
+                                    # self.move_object_w_undo(self.selected_object)
+                                    
+                                    # start a possible move
+                                    if not isinstance(self.selected_object, LineControlPoints):    
+                                        self.current_move = MoveObjectCommand(self, self.selected_object)
+                                        self.data_handler.logger.debug("start moving object")
+                                    
+                                    elif not self.selected_object.continue_adding_points:
+                                        self.current_move = MoveObjectCommand(self, self.selected_object)
+                                        self.data_handler.logger.debug("start moving object")
+
+                                    # update ui to display properties of selected object
+                                    self.selection_update()
+                                else:
+                                    self.current_move = None
+                                
+                                # create new object:
+                                if self.selected_object is None:
+
+                                    match self.main_ui.tools_buttons.checkedButton().text():
+                                        case "Line":
+                                            new_object = EditLineVisual(
+                                                parent=self.view.scene,
+                                                settings=self.main_window.settings,
+                                                num_points=2,
+                                            )
+                                        case "Ellipse":
+                                            new_object = EditEllipseVisual(
+                                                parent=self.view.scene,
+                                                settings=self.main_window.settings,
+                                            )
+                                        case "Rectangle":
+                                            new_object = EditRectVisual(
+                                                parent=self.view.scene,
+                                                settings=self.main_window.settings,
+                                            )
+                                        case "Angle":
+                                            new_object = EditLineVisual(
+                                                settings=self.main_window.settings,
+                                                parent=self.view.scene,
+                                                num_points=3,
+                                            )
+                                        case "Multi-Line":
+                                            new_object = EditLineVisual(
+                                                settings=self.main_window.settings,
+                                                parent=self.view.scene,
+                                                num_points=0,
+                                            )
+                                        case "Polygon":
+                                            new_object = EditPolygonVisual(
+                                                settings=self.main_window.settings,
+                                                parent=self.view.scene)
+                                        case "Edit":
+                                            return
+                                        
+                                    # dont show object before it is added to drawing_data
+                                    new_object.select(False)
+                                    if self.check_creation_allowed(new_object):
+
+                                        self.create_new_object_w_undo(
+                                            new_object, pos=pos, selected=True
+                                        )
+
+                                        # update ui where data is shown
+                                        self.selection_update(object=new_object)
+                                        # if linecontrolpoint to get automatic line creation without draggin
+                                        if isinstance(self.selected_object, LineControlPoints):
+                                            last_cp = self.selected_object.control_points[-1]
+                                            self.selected_object.select(True, last_cp)
+                                    else:
+                                        new_object.delete()
+
+                                    
+                            # delete object
+                            case 2:  # right button deletes object
+                                # not self.selected_object because we want to
+                                # delete on hover too
+                                if selected is not None:
+                                    self.unselect()
+                                    self.delete_object_w_undo(object=selected.parent)
+
+                                    # TODO: live update of data window, when it is open
+                                    # self.main_ui.update_data_window()
+                            
+                            # all other buttons just unselect the object
+                            case _:
+                                self.unselect()
 
                     case "Identify Scaling":
                         # disable panning
@@ -470,6 +490,13 @@ class VispyCanvas(SceneCanvas):
         self.main_window.undo_stack.push(command)
 
     def update_object_colors(self):
+        """
+        Update the colors of the objects in the canvas.
+        This method iterates over the drawing data stored in the data handler and updates the colors of each object.
+        The colors are retrieved from the graphics settings in the main window.
+        Returns:
+            None
+        """
         for name in self.data_handler.drawing_data.keys():
             for obj in self.data_handler.drawing_data[name]:
                 color = self.main_window.settings.value(
@@ -696,7 +723,6 @@ class VispyCanvas(SceneCanvas):
                                 self.selected_object.rotate(angle)
 
                             else:
-
                                 self.selected_object.move(pos[0:2], modifiers=modifiers)
 
                             # update ui to display properties of selected object
@@ -714,7 +740,6 @@ class VispyCanvas(SceneCanvas):
                 case _:
                     # if it is a line that is still being drawn
                     if isinstance(self.selected_object, LineControlPoints):
-
                         if self.selected_object.continue_adding_points:
                             modifiers = [key.name for key in event.modifiers]
                             tr = self.scene.node_transform(self.selected_object)
