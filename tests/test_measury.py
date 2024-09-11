@@ -82,3 +82,14 @@ def test_data_page():
     app.vispy_app.process_events()
     app.close()
     
+def test_image_rotation():
+
+    app = App(file_path=Path(__file__).parent/"test_data"/test_files[-1])
+    app.run(run_vispy=False)
+    app.vispy_app.process_events()
+    app.main_window.vispy_canvas.rotate_image()
+    app.vispy_app.process_events()
+    app.main_window.vispy_canvas.rotate_image(direction="counterclockwise")
+    app.vispy_app.process_events()
+    app.close()
+    

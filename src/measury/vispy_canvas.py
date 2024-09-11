@@ -165,6 +165,77 @@ class VispyCanvas(SceneCanvas):
                 )
         except Exception as error:
             self.main_window.raise_error(f"Image could not be centered: {error}")
+            
+    def rotate_image(self, direction="clockwise"):
+        self.data_handler.logger.debug(f"rotate image")
+        if self.data_handler.img_data is not None:
+            if direction == "clockwise":
+                new_origin = np.array([self.data_handler.img_data.shape[0]-self.origin[1], 
+                                    self.origin[0]])
+
+                self.data_handler.img_rotation += 90
+                direction = cv2.ROTATE_90_CLOCKWISE
+            else:
+                # rotate counter clockwise
+                new_origin = np.array([self.origin[1],
+                                        self.data_handler.img_data.shape[1] - self.origin[0]])
+                self.data_handler.img_rotation -= 90
+                direction = cv2.ROTATE_90_COUNTERCLOCKWISE
+            
+            # updating objects            
+            self.move_all_objects(self.origin)
+            self.set_origin(new_origin, move_objects=False)
+            self.rotate_all_objects(direction)
+            self.move_all_objects(-new_origin)
+            self.data_handler.img_data = cv2.rotate(self.data_handler.img_data, direction)
+            self.draw_image()
+            self.center_image()
+            
+    def rotate_coordinates_90(self, coords, direction="clockwise"):
+        """Rotate coordinates by 90 degrees in the given direction, 
+
+        Args:
+            coords (np.ndarray): coordinates to rotate
+            direction (cv2.rotation_type, optional): direction of rotation. Defaults to cv2.ROTATE_90_CLOCKWISE.
+
+        Returns:
+            np.ndarray: rotated coordinates
+        """
+        new_coords = np.empty_like(coords)
+        if direction == "clockwise":
+            new_coords[:,0] = self.data_handler.img_data.shape[0] - coords[:,1]
+            new_coords[:,1] = coords[:,0]
+        else:
+            new_coords[:,0] = coords[:,1]
+            new_coords[:,1] = self.data_handler.img_data.shape[1] - coords[:,0]
+        return new_coords
+            
+    def rotate_all_objects(self, direction="clockwise"):
+        """Rotate all objects by a given angle"""
+        self.data_handler.logger.debug("rotate all objects")
+        for structure in self.data_handler.drawing_data.keys():
+            for obj in self.data_handler.drawing_data[structure]:
+                # show object
+                if isinstance(obj, EditLineVisual):
+                    new_coords = self.rotate_coordinates_90(obj.coords, direction)
+                    obj.coords = new_coords
+                    obj.update_from_controlpoints()
+                else:
+                    if direction == 'clockwise':
+                        obj.angle += np.pi/2
+                    else:
+                        obj.angle -= np.pi/2
+                    
+                    obj.center = self.rotate_coordinates_90(obj.center[np.newaxis, :], 
+                                                            direction)[0]
+                    obj.update_from_controlpoints()
+                    
+        self.scene.update()  
+            
+        
+    def rotate_image_w_undo(self):
+        command = RotateImageCommand(self)
+        self.main_window.undo_stack.push(command)
 
     def add_load_text(self):
         # load image label
@@ -1246,3 +1317,16 @@ class SetOriginCommand(QUndoCommand):
     def redo(self):
         # Hide the object
         self.vispy_canvas.set_origin(self.new_origin)
+        
+class RotateImageCommand(QUndoCommand):
+    def __init__(self, vispy_canvas):
+        super().__init__()
+        self.vispy_canvas = vispy_canvas
+        
+    def undo(self):
+        """Rotate Image counter clockwise by 90 degrees"""
+        self.vispy_canvas.rotate_image(cv2.ROTATE_90_COUNTERCLOCKWISE)
+        
+    def redo(self):
+        """Rotate Image clockwise by 90 degrees"""
+        self.vispy_canvas.rotate_image(cv2.ROTATE_90_CLOCKWISE)
