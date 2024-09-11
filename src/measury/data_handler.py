@@ -365,6 +365,15 @@ class DataHandler:
 
     def open_image_from_clipboard(self):
 
+        clipboard = QGuiApplication.clipboard()
+
+        # if it is a file path, open it like a file
+        if clipboard.mimeData().hasUrls():
+            file_path = clipboard.mimeData().urls()[0].toLocalFile()
+            self.open_file(file_path)
+            return
+        
+        # otherwise open the image as an image
         reply = QMessageBox.StandardButton.Yes
         try:
             if self.img_data is not None:
@@ -377,14 +386,6 @@ class DataHandler:
                 )
 
             if reply == QMessageBox.StandardButton.Yes:
-
-                clipboard = QGuiApplication.clipboard()
-
-                # if it is a file path, open it like a file
-                if clipboard.mimeData().hasUrls():
-                    file_path = clipboard.mimeData().urls()[0].toLocalFile()
-                    self.open_file(file_path)
-                    return
 
                 self.file_path = Path("clipboard")
                 self.delete_all_objects()
@@ -399,7 +400,7 @@ class DataHandler:
 
                 # Check if the image is in the correct format
                 if clipboard_data.format() != QImage.Format.Format_RGB32:
-                    self.logger.info(f"Converting clipboard image from {clipboard_data.format()} to ARGB32 format")
+                    self.logger.info(f"Converting clipboard image from {clipboard_data.format()} to RGB32 format")
                     clipboard_data = clipboard_data.convertToFormat(QImage.Format.Format_RGB32)
                 
                 # Get the pointer to the pixel data
