@@ -166,19 +166,21 @@ class VispyCanvas(SceneCanvas):
         except Exception as error:
             self.main_window.raise_error(f"Image could not be centered: {error}")
             
-    def rotate_image(self, direction=cv2.ROTATE_90_CLOCKWISE):
+    def rotate_image(self, direction="clockwise"):
         self.data_handler.logger.debug(f"rotate image")
         if self.data_handler.img_data is not None:
-            if direction == cv2.ROTATE_90_CLOCKWISE:
+            if direction == "clockwise":
                 new_origin = np.array([self.data_handler.img_data.shape[0]-self.origin[1], 
                                     self.origin[0]])
 
                 self.data_handler.img_rotation += 90
+                direction = cv2.ROTATE_90_CLOCKWISE
             else:
                 # rotate counter clockwise
                 new_origin = np.array([self.origin[1],
                                         self.data_handler.img_data.shape[1] - self.origin[0]])
                 self.data_handler.img_rotation -= 90
+                direction = cv2.ROTATE_90_COUNTERCLOCKWISE
             
             # updating objects            
             self.move_all_objects(self.origin)
@@ -189,7 +191,7 @@ class VispyCanvas(SceneCanvas):
             self.draw_image()
             self.center_image()
             
-    def rotate_coordinates_90(self, coords, direction=cv2.ROTATE_90_CLOCKWISE):
+    def rotate_coordinates_90(self, coords, direction="clockwise"):
         """Rotate coordinates by 90 degrees in the given direction, 
 
         Args:
@@ -200,7 +202,7 @@ class VispyCanvas(SceneCanvas):
             np.ndarray: rotated coordinates
         """
         new_coords = np.empty_like(coords)
-        if direction == cv2.ROTATE_90_CLOCKWISE:
+        if direction == "clockwise":
             new_coords[:,0] = self.data_handler.img_data.shape[0] - coords[:,1]
             new_coords[:,1] = coords[:,0]
         else:
@@ -208,7 +210,7 @@ class VispyCanvas(SceneCanvas):
             new_coords[:,1] = self.data_handler.img_data.shape[1] - coords[:,0]
         return new_coords
             
-    def rotate_all_objects(self, direction=cv2.ROTATE_90_CLOCKWISE):
+    def rotate_all_objects(self, direction="clockwise"):
         """Rotate all objects by a given angle"""
         self.data_handler.logger.debug("rotate all objects")
         for structure in self.data_handler.drawing_data.keys():
@@ -219,7 +221,7 @@ class VispyCanvas(SceneCanvas):
                     obj.coords = new_coords
                     obj.update_from_controlpoints()
                 else:
-                    if direction == cv2.ROTATE_90_CLOCKWISE:
+                    if direction == 'clockwise':
                         obj.angle += np.pi/2
                     else:
                         obj.angle -= np.pi/2
