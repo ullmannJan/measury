@@ -182,7 +182,7 @@ class DataHandler:
             )
             output = (self.img_byte_stream, structure_data, scaling, 
                       self.main_window.vispy_canvas.origin, 
-                      self.main_window.data_handler.img_rotation)
+                      self.main_window.data_handler.img_rotation % 360)
         else:
             output = (None, structure_data, None)
 
@@ -191,7 +191,7 @@ class DataHandler:
             pickle.dump(output, save_file, pickle.HIGHEST_PROTOCOL, **kwargs)
 
         self.main_window.main_ui.save_window.close()
-        self.main_window.vispy_canvas.update_image()
+        self.main_window.vispy_canvas.update_file_path()
 
         
     def load_into_view(self, drawing_data, vispy_instance):
@@ -321,14 +321,18 @@ class DataHandler:
                 
                 self.main_window.main_ui.units_changed()
             
-            self.main_window.vispy_canvas.set_origin(origin, move_objects=False)
 
             self.main_window.main_ui.update_structure_dd()
-            self.main_window.vispy_canvas.update_image()
             
+            # this reads the image from the byte stream
+            self.main_window.vispy_canvas.update_image()
+                
             # rotate image if necessary
             for i in range(round(img_rotation % 360 / 90)):
-                self.main_window.vispy_canvas.rotate_image()
+                self.logger.debug("image rotation {}".format(img_rotation))
+                self.main_window.vispy_canvas.rotate_image(rotate_objects=False)
+                
+            self.main_window.vispy_canvas.set_origin(origin, move_objects=False)
 
     def open_file(self, file_path: str | Path | None):
 

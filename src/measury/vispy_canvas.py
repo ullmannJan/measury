@@ -106,9 +106,21 @@ class VispyCanvas(SceneCanvas):
         self.selected_point = None
 
         self.freeze()
+        
+    def update_file_path(self, file_path=None):
+        """Writes the filepath to the title label above the image
+        
+        Args:
+            file_path (Path): file_path to the image
+        """
+        if file_path is None:
+            file_path = self.data_handler.file_path
+        if file_path is not None:
+            self.title_label.text = file_path.name
 
     def update_image(self):
-        """Update the image in the vispy canvas and also the file path shown above the image"""
+        """Update the image in the vispy canvas and also the 
+        file path shown above the image"""
 
         # if there is no image loaded, do nothing
         if self.data_handler.file_path is not None:
@@ -134,7 +146,7 @@ class VispyCanvas(SceneCanvas):
                 self.xaxis.link_view(self.view)
                 self.yaxis.link_view(self.view)
 
-                self.title_label.text = self.data_handler.file_path.name
+                self.update_file_path()
 
             except Exception as error:
                 # handle the exception
@@ -166,7 +178,7 @@ class VispyCanvas(SceneCanvas):
         except Exception as error:
             self.main_window.raise_error(f"Image could not be centered: {error}")
             
-    def rotate_image(self, direction="clockwise"):
+    def rotate_image(self, direction="clockwise", rotate_objects=True):
         self.data_handler.logger.debug(f"rotate image")
         if self.data_handler.img_data is not None:
             if direction == "clockwise":
@@ -174,20 +186,23 @@ class VispyCanvas(SceneCanvas):
                                     self.origin[0]])
 
                 self.data_handler.img_rotation += 90
-                direction = cv2.ROTATE_90_CLOCKWISE
+                direction_hint = cv2.ROTATE_90_CLOCKWISE
             else:
                 # rotate counter clockwise
                 new_origin = np.array([self.origin[1],
                                         self.data_handler.img_data.shape[1] - self.origin[0]])
                 self.data_handler.img_rotation -= 90
-                direction = cv2.ROTATE_90_COUNTERCLOCKWISE
+                direction_hint = cv2.ROTATE_90_COUNTERCLOCKWISE
             
-            # updating objects            
-            self.move_all_objects(self.origin)
-            self.set_origin(new_origin, move_objects=False)
-            self.rotate_all_objects(direction)
-            self.move_all_objects(-new_origin)
-            self.data_handler.img_data = cv2.rotate(self.data_handler.img_data, direction)
+            # updating objects  
+            if rotate_objects:
+                self.move_all_objects(self.origin)
+                self.set_origin(new_origin, move_objects=False)
+                self.rotate_all_objects(direction)
+                self.move_all_objects(-new_origin)
+            else:
+                self.set_origin(new_origin, move_objects=False)
+            self.data_handler.img_data = cv2.rotate(self.data_handler.img_data, direction_hint)
             self.draw_image()
             self.center_image()
             
@@ -202,6 +217,7 @@ class VispyCanvas(SceneCanvas):
             np.ndarray: rotated coordinates
         """
         new_coords = np.empty_like(coords)
+        self.data_handler.logger.debug("rotate coordinates " + direction)
         if direction == "clockwise":
             new_coords[:,0] = self.data_handler.img_data.shape[0] - coords[:,1]
             new_coords[:,1] = coords[:,0]
@@ -1325,8 +1341,8 @@ class RotateImageCommand(QUndoCommand):
         
     def undo(self):
         """Rotate Image counter clockwise by 90 degrees"""
-        self.vispy_canvas.rotate_image(cv2.ROTATE_90_COUNTERCLOCKWISE)
+        self.vispy_canvas.rotate_image(direction="counter-clockwise")
         
     def redo(self):
         """Rotate Image clockwise by 90 degrees"""
-        self.vispy_canvas.rotate_image(cv2.ROTATE_90_CLOCKWISE)
+        self.vispy_canvas.rotate_image(direction="clockwise")
