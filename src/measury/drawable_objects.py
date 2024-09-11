@@ -613,7 +613,7 @@ class EditRectVisual(EditVisual):
     def update_colors(self, color, border_color):
         self.form.color = color
         self.form.border_color = border_color
-        self.arrow.color = border_color
+        # self.arrow.color = border_color
         self.arrow.arrow_color = border_color
 
 

@@ -64,6 +64,10 @@ class MainUI(QWidget):
         self.center_image_button = QPushButton("Center Image", self)
         self.image_layout.addWidget(self.center_image_button)
         self.center_image_button.clicked.connect(self.vispy_canvas.center_image)
+        
+        self.rotate_image_button = QPushButton("Rotate Image", self)
+        self.image_layout.addWidget(self.rotate_image_button)
+        self.rotate_image_button.clicked.connect(self.vispy_canvas.rotate_image_w_undo)
 
         image_tools = dict()
         image_tools["set_origin"] = QPushButton("Set Origin", self)

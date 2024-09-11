@@ -20,6 +20,7 @@ from .windows import ImageWindow
 class DataHandler:
     img_data = None
     img_byte_stream = None
+    img_rotation = 0
     file_path: Path | None = None
 
     main_window: dict | None = None
@@ -179,7 +180,9 @@ class DataHandler:
                 self.main_window.main_ui.units_dd.currentText(),
                 self.main_window.vispy_canvas.scale_bar_params,
             )
-            output = (self.img_byte_stream, structure_data, scaling, self.main_window.vispy_canvas.origin)
+            output = (self.img_byte_stream, structure_data, scaling, 
+                      self.main_window.vispy_canvas.origin, 
+                      self.main_window.data_handler.img_rotation)
         else:
             output = (None, structure_data, None)
 
@@ -224,12 +227,15 @@ class DataHandler:
         # only 3 elements are default, as it becomes 4 when loaded from file 
         scaling = (None, None, None) # pixel, length, unit
         origin = np.zeros(2)
+        img_rotation = 0
         if len(loaded_data) == 2:
             img_byte_stream, structure_data = loaded_data
         elif len(loaded_data) == 3:
             img_byte_stream, structure_data, scaling = loaded_data
         elif len(loaded_data) == 4:
             img_byte_stream, structure_data, scaling, origin = loaded_data
+        elif len(loaded_data) == 5:
+            img_byte_stream, structure_data, scaling, origin, img_rotation = loaded_data
 
         
         question = None
@@ -312,13 +318,17 @@ class DataHandler:
                     self.main_window.main_ui.units_dd.setCurrentIndex(index)
                 if len(scaling) > 3:
                     self.main_window.vispy_canvas.find_scale_bar_width(*scaling[3])
-                    
+                
                 self.main_window.main_ui.units_changed()
             
             self.main_window.vispy_canvas.set_origin(origin, move_objects=False)
 
             self.main_window.main_ui.update_structure_dd()
             self.main_window.vispy_canvas.update_image()
+            
+            # rotate image if necessary
+            for i in range(round(img_rotation % 360 / 90)):
+                self.main_window.vispy_canvas.rotate_image()
 
     def open_file(self, file_path: str | Path | None):
 
