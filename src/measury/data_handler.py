@@ -482,11 +482,11 @@ class DataHandler:
                         )
 
                 if len(data) == 1:
-                    results[structure_name][prop] = (np.mean(data), None, unit)
+                    results[structure_name][prop] = (np.mean(data, axis=0), None, unit)
                 else:
                     results[structure_name][prop] = (
-                        np.mean(data),
-                        np.std(data) / np.sqrt(len(object_list)),
+                        np.mean(data, axis=0),
+                        np.std(data, axis=0) / np.sqrt(len(object_list)),
                         unit,
                     )
         return results
@@ -500,10 +500,17 @@ class DataHandler:
             results_string += f"{structure_name}:\n"
             for prop, prop_results in structure_results.items():
                 results_string += f"\t{prop}:\t "
+                # value depending on if it is a single value or an array
+                if isinstance(prop_results[0], np.ndarray):
+                    value_str = "[" + ", ".join([f"{p:.1f}" for p in prop_results[0]]) + "]"
+                else:
+                    value_str = f"{prop_results[0]:.1f}"
                 # value with or without std
-                value_str = f"{prop_results[0]:.1f}"
                 if prop_results[1] is not None:
-                    value_str = f"({value_str} ± {prop_results[1]:.1f})"
+                    if isinstance(prop_results[1], np.ndarray):
+                        value_str = f"({value_str} ± [{', '.join([f'{p:.1f}' for p in prop_results[1]])}])"
+                    else:
+                        value_str = f"({value_str} ± {prop_results[1]:.1f})"
                 results_string += value_str
                 # adding unit
                 results_string += f" {prop_results[2]}\n"
