@@ -464,6 +464,7 @@ class DataHandler:
             for prop, value in props.items():
                 data = [obj.output_properties()[prop][0] for obj in object_list]
                 unit = value[1]
+                
                 if self.main_window.main_ui.scaling_factor is not None:
                     if prop in [
                         "length",
@@ -473,12 +474,21 @@ class DataHandler:
                         "height",
                         "center",
                     ]:
+                        exponent_string = ""
+                        exponent = 1
+                        if unit[-1] == ["²"]:
+                            exponent = 2
+                            exponent_string = unit[-1]
+                        if unit[-1] == ["³"]:
+                            exponent = 3
+                            exponent_string = unit[-1]
+                            
                         data = [
-                            d * self.main_window.main_ui.scaling_factor for d in data
+                            d * self.main_window.main_ui.scaling_factor**exponent for d in data
                         ]
-                        exponent = unit[-1] if unit[-1] in ["²", "³"] else ""
+                        
                         unit = (
-                            self.main_window.main_ui.units_dd.currentText() + exponent
+                            self.main_window.main_ui.units_dd.currentText() + exponent_string
                         )
 
                 if len(data) == 1:
