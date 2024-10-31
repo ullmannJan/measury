@@ -476,10 +476,10 @@ class DataHandler:
                     ]:
                         exponent_string = ""
                         exponent = 1
-                        if unit[-1] == ["²"]:
+                        if unit[-1] == "²":
                             exponent = 2
                             exponent_string = unit[-1]
-                        if unit[-1] == ["³"]:
+                        if unit[-1] == "³":
                             exponent = 3
                             exponent_string = unit[-1]
                             
