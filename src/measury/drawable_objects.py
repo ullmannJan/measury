@@ -575,7 +575,7 @@ class EditRectVisual(EditVisual):
             angle=self.angle,
         )
 
-    def intensity_profile(self, image, n_x=100, n_y=20, **kwargs):
+    def intensity_profile(self, image, n_x=100, n_y=20, origin=np.zeros(2),  **kwargs):
         # Get the coordinates of the rectangle
         coords = self.control_points.coords[:, 0, :]
 
@@ -583,21 +583,21 @@ class EditRectVisual(EditVisual):
         x_dir = np.linspace(0, coords[3][0] - coords[0][0], n_y, endpoint=True)
         y_dir = np.linspace(0, coords[3][1] - coords[0][1], n_y, endpoint=True)
         # Compute the start and end points for all lines
-        starts = coords[0][::-1] + np.column_stack((y_dir, x_dir))
-        ends = coords[1][::-1] + np.column_stack((y_dir, x_dir))
+        starts = coords[0] + np.column_stack((x_dir, y_dir)) + origin
+        ends = coords[1] + np.column_stack((x_dir, y_dir)) + origin
 
         if self.control_points._width < 0:
             starts, ends = ends, starts
 
-        # Initialize an empty list to hold the intensity profiles
+        # Initialize an empty array to hold the intensity profiles
         intensity_profile_line = np.zeros(n_x)
         evaluation_coords = np.empty((n_y, n_x, 2))
         img = np.sum(image, axis=2)
         # Iterate over all lines
         for i, (start, end) in enumerate(zip(starts, ends)):
             # Compute the coordinates along the line
-            x_coords = np.linspace(start[1], end[1], n_x)
-            y_coords = np.linspace(start[0], end[0], n_x)
+            x_coords = np.linspace(start[0], end[0], n_x)
+            y_coords = np.linspace(start[1], end[1], n_x)
 
             evaluation_coords[i, :, :] = np.column_stack((x_coords, y_coords))
             # Stack the coordinates into a 2D array
@@ -909,10 +909,11 @@ class EditLineVisual(EditVisual):
     @property
     def angles(self):
         diff = np.diff(self.control_points.coords, axis=0)
-        diff[0] *= -1
-        angles = np.rad2deg(np.arctan2(-diff[:, 1], diff[:, 0]))
-        return angles
-
+        if len(diff) > 0:
+            diff[0] *= -1
+            angles = np.rad2deg(np.arctan2(-diff[:, 1], diff[:, 0]))
+            return angles
+        return [0]
     @property
     def angle(self):
         return self.angles[0]
@@ -1002,7 +1003,7 @@ class EditLineVisual(EditVisual):
     def save(self):
         return dict(coords=self.coords, num_points=self.num_points)
 
-    def intensity_profile(self, image, n=100, **kwargs):
+    def intensity_profile(self, image, n=100, origin=np.zeros(2), **kwargs):
 
         # Iterate over pairs of consecutive coordinates
 
@@ -1025,12 +1026,12 @@ class EditLineVisual(EditVisual):
         count = 0
         for index, m in enumerate(num_points):
             # Swap x and y in the start and end points
-            start = self.coords[index][::-1]
-            end = self.coords[index + 1][::-1]
+            start = self.coords[index] + origin
+            end = self.coords[index + 1] + origin
 
             # Compute the coordinates along the line
-            x_coords = np.linspace(start[1], end[1], m, endpoint=True)
-            y_coords = np.linspace(start[0], end[0], m, endpoint=True)
+            x_coords = np.linspace(start[0], end[0], m, endpoint=True)
+            y_coords = np.linspace(start[1], end[1], m, endpoint=True)
 
             # Stack the coordinates into a 2D array
             eval_coords = np.vstack([y_coords, x_coords])
@@ -1115,6 +1116,6 @@ class EditPolygonVisual(EditLineVisual):
         else:
             self.form.pos = self.corrected_coords()
                                     
-    def intensity_profile(self, image, n=100, **kwargs):
+    def intensity_profile(self, image, n=100, origin=np.zeros(2), **kwargs):
         pass
         

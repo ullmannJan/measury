@@ -165,12 +165,16 @@ class RightUI(QWidget):
         # calculate intensity profile
         if isinstance(selected_element, EditLineVisual):
             length = selected_element.length
+            if not length:
+                self.reset_intensity_plot()
+                return
             if not isinstance(length, float):
                 length = np.sum(length)
             intensity, _ = selected_element.intensity_profile(
                 image=image,
                 n=interpolation_factor * int(length),
                 order=spline_order,
+                origin=self.main_window.vispy_canvas.origin,
             )
             distance = np.linspace(0, length, len(intensity))*scaling_factor
             if selected_element.angle % 90 == 0:
@@ -194,6 +198,7 @@ class RightUI(QWidget):
                 n_x=interpolation_factor * width_integer,
                 n_y=interpolation_factor * height_integer,
                 order=spline_order,
+                origin=self.main_window.vispy_canvas.origin,
             )
             distance = np.linspace(0, width, len(intensity))*scaling_factor
             if selected_element.angle % 90 == 0:
@@ -231,7 +236,8 @@ class RightUI(QWidget):
                 if length <= 0:
                     return
                 intensity, eval_coords = selected_element.intensity_profile(
-                    image=image, n=interpolation_factor * length
+                    image=image, n=interpolation_factor * length,
+                    origin=self.main_window.vispy_canvas.origin,
                 )
 
                 np.savetxt(
@@ -250,6 +256,7 @@ class RightUI(QWidget):
                     image=image,
                     n_x=interpolation_factor * width,
                     n_y=interpolation_factor * int(selected_element.height),
+                    origin=self.main_window.vispy_canvas.origin,
                 )
 
                 np.savetxt(
