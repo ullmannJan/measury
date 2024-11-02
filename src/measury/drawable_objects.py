@@ -575,7 +575,7 @@ class EditRectVisual(EditVisual):
             angle=self.angle,
         )
 
-    def intensity_profile(self, image, n_x=100, n_y=20, **kwargs):
+    def intensity_profile(self, image, n_x=100, n_y=20, origin=np.zeros(2),  **kwargs):
         # Get the coordinates of the rectangle
         coords = self.control_points.coords[:, 0, :]
 
@@ -589,8 +589,8 @@ class EditRectVisual(EditVisual):
         if self.control_points._width < 0:
             starts, ends = ends, starts
 
-        # Initialize an empty list to hold the intensity profiles
-        intensity_profile_line = np.zeros(n_x)
+        # Initialize an empty array to hold the intensity profiles
+        intensity_profile_line = np.empty(n_x)
         evaluation_coords = np.empty((n_y, n_x, 2))
         img = np.sum(image, axis=2)
         # Iterate over all lines
@@ -1002,7 +1002,7 @@ class EditLineVisual(EditVisual):
     def save(self):
         return dict(coords=self.coords, num_points=self.num_points)
 
-    def intensity_profile(self, image, n=100, **kwargs):
+    def intensity_profile(self, image, n=100, origin=np.zeros(2), **kwargs):
 
         # Iterate over pairs of consecutive coordinates
 
@@ -1115,6 +1115,6 @@ class EditPolygonVisual(EditLineVisual):
         else:
             self.form.pos = self.corrected_coords()
                                     
-    def intensity_profile(self, image, n=100, **kwargs):
+    def intensity_profile(self, image, n=100, origin=np.zeros(2), **kwargs):
         pass
         
