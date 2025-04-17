@@ -58,9 +58,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.x
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libegl1
       - name: Install dependencies and build
         run: |
-          sudo apt-get update && sudo apt-get install -y libegl1-mesa
           pip install .
           pip install pyinstaller
           python ./compiling/compile.py zipped
