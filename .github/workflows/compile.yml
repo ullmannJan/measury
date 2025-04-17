@@ -60,7 +60,6 @@ jobs:
           python-version: 3.x
       - name: Install dependencies and build
         run: |
-          sudo apt-get update && sudo apt-get install -y libegl1-mesa
           pip install .
           pip install pyinstaller
           python ./compiling/compile.py zipped
