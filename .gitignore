@@ -60,6 +60,6 @@ docs/_build/
 .env
 .venv
 env/
-venv/
+venv*/
 ENV/
 env.bak/
