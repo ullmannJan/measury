@@ -582,4 +582,14 @@ class CustomUnpickler(pickle.Unpickler):
         # with measury. This allows for the loading of old files
         if "drawable_objects" in module:
             module = "measury.drawable_objects"
+
+        # # Handle deprecated numpy modules
+        # if module.startswith("numpy.core") or module.startswith("numpy_core"):
+        #     # For numeric module and other deprecated numpy.core modules
+        #     module = "numpy"
+
+        # # Handle specific numpy functions that have been moved or renamed
+        # if module == "numpy" and name == "_frombuffer":
+        #     name = 'frombuffer'
+
         return super().find_class(module, name)
